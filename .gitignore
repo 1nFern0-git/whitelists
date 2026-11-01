@@ -23,5 +23,6 @@ __pycache__/
 *.egg
 .codebase-memory/
 .codebase-memory/status.json
+.mcp.json
 data/
 
