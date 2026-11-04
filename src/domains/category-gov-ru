@@ -1,98 +1,129 @@
-# Federal Gov.
-government.ru
+# Федеральные органы власти
 gov.ru
+government.ru
 
-# Federal Public Services
+# Федеральные государственные услуги
 gosuslugi.ru
 gu-st.ru
 
-# Federal Healthcare Services
+# Федеральные сервисы здравоохранения
 emias.info
 mgfoms.ru
 
-# Federal Educational Services
+# Федеральные образовательные сервисы
 ro-edu.ru
 
-# Digital educational platform
+# Цифровая образовательная платформа
 dnevnik.ru
 
-# Рос сети
+# Россети
 rosseti.ru
 
-# Рос атом
+# Росатом
 rosatom.ru
 
-# Рос тех
+# Ростех
 rostec.ru
 
-# Рос нефть
+# Роснефть
 rosneft.ru
 
 # ГИС ЭПД
 epd-portal.ru
 
-# Казначейство
-roskazna.gov.ru
-
 # Суды
-vsrf.ru
-sudrf.ru
 arbitr.ru
-ssrf.ru
-vkks.ru
-vekrf.ru
 cdep.ru
+ssrf.ru
+sudrf.ru
+vekrf.ru
+vkks.ru
+vsrf.ru
 
-# Other Federal Resources
-cbr.ru          # Central Bank of Russia
-cikrf.ru        # Central Electoral Commission of the Russian Federation
-ebs.ru          # Unified Biometric System
-goskey.ru       # GosKey - an electronic signature on a smartphone
-grfc.ru         # General radio frequency center
-izbirkom.ru     # Information on ongoing elections and referendums
-kremlin.ru      # Online representation of the President of Russia
-mil.ru          # Ministry of Defense of the Russian Federation
-nalog.ru        # Federal Tax Service
-lkfl2.nalog.ru
-lknpd.nalog.ru
-честныйзнак.рф # Honest Sign - State Labeling System
-moex.com        # Moscow Exchange
+# Прочие федеральные ресурсы
+
+# Центральный банк России
+cbr.ru
+
+# ЦИК России
+cikrf.ru
+
+# Единая биометрическая система
+ebs.ru
+
+# Госключ — электронная подпись на смартфоне
+goskey.ru
+
+# Главный радиочастотный центр
+grfc.ru
+
+# Информация о выборах и референдумах
+izbirkom.ru
+
+# Сайт Президента России
+kremlin.ru
+
+# Министерство обороны РФ
+mil.ru
+
+# Федеральная налоговая служба
+nalog.ru
+
+# Честный знак — система маркировки
+честныйзнак.рф
+
+# Московская биржа
+moex.com
+
+# МВД России
 мвд.рф
-epp.genproc.gov.ru
-mchs.gov.ru
-moskva-putinu.ru
+
+# Объясняем.рф
 объясняем.рф
 
-# Federal Cities (Cities of Federal Importance)
+# Москва — Путину
+moskva-putinu.ru
+
+# Города федерального значения
 mos.ru
 mosreg.ru
-spb.ru
 sevastopol.ru
+spb.ru
 
-# Subjects of the Russian Federation
+# Субъекты Российской Федерации
 kchr.ru
 tatarstan.ru
 
-# Administrative resources of cities of the Russian Federation
-krd.ru
+# Административные ресурсы городов России
 i-ola.ru
+kemerovo.ru
+krd.ru
+kursk.ru
+pskov.ru
 vlc.ru
 екатеринбург.рф
-kemerovo.ru
-kursk.ru
 липецкаяобласть.рф
-pskov.ru
 
-# Political parties of the Russian Federation
+# Политические партии России
 er.ru
+kprf.ru
 ldpr.ru
 newpeople.ru
-kprf.ru
 
-# Projects
-rsv.ru            # Россия — страна возможностей
-будьвдвижении.рф  # Движение первых
-myrosmol.ru       # Молодёжь России
-tvoyhod.online    # Твой Ход
-znanierussia.ru   # Общество Знание
-onf.ru            # Народный фронт
+# Россия — страна возможностей
+rsv.ru
+
+# Движение первых
+будьвдвижении.рф
+
+# Молодёжь России
+myrosmol.ru
+
+# Твой Ход
+tvoyhod.online
+
+# Общество Знание
+znanierussia.ru
+
+# Народный фронт
+onf.ru
