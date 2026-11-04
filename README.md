@@ -55,7 +55,7 @@ python3 tools/check.py
 
 ```
 whitelists/
-├── .github/workflows/          # Пересборка release из runs/ (Actions)
+├── .github/workflows/          # Обновление кэша адресов (Actions)
 ├── tools/                      # Скрипты проверки
 │   ├── check.py                # Один вход: проверка → runs/ → release
 │   ├── check-domains.py        # Проверка доменов (DNS + HTTP)
@@ -69,9 +69,8 @@ whitelists/
 ├── src/
 │   └── domains/                # Списки доменов по категориям
 
-├── runs/                       # Накопленные наблюдения — исходные данные release
-│   ├── megafon/                # <дата>-http.txt, <дата>-tls.txt, <дата>-tls.tsv
-│   └── rostelecom/
+├── runs/                       # Ваши прогоны; локально, в git не попадает
+│   └── <оператор>/             # <дата>-http.txt, <дата>-tls.txt, <дата>-tls.tsv
 ├── configs/
 │   ├── release.json            # Манифест: из чего собирать каждый release
 │   ├── dns-cache.json          # Адреса всех доменов; обновляется workflow
@@ -80,7 +79,7 @@ whitelists/
 ├── build/                      # Черновики прогонов (создаётся автоматически)
 │   ├── domains_checked/        # Whitelist'ы по операторам
 │   └── pairs/                  # Сырые наблюдения по парам SNI + IP (JSONL/TSV)
-└── release/                    # Финальные списки
+└── release/                    # Результат ваших прогонов
     ├── whitelist-<оператор>.txt    # Проверенные домены для оператора
     └── IP-whitelist-<оператор>.txt # Адреса этих же доменов в CIDR
 ```
@@ -114,25 +113,24 @@ whitelists/
 | `category-jkh-ru` | энергосбыт и ГИС ЖКХ |
 | `category-services-ru` | прочие сервисы: карты, ИИ, каршеринг, почта, B2B-ПО |
 
-## ✅ Актуальные данные
+## 🧭 Что на выходе
 
-Списки собираются под конкретного оператора: фильтрация у них разная и меняется
-во времени, поэтому общего «правильного» списка не существует. Список появляется
-только после полевых замеров у этого оператора — придумать его нельзя.
+Инструмент не поставляет готовых списков: доступность зависит от оператора,
+региона, базовой станции и момента времени, поэтому чужие результаты вам всё
+равно не подойдут. Вы запускаете проверку в своей сети и получаете свои:
 
-| Оператор | Домены | IP-адреса (CIDR) |
-|---|---|---|
-| МегаФон | [`whitelist-megafon.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/whitelist-megafon.txt) (351) | [`IP-whitelist-megafon.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/IP-whitelist-megafon.txt) (360 сетей) |
-| Ростелеком | [`whitelist-rostelecom.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/whitelist-rostelecom.txt) (143) | [`IP-whitelist-rostelecom.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/IP-whitelist-rostelecom.txt) (147 сетей) |
-| МТС, Билайн, Tele2, Yota | ждут замеров | — |
+- `release/whitelist-<оператор>.txt` — домены, прошедшие проверку;
+- `release/IP-whitelist-<оператор>.txt` — адреса этих доменов в CIDR;
+- `build/run-<дата>/` — сырые наблюдения, из которых всё посчитано.
 
-Остальные операторы уже прописаны в `configs/release.json` и в меню `check.py`:
-достаточно один раз прогнать `python3 tools/check.py` в сети нужного оператора,
-и списки `whitelist-<оператор>.txt` с IP-адресами появятся сами.
+IP-список дополняет доменный, а не заменяет его: при вердикте `ip` фильтр
+смотрит на адреса, при `sni` — на имя в TLS.
 
-IP-список содержит только адреса доменов из соответствующего доменного списка —
-он не заменяет его, а дополняет: при вердикте `ip` фильтр смотрит на адреса,
-при `sni` — на имя в TLS.
+Файлы в `release/` этого репозитория — снимок с прогонов автора: они показывают
+формат и масштаб, но к вашей сети отношения не имеют. Свой список вы получите,
+запустив `check.py` у себя.
+
+---
 
 ## 🚀 Быстрый старт
 
@@ -412,8 +410,8 @@ domain  ip  family  sni  status  http  tls  cert_cn  ech  duration_ms  operator 
 
 ```bash
 python3 tools/build_release.py -o release/whitelist-x.txt --mode intersection \
-    runs/megafon/2026-11-04-http.txt \
-    runs/megafon/2026-11-04-tls.txt
+    runs/<оператор>/*-http.txt \
+    runs/<оператор>/*-tls.txt
 ```
 
 `intersection` (по умолчанию) оставляет домены, подтверждённые **всеми**
@@ -426,8 +424,8 @@ IP-список строится из тех же наблюдений — от�
 
 ```bash
 python3 tools/build_release.py -o release/whitelist-x.txt --mode min --min-sources 3 \
-    runs/rostelecom/*.txt \
-    --pairs runs/rostelecom/*.tsv \
+    runs/<оператор>/*.txt \
+    --pairs runs/<оператор>/*.tsv \
     --ip-output release/IP-whitelist-x.txt
 ```
 
@@ -491,8 +489,10 @@ LIMIT=50 python3 tools/check.py         # быстрый пробный прог
 
 Что делает: проверка канала → пары SNI × IP → отчёт → HTTP-проверка →
 `runs/<оператор>/<дата>-{tls.txt,tls.tsv,http.txt}` → пересборка release
-для этого оператора. Если оператора ещё нет в `configs/release.json`,
-он добавляется туда автоматически (`min`, порог 2 источника).
+для этого оператора. `runs/` — ваши наблюдения, в git они не попадают:
+они нужны только чтобы собрать `release/` из нескольких прогонов.
+Если оператора ещё нет в `configs/release.json`, он добавляется туда
+автоматически (`min`, порог 2 источника).
 
 Адреса берутся из `configs/dns-cache.json` — файла, который обновляет workflow
 раз в неделю и при изменении `src/domains/`. Это не оптимизация: в сети
@@ -598,8 +598,9 @@ A: Увеличьте параметр `-c` для доменов (но не б�
 A: Да, не указывайте параметр `--dns`. Для принудительного использования системных DNS убедитесь, что они корректно настроены в ОС.
 
 **Q: Где найти итоговый whitelist?**  
-A: В `release/` — по файлу на оператора: `whitelist-<оператор>.txt` и `IP-whitelist-<оператор>.txt`.
-Общего списка «для всех» нет: операторы фильтруют по-разному.
+A: В `release/` после прогона — по файлу на оператора: `whitelist-<оператор>.txt`
+и `IP-whitelist-<оператор>.txt`. Готовых списков в проекте нет: они зависят от
+вашей сети и вашего момента времени.
 
 **Q: Почему у операторов разные списки?**  
 A: Фильтрация идёт по паре SNI + IP и отличается не только между операторами,
