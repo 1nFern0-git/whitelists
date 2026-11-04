@@ -369,6 +369,23 @@ async def probe(ip: str, sni: str, port: int, timeout: float,
     return result
 
 
+def local_ip() -> Optional[str]:
+    """Локальный адрес, с которого уйдёт трафик (без отправки пакетов).
+
+    Полезен для проверки гипотезы «сменилась базовая станция/шлюз»: если
+    адрес меняется между прогонами, сеть переподключалась.
+    """
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            sock.connect(("1.1.1.1", 53))   # UDP connect не отправляет пакеты
+            return sock.getsockname()[0]
+        finally:
+            sock.close()
+    except Exception:
+        return None
+
+
 def make_record(kind: str, domain: str, ip: str, sni: str, family: str,
                 ech: bool, probe_result: Dict[str, Any], meta: Dict[str, Any]) -> Dict[str, Any]:
     record = {
@@ -613,7 +630,8 @@ def write_outputs(records: List[Dict[str, Any]], summary: Dict[str, Any],
 
     columns = ["ts", "probe", "domain", "ip", "family", "sni", "status", "http",
                "tls", "cipher", "cert_cn", "cert_sha256", "ech", "duration_ms",
-               "error", "operator", "mcc_mnc", "channel"]
+               "error", "operator", "mcc_mnc", "channel", "local_ip",
+               "pass_count", "attempts"]
 
     if args.format == "jsonl" and jsonl_path != default_jsonl:
         with open(jsonl_path, "w", encoding="utf-8") as f:
@@ -746,6 +764,10 @@ async def main() -> None:
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     meta: Dict[str, Any] = {"operator": args.operator, "mcc_mnc": args.mcc_mnc,
                             "channel": args.channel}
+    detected_local_ip = local_ip()
+    if detected_local_ip:
+        meta["local_ip"] = detected_local_ip
+        print(f"   локальный адрес: {detected_local_ip}")
 
     args.dns_cache_data = load_dns_cache(args.dns_cache)
     if args.cache_only and not args.dns_cache_data:
