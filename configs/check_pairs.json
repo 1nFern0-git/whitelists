@@ -1,0 +1,28 @@
+{
+  "comment": "Конфигурация для check_pairs.py — проверка пар (SNI, IP) в сети оператора",
+  "version": "1.0",
+
+  "paths": {
+    "domains_directory": "../src/domains",
+    "output_directory": "build/pairs"
+  },
+
+  "network": {
+    "timeout": 3.0,
+    "concurrency": 50
+  },
+
+  "probe": {
+    "port": 443,
+    "families": ["A", "AAAA"],
+    "control": true,
+    "control_sample": 5
+  },
+
+  "output": {
+    "format": "both",
+    "jsonl": "pairs-{ts}.jsonl",
+    "tsv": "pairs-{ts}.tsv",
+    "summary": "summary-{ts}.json"
+  }
+}

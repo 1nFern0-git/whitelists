@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Сканер доступных IP (CIDR / список IP) с пингом.
+Сканер доступных IP (CIDR / список IP).
+
+Проверка по умолчанию — TCP-connect на порты 443/80: в мобильных сетях ICMP
+обычно закрыт, и ping даёт ложные «недоступен». Режим ICMP остался под флагом
+--icmp.
 Поддерживает тихий режим, логирование, безопасное прерывание и resume.
 
 Режимы работы:
@@ -12,6 +16,7 @@
 
 Конфигурация: configs/check_ips.json
 """
+import socket
 import subprocess
 import sys
 import os
@@ -27,7 +32,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as
 import time
 from pathlib import Path
 from itertools import islice
-from typing import Optional, cast
+from typing import List, Optional, cast
 
 # ================= ЗАГРУЗКА КОНФИГУРАЦИИ =================
 SCRIPT_DIR = Path(__file__).parent
@@ -99,6 +104,11 @@ CIDR_MAX_CHECKS: int = cast(int, get_config_value("scan", "cidr_max_checks"))
 
 IP_WHITELIST_FILE: str = cast(str, get_config_value("output", "ip_whitelist"))
 CIDR_WHITELIST_FILE: str = cast(str, get_config_value("output", "cidr_whitelist"))
+
+# Способ проверки адресов: tcp (по умолчанию) или icmp
+PROBE_MODE: str = str(get_config_value("network", "probe_mode", default="tcp") or "tcp").lower()
+PROBE_PORTS: List[int] = [int(p) for p in (get_config_value("network", "probe_ports", default=[443, 80]) or [443, 80])]
+PROBE_TIMEOUT: float = float(get_config_value("network", "probe_timeout", default=PING_TIMEOUT))
 # =================================================
 
 # Проверка обязательных параметров
@@ -241,8 +251,12 @@ def _cidr_sort_key(cidr: str):
     except ValueError:
         return ipaddress.ip_network("0.0.0.0/0")
 
-def ping_ip(ip, timeout: Optional[int] = None):
-    """Пинг одного IP адреса."""
+def ping_icmp(ip, timeout: Optional[int] = None):
+    """Пинг одного IP адреса по ICMP.
+
+    Оставлен для совместимости (--icmp): в мобильных сетях ICMP часто закрыт,
+    поэтому «нет ответа» здесь не означает недоступность сервиса.
+    """
     timeout = PING_TIMEOUT if timeout is None else timeout
     if sys.platform.startswith("win"):
         cmd = ["ping", "-n", "1", "-w", str(timeout * 1000), ip]
@@ -257,6 +271,34 @@ def ping_ip(ip, timeout: Optional[int] = None):
         return ip, res.returncode == 0
     except Exception:
         return ip, False
+
+def probe_tcp(ip, timeout: Optional[float] = None, ports: Optional[List[int]] = None):
+    """TCP-connect по портам (по умолчанию 443 и 80).
+
+    Успешный connect означает, что адрес пропускает трафик — именно это нужно
+    в режиме «белого списка», где фильтрация идёт по паре SNI + IP, а ICMP
+    может быть закрыт полностью.
+    """
+    timeout = PROBE_TIMEOUT if timeout is None else timeout
+    ports = ports or PROBE_PORTS
+    for port in ports:
+        try:
+            with socket.create_connection((ip, port), timeout=timeout):
+                return ip, True
+        except OSError:
+            continue
+        except Exception:
+            continue
+    return ip, False
+
+def probe_ip(ip, timeout: Optional[float] = None):
+    """Проверка адреса выбранным способом: TCP-connect или ICMP."""
+    if PROBE_MODE == "icmp":
+        return ping_icmp(ip, timeout)
+    return probe_tcp(ip, timeout)
+
+# обратная совместимость для внешних вызовов
+ping_ip = probe_ip
 
 def aggregate_ips_to_cidr(input_file, output_file):
     """Агрегация IP в CIDR"""
@@ -340,7 +382,7 @@ def process_stream(ip_generator, results_dir, checkpoint_state: dict):
                         if ip in existing_ips:
                             count_checked += 1
                             continue
-                        futures[executor.submit(ping_ip, ip)] = ip
+                        futures[executor.submit(probe_ip, ip)] = ip
                     except StopIteration:
                         break
                 
@@ -475,7 +517,7 @@ def check_cidr_parallel(cidr_str, max_checks_per_batch=40, timeout: Optional[int
             
             # Параллельный пинг всех IP в текущей порции
             with ThreadPoolExecutor(max_workers=len(batch_ips)) as executor:
-                futures = {executor.submit(ping_ip, ip, timeout): ip for ip in batch_ips}
+                futures = {executor.submit(probe_ip, ip, timeout): ip for ip in batch_ips}
                 
                 for future in as_completed(futures):
                     if SHUTDOWN_REQUESTED.is_set():
@@ -690,6 +732,8 @@ def determine_file_type(filepath):
         return "unknown"
 
 def main():
+    global PROBE_MODE, PROBE_PORTS, PROBE_TIMEOUT
+
     parser = argparse.ArgumentParser(description='IP Scanner с поддержкой resume и логирования')
     parser.add_argument('-q', '--quiet', action='store_true', help='Тихий режим (вывод только в scan.log)')
     parser.add_argument('--resume', action='store_true', help='Продолжить сканирование с места обрыва')
@@ -698,8 +742,21 @@ def main():
                         help='Режим проверки подсетей (до первого живого IP, быстро)')
     parser.add_argument('--cidr-checks', type=int, default=CIDR_MAX_CHECKS,
                         help=f'Размер порции IP, проверяемых параллельно в режиме --cidr (по умолч. {CIDR_MAX_CHECKS})')
-    parser.add_argument('--version', action='version', version='IP Scanner v2.0')
+    parser.add_argument('--icmp', action='store_true',
+                        help='Проверять ICMP-пингом вместо TCP-connect (в мобильных сетях ICMP обычно закрыт)')
+    parser.add_argument('--ports', default=None,
+                        help=f'Порты для TCP-проверки через запятую (по умолч. {",".join(map(str, PROBE_PORTS))})')
+    parser.add_argument('--probe-timeout', type=float, default=None,
+                        help=f'Таймаут одной TCP-пробы, сек (по умолч. {PROBE_TIMEOUT})')
+    parser.add_argument('--version', action='version', version='IP Scanner v2.1')
     args = parser.parse_args()
+
+    if args.icmp:
+        PROBE_MODE = "icmp"
+    if args.ports:
+        PROBE_PORTS = [int(p) for p in args.ports.replace(",", " ").split() if p.strip()]
+    if args.probe_timeout:
+        PROBE_TIMEOUT = args.probe_timeout
     
     setup_logging(quiet=args.quiet)
     os.makedirs(RESULTS_DIR, exist_ok=True)
@@ -709,12 +766,15 @@ def main():
         logger.info("🗑️ Чекпоинт сброшен")
     
     logger.info("="*60)
-    logger.info(f"🔍 IP SCANNER v2.0")
+    logger.info(f"🔍 IP SCANNER v2.1")
     logger.info(f"⚙️ Режим: {'CIDR (быстрый)' if args.cidr else 'Полный'}")
     if args.cidr:
         logger.info(f"⚙️ CIDR проверка: порции по {args.cidr_checks} IP (до первого живого)")
+    probe_desc = ("ICMP-пинг" if PROBE_MODE == "icmp"
+                  else f"TCP-connect {','.join(map(str, PROBE_PORTS))}")
+    logger.info(f"⚙️ Проверка: {probe_desc}, таймаут={PROBE_TIMEOUT}с")
     logger.info(f"⚙️ Настройки: потоки={NUM_THREADS}, очередь={MAX_QUEUE_SIZE}, "
-               f"таймаут={PING_TIMEOUT}с, чекпоинт={CHECKPOINT_INTERVAL}")
+               f"чекпоинт={CHECKPOINT_INTERVAL}")
     logger.info(f"⚙️ Конфиг: {CONFIG_FILE}")
     logger.info("="*60)
     

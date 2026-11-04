@@ -13,7 +13,10 @@
     "num_threads": 50,
     "max_queue_size": 5000,
     "ping_timeout": 3,
-    "max_ips_per_cidr": 500000
+    "max_ips_per_cidr": 500000,
+    "probe_mode": "tcp",
+    "probe_ports": [443, 80],
+    "probe_timeout": 3
   },
   
   "scan": {
