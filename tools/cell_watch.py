@@ -35,6 +35,7 @@ FIELD_RE = {
     "mcc": re.compile(r"mMcc=(\d+)"),
     "mnc": re.compile(r"mMnc=(\d+)"),
     "barring": re.compile(r"mBarringType=(\w+)"),
+    "operator": re.compile(r"mAlphaLong=([A-Za-z]+)"),
 }
 
 
@@ -48,18 +49,32 @@ def adb_shell(command: str, timeout: float = 15.0) -> str:
         return ""
 
 
+def data_block(text: str) -> str:
+    """Возвращает блок активной подписки данных.
+
+    В телефоне две SIM, и первая запись в dumpsys относится не к той, через
+    которую идёт трафик. Признак активной — mDataConnectionState=2 (CONNECTED).
+    """
+    blocks = text.split("mServiceState={")
+    for block in blocks[1:]:
+        if "mDataConnectionState=2" in block:
+            return block
+    return text  # одна SIM или нет данных — разбираем как есть
+
+
 def parse_state(text: str) -> Dict[str, Optional[str]]:
+    block = data_block(text)
     state: Dict[str, Optional[str]] = {}
-    # Берём первую (основную) запись mServiceState и соответствующий сигнал.
     for name, pattern in FIELD_RE.items():
-        match = pattern.search(text)
+        match = pattern.search(block)
         state[name] = match.group(1) if match else None
     return state
 
 
 def signature(state: Dict[str, Optional[str]]) -> str:
     """Признак «той же соты»: канал и оператор. Сигнал меняется постоянно."""
-    return f"{state.get('mcc')}/{state.get('mnc')}/{state.get('earfcn')}"
+    return (f"{state.get('operator')}/{state.get('mcc')}/{state.get('mnc')}"
+            f"/{state.get('earfcn')}")
 
 
 def main() -> None:
@@ -70,7 +85,7 @@ def main() -> None:
     parser.add_argument("--quiet", action="store_true", help="Писать только в файл")
     args = parser.parse_args()
 
-    columns = ["ts", "mcc", "mnc", "earfcn", "rsrp", "rsrq", "rssnr",
+    columns = ["ts", "operator", "mcc", "mnc", "earfcn", "rsrp", "rsrq", "rssnr",
                "level", "barring", "changed"]
     writer = None
     handle = None
@@ -106,7 +121,8 @@ def main() -> None:
                 handle.flush()
             if not args.quiet and (changed or samples == 0):
                 marker = "⚠️  СОТА ИЗМЕНИЛАСЬ" if changed else "📶"
-                print(f"{marker} {row['ts']}  mcc/mnc={row['mcc']}/{row['mnc']} "
+                print(f"{marker} {row['ts']}  {row['operator']} "
+                      f"mcc/mnc={row['mcc']}/{row['mnc']} "
                       f"earfcn={row['earfcn']} rsrp={row['rsrp']} "
                       f"snr={row['rssnr']} level={row['level']} "
                       f"barring={row['barring']}")

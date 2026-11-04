@@ -240,6 +240,26 @@ def classify_error(error: BaseException) -> Tuple[str, str]:
 # а также punycode вида xn--80afnfom.xn--80ahmohdapg.xn--80asehdb.
 _D_LABEL = r'[a-z0-9\u0400-\u04ff]'
 _D_INNER = r'[a-z0-9\u0400-\u04ff-]'
+def _record_host(rr: Any) -> Optional[str]:
+    """Адрес из записи DNS в любом из известных форматов.
+
+    aiodns 3.x: records с полем host/address.
+    aiodns 4.x: DNSRecord, адрес во вложенном .data (.addr или .target).
+    pycares: тоже .host.
+    """
+    for attr in ("host", "address"):
+        value = getattr(rr, attr, None)
+        if value:
+            return str(value)
+    data = getattr(rr, "data", None)
+    if data is not None:
+        for attr in ("addr", "target", "address"):
+            value = getattr(data, attr, None)
+            if value:
+                return str(value)
+    return None
+
+
 DOMAIN_RE = re.compile(
     r'^(?!-)'
     + r'(?:' + _D_LABEL + r'(?:' + _D_INNER + r'{0,61}' + _D_LABEL + r')?\.)+'
@@ -299,20 +319,36 @@ class Resolver:
     def __init__(self, dns_servers: List[str], timeout: float):
         self.dns_servers = dns_servers
         self.timeout = timeout
-        self._aiodns = aiodns.DNSResolver(nameservers=dns_servers) if dns_servers else None
-        self._loop = None
+        self._aiodns = None  # создаётся внутри работающего цикла
 
     async def addresses(self, domain: str) -> Tuple[List[str], List[str]]:
-        if self._aiodns is not None:
+        if self.dns_servers:
+            if self._aiodns is None:
+                # aiodns привязывает резолвер к текущему циклу событий
+                self._aiodns = aiodns.DNSResolver(nameservers=self.dns_servers)
             return await self._addresses_custom(domain)
         return await self._addresses_system(domain)
 
     async def _query(self, domain: str, rtype: str) -> List[str]:
-        # aiodns 4.x: query_dns, aiodns 3.x: query — поддерживаем оба
+        # aiodns 4.x: query_dns, aiodns 3.x: query — поддерживаем оба.
+        # В 4.x метод возвращает Future, поэтому оборачиваем в корутину:
+        # asyncio.wait_for ожидает именно её.
         method = getattr(self._aiodns, "query_dns", None) or self._aiodns.query
+
+        async def call():
+            result = method(domain, rtype)
+            if asyncio.isfuture(result) or asyncio.iscoroutine(result):
+                return await result
+            return result
+
         try:
-            answer = await asyncio.wait_for(method(domain, rtype), timeout=self.timeout)
-            return [getattr(rr, "host", None) or rr.address for rr in answer]
+            answer = await asyncio.wait_for(call(), timeout=self.timeout)
+            # aiodns 4.x отдаёт DNSResult (записи в .answer), 3.x — список записей
+            records = getattr(answer, "answer", answer)
+            hosts = []
+            for rr in records or []:
+                hosts.append(_record_host(rr))
+            return [h for h in hosts if h]
         except (Exception, asyncio.CancelledError):
             return []
 
