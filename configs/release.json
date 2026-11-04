@@ -1,0 +1,15 @@
+{
+  "megafon": {
+    "title": "МегаФон",
+    "mode": "intersection",
+    "sources": ["runs/megafon/*.txt"],
+    "pairs": ["runs/megafon/*.tsv"]
+  },
+  "rostelecom": {
+    "title": "Ростелеком",
+    "mode": "min",
+    "min_sources": 3,
+    "sources": ["runs/rostelecom/*.txt"],
+    "pairs": ["runs/rostelecom/*.tsv"]
+  }
+}

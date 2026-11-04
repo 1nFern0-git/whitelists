@@ -19,6 +19,7 @@
         build/field-lte-*/report/domains.txt
 """
 import argparse
+import csv
 import ipaddress
 import json
 from datetime import datetime
@@ -57,6 +58,22 @@ def read_domains(path: Path) -> Set[str]:
     return domains
 
 
+def read_pass_tsv(path: Path, wanted: Set[str], found: Set[str]) -> None:
+    """Достаёт пары из компактной выгрузки pairs.tsv (только прошедшие пробы)."""
+    with open(path, "r", encoding="utf-8") as f:
+        for row in csv.DictReader(f, delimiter="\t"):
+            ip = (row.get("ip") or "").strip()
+            domain = (row.get("domain") or "").strip().lower()
+            if not ip or domain not in wanted:
+                continue
+            try:
+                passed = int(row.get("pass_count") or 0)
+            except ValueError:
+                continue
+            if passed >= 1:
+                found.add(ip)
+
+
 def collect_ips(pairs_paths: List[str], domains: List[str]) -> List[str]:
     """Собирает адреса, на которых итоговые домены прошли проверку пар."""
     wanted = set(domains)
@@ -65,6 +82,9 @@ def collect_ips(pairs_paths: List[str], domains: List[str]) -> List[str]:
         path = Path(raw)
         if not path.exists():
             print(f"⚠️  нет файла наблюдений: {path}")
+            continue
+        if path.suffix == ".tsv":
+            read_pass_tsv(path, wanted, found)
             continue
         with open(path, "r", encoding="utf-8") as f:
             for line in f:
@@ -118,6 +138,11 @@ def main() -> None:
         sets[str(path)] = read_domains(path)
 
     if not sets:
+        if args.pairs and not args.sources:
+            raise SystemExit(
+                "❌ источники доменов не переданы: флаг --pairs забирает все "
+                "аргументы после себя, поэтому список файлов с доменами "
+                "указывается перед ним")
         raise SystemExit("❌ не найдено ни одного источника с данными")
 
     if args.mode == "intersection":

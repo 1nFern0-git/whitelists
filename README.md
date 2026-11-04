@@ -30,17 +30,18 @@
 > SNI + IP. Один домен может быть разрешён частично — часть адресов проходит,
 > часть нет. Проверка «домен доступен» по одному случайному IP даёт неверный вывод.
 
-### merged.py
-Консолидация результатов проверки доменов:
-- ✅ Объединение whitelist'ов от разных операторов
-- ✅ Фильтрация по порогу встречаемости (%)
-- ✅ Добавление обязательных доменов из конфигурации
-- ✅ Сортировка и удаление дубликатов
+### build_all_release.py
+Сборка release-списков по операторам из манифеста `configs/release.json`:
+- ✅ Отдельный список на каждого оператора — фильтрация у них разная
+- ✅ Учёт порога подтверждений между прогонами (`min` + `min_sources`)
+- ✅ IP-список из тех же наблюдений, что и домены
+- ✅ `--check` — сверка с тем, что лежит в `release/`, без записи файлов
 
 ## 📦 Структура проекта
 
 ```
 whitelists/
+├── .github/workflows/          # Пересборка release из runs/ (Actions)
 ├── tools/lte/Dockerfile        # Образ с зависимостями для работы в LTE
 ├── tools/                      # Скрипты проверки
 │   ├── check-domains.py        # Проверка доменов (DNS + HTTP)
@@ -49,20 +50,24 @@ whitelists/
 │   ├── pairs_report.py         # Отчёт: домены и IP из наблюдений
 │   ├── merge_runs.py           # Агрегация прогонов: устойчиво / флап
 │   ├── build_release.py        # Итоговый список из разных проверок
+│   ├── build_all_release.py    # Сборка release по всем операторам
 │   ├── cell_watch.py           # Монитор соты через adb (EARFCN, RSRP)
 │   ├── field_test.sh           # Автономный полевой прогон
-│   ├── lte_docker.sh           # Прогон в контейнере через сеть оператора
-│   └── merged.py               # Консолидация результатов
+│   └── lte_docker.sh           # Прогон в контейнере через сеть оператора
 ├── src/
-│   ├── domains/                # Списки доменов по категориям
+│   └── domains/                # Списки доменов по категориям
+├── runs/                       # Накопленные наблюдения — исходные данные release
+│   ├── megafon/                # <дата>-http.txt, <дата>-tls.txt, <дата>-tls.tsv
+│   └── rostelecom/
 ├── configs/
+│   ├── release.json            # Манифест: из чего собирать каждый release
 │   ├── minimal-whitelist.list  # Обязательные домены
 │   ├── check-domains.json      # Основной конфиг для check-domains.py
-│   ├── check_pairs.json        # Конфиг для check_pairs.py
-├── build/                      # Результаты проверок (создаётся автоматически)
+│   └── check_pairs.json        # Конфиг для check_pairs.py
+├── build/                      # Черновики прогонов (создаётся автоматически)
 │   ├── domains_checked/        # Whitelist'ы по операторам
-│   ├── pairs/                  # Сырые наблюдения по парам SNI + IP (JSONL/TSV)
-└── release/                    # Финальные списки (создаётся автоматически)
+│   └── pairs/                  # Сырые наблюдения по парам SNI + IP (JSONL/TSV)
+└── release/                    # Финальные списки
     ├── whitelist-<оператор>.txt    # Проверенные домены для оператора
     └── IP-whitelist-<оператор>.txt # Адреса этих же доменов в CIDR
 ```
@@ -198,21 +203,19 @@ python3 check-domains.py -q
 
 - Результат сохранится в `../build/domains_checked/whitelist-<TIMESTAMP>-<OPERATOR>.txt`
 
-### 4. Консолидация результатов
+### 4. Сборка release
 
 ```bash
-cd tools
+# Все операторы из configs/release.json
+python3 tools/build_all_release.py
 
-# Объединение всех whitelist'ов из build/domains_checked/
-python3 merged.py
+# Только один, и без записи — сверить с текущими файлами
+python3 tools/build_all_release.py --only rostelecom --check
 ```
 
-**Настройки** (редактируются в начале скрипта `merged.py`):
-- `THRESHOLD_PERCENT` — порог встречаемости (по умолчанию 75%)
-- `MANDATORY_FILE` — файл с обязательными доменами
-
-**Результат:**
-- Финальный список сохраняется в `../release/whitelist.txt`
+**Результат:** `release/whitelist-<оператор>.txt` и `release/IP-whitelist-<оператор>.txt`.
+Если сборка ничего не изменила, файлы не перезаписываются содержимым-пустышкой:
+оператор без источников останавливает сборку с ошибкой.
 
 ---
 
@@ -297,11 +300,10 @@ python check-domains.py -q
 
 **Примечание:** В Windows пути используют обратные слеши (`\`), но Python также принимает прямые (`/`).
 
-### 4. Консолидация результатов
+### 4. Сборка release
 
 ```powershell
-cd tools
-python merged.py
+python tools/build_all_release.py
 ```
 
 ---
@@ -439,8 +441,8 @@ python3 tools/cache_dns.py -o build/dns-cache.json
 
 ```bash
 python3 tools/build_release.py -o release/whitelist-x.txt --mode intersection \
-    build/domains_checked/whitelist-*-Megafon.txt \
-    build/field-lte-*/report/domains.txt
+    runs/megafon/2026-11-04-http.txt \
+    runs/megafon/2026-11-04-tls.txt
 ```
 
 `intersection` (по умолчанию) оставляет домены, подтверждённые **всеми**
@@ -453,12 +455,15 @@ IP-список строится из тех же наблюдений — от�
 
 ```bash
 python3 tools/build_release.py -o release/whitelist-x.txt --mode min --min-sources 3 \
-    --pairs build/rostelecom-*/pairs/pairs-*.jsonl \
-    --ip-output release/IP-whitelist-x.txt \
-    build/domains_checked/whitelist-*-ROSTELECOM.txt build/rostelecom-*/report/domains.txt
+    runs/rostelecom/*.txt \
+    --pairs runs/rostelecom/*.tsv \
+    --ip-output release/IP-whitelist-x.txt
 ```
 
 В `--ip-output` попадают только адреса итоговых доменов, схлопнутые в CIDR.
+`--pairs` принимает и JSONL прогона, и `pairs.tsv` из отчёта (он в 10 раз меньше,
+потому что содержит только прошедшие пробы). Источники доменов указывайте
+**перед** `--pairs`: у флага `nargs='*'`, и он забирает все следующие аргументы.
 
 ### merge_runs.py
 
@@ -562,15 +567,20 @@ LIMIT=50 HTTP_SUBSET=20 CIDR_LIMIT=20 bash tools/field_test.sh Megafon 250-01
 Для оценки устойчивости используйте `REPEAT=3` — инструмент считает `pass_count`
 и `attempts` для каждой пары и помечает нестабильные (`unstable`) в отчёте.
 
-### merged.py
+### build_all_release.py
 
-Редактируются в начале файла:
+Настройки живут в `configs/release.json` — по блоку на оператора:
 
-| Переменная | Описание | По умолчанию |
-|------------|--------------|--------------------------------------|
-| INPUT_PATTERN | Шаблон файлов для объединения | ../build/domains_checked/*.txt |
-| THRESHOLD_PERCENT | Порог встречаемости (%) | 75.0 |
-| MANDATORY_FILE | Файл обязательных доменов | ../configs/minimal-whitelist.list |
+| Ключ | Описание |
+|------|----------|
+| `title` | Название оператора для вывода |
+| `sources` | Маски файлов с доменами (`runs/<оператор>/*.txt`) |
+| `pairs` | Маски выгрузок пар (`runs/<оператор>/*.tsv`) для IP-списка |
+| `mode` | `intersection`, `union` или `min` |
+| `min_sources` | Для `min`: в скольких источниках домен должен подтвердиться |
+
+Чтобы добавить оператора, достаточно создать `runs/<оператор>/`, положить туда
+`<дата>-http.txt` и `<дата>-tls.txt` (и `*.tsv` из отчёта), и дописать блок в манифест.
 
 ---
 
@@ -589,9 +599,9 @@ python3 check-domains.py -c 15 --dns 77.88.8.8
 
 ```bash
 # Повторите проверку для каждого оператора (меняя сеть/DNS)
-# Затем объедините результаты:
-python3 merged.py
-# Получите общий whitelist с порогом 75%
+# Затем соберите release по каждому:
+python3 tools/build_all_release.py
+# Получите whitelist-<оператор>.txt и IP-whitelist-<оператор>.txt
 ```
 
 ### Сценарий 3: Проверка конкретных доменов
@@ -648,10 +658,13 @@ A: Увеличьте параметр `-c` для доменов (но не б�
 A: Да, не указывайте параметр `--dns`. Для принудительного использования системных DNS убедитесь, что они корректно настроены в ОС.
 
 **Q: Где найти итоговый whitelist?**  
-A: После запуска `merged.py` файл `whitelist.txt` появится в директории `release/`.
+A: В `release/` — по файлу на оператора: `whitelist-<оператор>.txt` и `IP-whitelist-<оператор>.txt`.
+Общего списка «для всех» нет: операторы фильтруют по-разному.
 
-**Q: Check_ips.py не работает на Windows**  
-A: Убедитесь, что брандмауэр разрешает ICMP-запросы (ping). Запустите PowerShell от имени администратора или настройте правила брандмауэра.
+**Q: Почему у операторов разные списки?**  
+A: Фильтрация идёт по паре SNI + IP и отличается не только между операторами,
+но и между базовыми станциями одного оператора. Пересечение всех операторов
+дало бы список, неверный для каждого из них.
 
 ---
 
@@ -679,9 +692,9 @@ A: Убедитесь, что брандмауэр разрешает ICMP-за�
 ### Что мы делаем с полученными данными:
 
 1. Собираем все файлы `whitelist-*-<OPERATOR>.txt` от сообщества
-2. `merged.py` консолидирует прогоны одного оператора с порогом встречаемости 75%
-3. Добавляем обязательные домены из конфигурации
-4. `build_release.py` собирает `release/whitelist-<оператор>.txt` и IP-список к нему
+2. Кладём наблюдения в `runs/<оператор>/` — они и есть исходные данные release
+3. `build_all_release.py` собирает `release/whitelist-<оператор>.txt` и IP-список к нему
+4. GitHub Actions пересобирает release при изменении `runs/` и раз в неделю
 
 **Каждый присланный файл делает общий whitelist лучше! 🙏**
 
