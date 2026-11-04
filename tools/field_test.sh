@@ -147,17 +147,7 @@ python3 check_pairs.py --out-dir "$OUT/dns-operator" --format jsonl --timeout "$
 echo "код возврата (DNS оператора): $?"
 
 echo
-echo
-echo "[$(date +%H:%M:%S)] --- 3c. Сравнение DNS: оператор vs публичный ---"
-DNS_SAMPLE="${DNS_SAMPLE:-40}"
-echo "если публичный DNS не отвечает — фильтрация идёт и на уровне DNS"
-python3 check_pairs.py --out-dir "$OUT/dns-check" --format jsonl --timeout "$PROBE_TIMEOUT" \
-    -c "$CONCURRENCY" --limit "$DNS_SAMPLE" --dns 77.88.8.8 77.88.8.1 \
-    --no-control -o "$OPERATOR" --channel "$CHANNEL" 2>&1 | tail -12
-echo "код возврата (публичный DNS): $?"
-
-echo
-echo "[$(date +%H:%M:%S)] --- 3d. DNS-резолвер системы ---"
+echo "[$(date +%H:%M:%S)] --- 3c. DNS-резолвер системы ---"
 grep -vE '^#' /etc/resolv.conf 2>/dev/null | head -8 || echo "(нет /etc/resolv.conf)"
 resolvectl status 2>/dev/null | head -20 || true
 

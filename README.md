@@ -556,8 +556,7 @@ LIMIT=50 HTTP_SUBSET=20 CIDR_LIMIT=20 bash tools/field_test.sh Megafon 250-01
 | 3 | `check_pairs.py`: матрица SNI × IP по всем доменам через кэш DNS |
 | 3a | `pairs_report.py`: списки доменов и IP, прошедших в сети оператора |
 | 3b | прогон без кэша — фиксация того, что именно не отдаёт DNS оператора |
-| 3c | сравнение с публичным DNS (77.88.8.8) |
-| 3d | состояние системного резолвера |
+| 3c | состояние системного резолвера |
 | 4 | `check-domains.py` по подмножеству — второе мнение по HTTP |
 
 Перебор IP-сетей намеренно не выполняется: белый список состоит из конкретных
@@ -570,9 +569,9 @@ LIMIT=50 HTTP_SUBSET=20 CIDR_LIMIT=20 bash tools/field_test.sh Megafon 250-01
 
 Результаты: `build/field-<timestamp>/` — `field.log`, `pairs-*.jsonl`,
 `pairs-*.tsv`, `summary-*.json`, `egress.json`, `report/` (домены, IP, сводка),
-`dns-check/`, `dns-operator/`. В конце печатается краткая сводка и время прогона.
+`dns-operator/` (что скрыл DNS оператора). В конце печатается краткая сводка и время прогона.
 
-Переменные окружения: `LIMIT`, `HTTP_SUBSET`, `DNS_SAMPLE`, `DNS_SAMPLE_PROBE`,
+Переменные окружения: `LIMIT`, `HTTP_SUBSET`, `DNS_SAMPLE_PROBE`,
 `PROBE_TIMEOUT`, `CONCURRENCY`, `REPEAT`, `DNS_CACHE`.
 
 **Про нестабильность.** Фильтрация в режиме белого списка недетерминирована:
