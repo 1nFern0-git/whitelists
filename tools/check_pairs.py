@@ -156,6 +156,29 @@ def load_dns_cache(path: Optional[str]) -> Dict[str, Any]:
         return {}
 
 
+async def detect_ipv6(timeout: float = 2.0) -> bool:
+    """Есть ли рабочий IPv6-выход.
+
+    Без этой проверки пробы AAAA на сети без IPv6 выглядят как блокировки
+    (DROP), хотя это просто отсутствие маршрута. В мобильных сетях IPv6
+    выдают не всегда, и тогда AAAA-пробы только засоряют отчёт.
+    """
+    probe_targets = [("2606:4700:4700::1111", 443), ("2a00:1450:4010:c0e::64", 443)]
+    for host, port in probe_targets:
+        try:
+            _, writer = await asyncio.wait_for(
+                asyncio.open_connection(host, port), timeout=timeout)
+            writer.close()
+            try:
+                await asyncio.wait_for(writer.wait_closed(), timeout=1)
+            except Exception:
+                pass
+            return True
+        except Exception:
+            continue
+    return False
+
+
 async def resolve_addresses(domain: str, families: List[str], nameservers: List[str],
                             timeout: float, cache: Optional[Dict[str, Any]] = None,
                             use_cache_only: bool = False) -> Tuple[List[str], bool]:
@@ -532,6 +555,10 @@ async def main() -> None:
                         help="После TLS отправлять HEAD и писать HTTP-код")
     parser.add_argument("--no-control", dest="control", action="store_false",
                         help="Не выполнять контрольные пробы")
+    parser.add_argument("--no-ipv6", action="store_true",
+                        help="Не проверять AAAA (когда IPv6 в сети не выдаётся)")
+    parser.add_argument("--ipv6-check", action="store_true",
+                        help="Проверять IPv6 и предупредить, если он недоступен")
     parser.add_argument("--control-sample", type=int,
                         help="Сколько пар проверять в контроле")
     parser.add_argument("--detect-egress", action="store_true",
@@ -560,6 +587,9 @@ async def main() -> None:
     args.timeout = args.timeout or cfg("network", "timeout", default=3.0)
     args.port = args.port or cfg("probe", "port", default=443)
     args.families = args.family or cfg("probe", "families", default=["A", "AAAA"])
+    if args.no_ipv6 and "AAAA" in args.families:
+        args.families = [f for f in args.families if f != "AAAA"]
+    args.ipv6_available = None
     args.control_sample = args.control_sample or cfg("probe", "control_sample", default=5)
     args.out_dir = args.out_dir or cfg("paths", "output_directory", default="build/pairs")
     args.format = args.format or cfg("output", "format", default="both")
@@ -593,6 +623,17 @@ async def main() -> None:
     print(f"   Записи: {'/'.join(args.families)} | контроль типа фильтра: "
           f"{'да' if args.control else 'нет'}")
     print(f"   Оператор: {args.operator} {args.mcc_mnc}".rstrip())
+
+    if "AAAA" in args.families and args.ipv6_check:
+        available = await detect_ipv6()
+        args.ipv6_available = available
+        if available:
+            print("   IPv6: доступен, AAAA-пробы включены")
+        else:
+            print("   ⚠️  IPv6 не работает: AAAA-пробы дадут DROP без блокировки.")
+            print("       Это не блокировка, а отсутствие маршрута. "
+                  "Чтобы не засорять отчёт: --no-ipv6")
+            meta["ipv6_warning"] = "AAAA-пробы без IPv6-маршрута"
 
     if args.detect_egress:
         egress = await detect_egress()
@@ -633,6 +674,7 @@ async def main() -> None:
         "domains_total": len(domains),
         "probes_total": len(records),
         "interrupted": SHUTDOWN_REQUESTED,
+        "ipv6_available": getattr(args, "ipv6_available", None),
         "operator": args.operator,
         "mcc_mnc": args.mcc_mnc,
         "egress": {k: v for k, v in meta.items() if k.startswith("egress")},

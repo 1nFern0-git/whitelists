@@ -111,7 +111,7 @@ else
 fi
 
 PAIR_ARGS=(--out-dir "$OUT" --format both --timeout "$PROBE_TIMEOUT"
-           -c "$CONCURRENCY" --http --progress 200
+           -c "$CONCURRENCY" --http --progress 200 --ipv6-check
            -o "$OPERATOR" --channel "$CHANNEL")
 [ ${#CACHE_ARGS[@]} -gt 0 ] && PAIR_ARGS+=("${CACHE_ARGS[@]}")
 [ -n "$MCC_MNC" ] && PAIR_ARGS+=(--mcc-mnc "$MCC_MNC")
