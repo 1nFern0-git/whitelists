@@ -30,6 +30,9 @@ TOOLS = Path(__file__).resolve().parent
 ROOT = TOOLS.parent
 RELEASE_CONFIG = ROOT / "configs" / "release.json"
 DOMAINS_DIR = ROOT / "src" / "domains"
+# Кэш адресов, который собирает workflow: в сети оператора DNS не отвечает,
+# и без готовых адресов домен нечем проверять.
+DNS_CACHE = ROOT / "dns-cache.json"
 
 MOBILE_PREFIXES = ("ww", "ppp", "rmnet", "usb", "enx")
 
@@ -182,6 +185,8 @@ def main():
                         help="Одновременных проб")
     parser.add_argument("--dns", nargs="+", default=None,
                         help="DNS-серверы для резолва (по умолчанию системные)")
+    parser.add_argument("--no-cache", action="store_true",
+                        help="Не использовать кэш адресов dns-cache.json")
     parser.add_argument("--no-http", action="store_true",
                         help="Не делать HTTP-проверку (быстрее, но одно мнение)")
     parser.add_argument("--http-limit", type=int, default=0,
@@ -201,11 +206,19 @@ def main():
     print(f"\n=== Проверка доменов · оператор: {operator} ===")
     channel = check_channel()
 
+    cache_args = []
+    if DNS_CACHE.exists() and not args.no_cache:
+        print(f"\n📦 адреса из кэша: {DNS_CACHE.name}")
+        cache_args = ["--dns-cache", str(DNS_CACHE)]
+    elif not args.no_cache:
+        print("\nℹ️  кэша адресов нет: домены вне белого списка получат DNS_NX")
+        print("   собрать заранее (нужен обычный интернет): python3 tools/cache_dns.py")
+
     pairs = [sys.executable, "check_pairs.py", str(DOMAINS_DIR),
              "--out-dir", str(out / "pairs"), "--format", "both",
              "--timeout", str(args.timeout), "-c", str(args.concurrency),
              "--repeat", str(args.repeat), "--ipv6-check",
-             "-o", operator, "--channel", channel]
+             "-o", operator, "--channel", channel, *cache_args]
     if mcc_mnc:
         pairs += ["--mcc-mnc", mcc_mnc]
     if args.dns:

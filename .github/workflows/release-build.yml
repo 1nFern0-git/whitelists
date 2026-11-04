@@ -1,7 +1,9 @@
 name: Release build
 
-# Release пересобирается из накопленных наблюдений в runs/.
-# Фильтрация у операторов разная, поэтому на выходе файл на оператора.
+# Два шага подряд, чтобы не толкаться в main одновременно:
+#   1) кэш адресов — его собирает раннер, у которого есть обычный интернет;
+#      в сети оператора DNS не отвечает, и без кэша домен нечем проверять;
+#   2) сборка release из накопленных наблюдений в runs/.
 
 on:
   schedule:
@@ -12,8 +14,7 @@ on:
     paths:
       - 'runs/**'
       - 'src/domains/**'
-      - 'tools/build_release.py'
-      - 'tools/build_all_release.py'
+      - 'tools/**'
       - 'configs/release.json'
 
 permissions:
@@ -24,7 +25,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  dns-cache:
     runs-on: ubuntu-latest
 
     steps:
@@ -36,11 +37,47 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Install dnspython
+        run: pip install dnspython==2.7.0
+
+      - name: Build DNS cache
+        run: python3 tools/cache_dns.py
+
+      - name: Commit cache
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          git add dns-cache.json
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "🤖 Auto-update: кэш адресов для полевых прогонов"
+            git pull --rebase --autostash
+            git push
+          fi
+
+  release:
+    needs: dns-cache
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
       # Только стандартная библиотека — pip install не нужен
       - name: Build release lists
         run: python3 tools/build_all_release.py
 
-      - name: Commit changes
+      - name: Commit release
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
@@ -51,5 +88,6 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "🤖 Auto-update: release build"
+            git pull --rebase --autostash
             git push
           fi

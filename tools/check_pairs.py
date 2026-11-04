@@ -132,6 +132,33 @@ def load_domains(directory: str) -> List[str]:
     return domains
 
 
+def load_dns_cache(path: Optional[str]) -> Dict[str, Any]:
+    """Читает кэш DNS, собранный заранее (tools/cache_dns.py).
+
+    В режиме «белого списка» DNS оператора не отвечает на домены вне списка,
+    и адрес просто неизвестен. Кэш снимает эту зависимость: адреса известны
+    заранее, измеряются только пары (SNI, IP).
+    """
+    if not path:
+        return {}
+    cache_path = Path(path)
+    if not cache_path.is_absolute():
+        candidate = Path.cwd() / cache_path
+        cache_path = candidate if candidate.exists() else PROJECT_ROOT / cache_path
+    if not cache_path.exists():
+        print(f"⚠️  кэш DNS не найден: {cache_path}")
+        return {}
+    try:
+        data = json.loads(cache_path.read_text(encoding="utf-8"))
+        domains = data.get("domains", data)
+        print(f"📦 кэш DNS: {len(domains)} доменов из {cache_path.name} "
+              f"(собран {data.get('generated_at', 'неизвестно')})")
+        return domains
+    except Exception as exc:
+        print(f"⚠️  кэш DNS не прочитан: {exc}")
+        return {}
+
+
 async def detect_ipv6(timeout: float = 2.0) -> bool:
     """Есть ли рабочий IPv6-выход.
 
@@ -156,10 +183,23 @@ async def detect_ipv6(timeout: float = 2.0) -> bool:
 
 
 async def resolve_addresses(domain: str, families: List[str], nameservers: List[str],
-                            timeout: float) -> Tuple[List[str], bool]:
+                            timeout: float, cache: Optional[Dict[str, Any]] = None,
+                            use_cache_only: bool = False) -> Tuple[List[str], bool]:
     """Возвращает все адреса домена и признак поддержки ECH (скрывает SNI)."""
     addresses: List[str] = []
     ech = False
+
+    if cache:
+        entry = cache.get(domain)
+        if entry:
+            for family in families:
+                addresses.extend(entry.get(family) or [])
+            ech = bool(entry.get("ech"))
+            unique = list(dict.fromkeys(addresses))
+            if unique or use_cache_only:
+                return unique, ech
+        elif use_cache_only:
+            return [], False
 
     if DNS_LIB:
         resolver = dns.asyncresolver.Resolver(configure=not nameservers)
@@ -503,6 +543,8 @@ async def resolve_all(domains: List[str], args: argparse.Namespace
                       ) -> Dict[str, Tuple[List[str], bool]]:
     """Резолвит все домены заранее: так известно точное число проб для прогресса."""
     resolved: Dict[str, Tuple[List[str], bool]] = {}
+    cache = getattr(args, "dns_cache_data", None)
+    cache_only = getattr(args, "cache_only", False)
     semaphore = asyncio.Semaphore(max(args.concurrency, 20))
     total = len(domains)
     done = 0
@@ -511,7 +553,7 @@ async def resolve_all(domains: List[str], args: argparse.Namespace
         nonlocal done
         async with semaphore:
             resolved[domain] = await resolve_addresses(
-                domain, args.families, args.dns or [], args.timeout)
+                domain, args.families, args.dns or [], args.timeout, cache, cache_only)
             done += 1
             if done % 100 == 0 or done == total:
                 print(f"   резолв: {done}/{total} доменов", flush=True)
@@ -536,7 +578,9 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
         if SHUTDOWN_REQUESTED:
             return
         addresses, ech = resolved[domain] if resolved is not None else await resolve_addresses(
-            domain, args.families, args.dns or [], args.timeout)
+            domain, args.families, args.dns or [], args.timeout,
+            getattr(args, "dns_cache_data", None),
+            getattr(args, "cache_only", False))
         if not addresses:
             add(make_record("matrix", domain, "", domain, "", ech, {
                 "status": "DNS_NX", "error": "нет A/AAAA", "duration_ms": 0,
@@ -713,6 +757,11 @@ async def main() -> None:
     parser.add_argument("--port", type=int, help="Порт для TLS-пробы (по умолчанию 443)")
     parser.add_argument("--dns", nargs="+", default=None,
                         help="DNS-серверы для резолва (по умолчанию системные)")
+    parser.add_argument("--dns-cache", default=None,
+                        help="Кэш DNS (tools/cache_dns.py): адреса берутся из него "
+                             "при фильтрации DNS оператором")
+    parser.add_argument("--cache-only", action="store_true",
+                        help="Не обращаться к DNS вовсе: только домены из кэша")
     parser.add_argument("--operator", "-o", default="unknown",
                         help="Оператор, в сети которого идёт проверка")
     parser.add_argument("--mcc-mnc", default="", help="Код сети, например 250-01")
@@ -780,6 +829,8 @@ async def main() -> None:
     args.jsonl = args.jsonl or cfg("output", "jsonl", default="pairs-{ts}.jsonl")
     args.tsv = args.tsv or cfg("output", "tsv", default="pairs-{ts}.tsv")
     args.summary = args.summary or cfg("output", "summary", default="summary-{ts}.json")
+    args.dns_cache = args.dns_cache or cfg("probe", "dns_cache", default=None)
+    args.cache_only = args.cache_only or bool(cfg("probe", "cache_only", default=False))
     directory = args.directory or cfg("paths", "domains_directory", default="../src/domains")
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -792,6 +843,13 @@ async def main() -> None:
     if detected_local_ip:
         meta["local_ip"] = detected_local_ip
         print(f"   локальный адрес: {detected_local_ip}")
+
+    args.dns_cache_data = load_dns_cache(args.dns_cache)
+    if args.cache_only and not args.dns_cache_data:
+        print("❌ --cache-only требует кэш с данными")
+        return
+    if args.dns_cache_data:
+        meta["dns_source"] = "cache" if args.cache_only else "cache+live"
 
     domains = load_domains(directory)
     if args.limit and args.limit > 0:

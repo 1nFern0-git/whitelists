@@ -60,6 +60,7 @@ whitelists/
 │   ├── check.py                # Один вход: проверка → runs/ → release
 │   ├── check-domains.py        # Проверка доменов (DNS + HTTP)
 │   ├── check_pairs.py          # Проверка пар (SNI, IP) в сети оператора
+│   ├── cache_dns.py            # Сбор адресов заранее (обновляет CI)
 │   ├── pairs_report.py         # Отчёт: домены и IP из наблюдений
 │   ├── merge_runs.py           # Агрегация прогонов: устойчиво / флап
 │   ├── build_release.py        # Итоговый список из разных проверок
@@ -67,6 +68,7 @@ whitelists/
 │   └── cell_watch.py           # Монитор соты через adb (EARFCN, RSRP)
 ├── src/
 │   └── domains/                # Списки доменов по категориям
+├── dns-cache.json              # Адреса всех доменов; обновляется workflow
 ├── runs/                       # Накопленные наблюдения — исходные данные release
 │   ├── megafon/                # <дата>-http.txt, <дата>-tls.txt, <дата>-tls.tsv
 │   └── rostelecom/
@@ -161,10 +163,10 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-Установите зависимости для check-domains.py:
+Установите зависимости:
 
 ```bash
-pip install curl_cffi httpx aiodns aiohttp tqdm
+pip install curl_cffi httpx aiodns aiohttp tqdm dnspython
 ```
 
 ### 3. Проверка доменов
@@ -475,6 +477,7 @@ LIMIT=50 python3 tools/check.py         # быстрый пробный прог
 | `--timeout` | 3 | Таймаут одной пробы, сек |
 | `-c`, `--concurrency` | 50 | Одновременных проб |
 | `--dns` | системные | DNS-серверы для резолва |
+| `--no-cache` | — | Не брать адреса из `dns-cache.json`, резолвить вживую |
 | `--http-limit N` | 0 (все) | Сколько доменов проверять по HTTP |
 | `--no-http` | — | Только пары, без HTTP-проверки |
 | `--no-release` | — | Проверить и записать наблюдения, release не трогать |
@@ -483,6 +486,19 @@ LIMIT=50 python3 tools/check.py         # быстрый пробный прог
 `runs/<оператор>/<дата>-{tls.txt,tls.tsv,http.txt}` → пересборка release
 для этого оператора. Если оператора ещё нет в `configs/release.json`,
 он добавляется туда автоматически (`min`, порог 2 источника).
+
+Адреса берутся из `dns-cache.json` — файла, который обновляет workflow
+раз в неделю и при изменении `src/domains/`. Это не оптимизация: в сети
+оператора DNS отвечает только на домены из белого списка, остальные
+получают `DNS_NX`, и проверять у них нечего. Кэш собирается там, где
+интернет обычный, и приносит адреса с собой. Собрать вручную:
+
+```bash
+python3 tools/cache_dns.py        # нужен dnspython: pip install dnspython
+```
+
+Если файла нет, прогон это скажет и продолжит с живым DNS. `--no-cache`
+отключает кэш принудительно.
 
 Результат прогона — `build/run-<дата>/`: `run.log` (полный журнал),
 `pairs/` (сырые наблюдения), `report/` (домены, адреса, сводка).

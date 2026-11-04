@@ -1,0 +1,5036 @@
+{
+  "generated_at": "2026-11-04T22:34:51Z",
+  "nameservers": [
+    "system"
+  ],
+  "domains": {
+    "cbrpay.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "nspk.ru": {
+      "A": [
+        "194.190.0.23"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "alfabank.ru": {
+      "A": [
+        "217.12.104.100"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "alfabank.st": {
+      "A": [
+        "217.12.104.100"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "alfaonline.org": {
+      "A": [
+        "217.12.98.136"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "forabank.ru": {
+      "A": [
+        "185.71.64.140"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gazprombank.ru": {
+      "A": [
+        "82.202.190.240"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gpb.ru": {
+      "A": [
+        "82.202.190.99"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dbo-dengi.online": {
+      "A": [
+        "185.163.159.218"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mtsdengi.ru": {
+      "A": [
+        "185.163.159.154"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "psbank.ru": {
+      "A": [
+        "193.200.10.123"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "bankline.ru": {
+      "A": [
+        "178.130.128.28"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rosbank.ru": {
+      "A": [
+        "178.130.129.27"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "abr.ru": {
+      "A": [
+        "194.226.55.16"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "raiffeisen.ru": {
+      "A": [
+        "193.28.44.8"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rshb.ru": {
+      "A": [
+        "194.190.12.47"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sber.ru": {
+      "A": [
+        "84.252.149.198"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sberbank.com": {
+      "A": [
+        "84.252.149.206"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sberbank.ru": {
+      "A": [
+        "84.252.149.206"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sbrf.ru": {
+      "A": [
+        "84.252.149.206"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdn-tinkoff.ru": {
+      "A": [
+        "193.17.93.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "t-bank-app.ru": {
+      "A": [
+        "193.17.93.93"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "t-bank-app.su": {
+      "A": [
+        "193.17.93.93"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "t-static.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tbank-online.com": {
+      "A": [
+        "178.130.128.27"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tbank.ru": {
+      "A": [
+        "178.130.128.27"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tinkoff.ru": {
+      "A": [
+        "178.130.128.27"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tmiaf.ru": {
+      "A": [
+        "178.130.128.39"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tochka-tech.com": {
+      "A": [
+        "194.107.116.136"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tochka.com": {
+      "A": [
+        "91.206.127.19"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vtb.ru": {
+      "A": [
+        "195.242.82.13",
+        "195.242.83.13"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "bspb.ru": {
+      "A": [
+        "213.172.3.49",
+        "217.195.86.165"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "domrfbank.ru": {
+      "A": [
+        "91.232.6.132"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "pochtabank.ru": {
+      "A": [
+        "195.242.82.14",
+        "195.242.83.14"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "uralsib.ru": {
+      "A": [
+        "185.71.67.109"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mkb.ru": {
+      "A": [
+        "93.92.113.12"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sovcombank.ru": {
+      "A": [
+        "178.248.233.80"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "akbars.ru": {
+      "A": [
+        "217.198.15.72"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "otpbank.ru": {
+      "A": [
+        "91.221.165.177"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "homecredit.ru": {
+      "A": [
+        "178.248.233.80"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "bm-bank.ru": {
+      "A": [
+        "178.248.232.192"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rncb.ru": {
+      "A": [
+        "195.242.82.13",
+        "195.242.83.13"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "qiwi.com": {
+      "A": [
+        "91.232.230.126",
+        "91.232.230.139",
+        "91.232.230.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cloud.vk.com": {
+      "A": [
+        "95.163.254.192",
+        "95.163.254.193",
+        "95.163.254.194",
+        "95.163.254.195",
+        "95.163.254.196",
+        "95.163.254.197"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "reg.ru": {
+      "A": [
+        "194.67.72.31"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "selectel.ru": {
+      "A": [
+        "94.26.255.104"
+      ],
+      "AAAA": [
+        "2a00:ab00:2000:2::1"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "timeweb.cloud": {
+      "A": [
+        "178.248.239.157"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "timeweb.com": {
+      "A": [
+        "185.65.148.89"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "yandex.cloud": {
+      "A": [
+        "87.250.250.108"
+      ],
+      "AAAA": [
+        "2a02:6b8::339"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "mcs.mail.ru": {
+      "A": [
+        "95.163.254.192",
+        "95.163.254.193",
+        "95.163.254.194",
+        "95.163.254.195",
+        "95.163.254.196",
+        "95.163.254.197"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dostavista.ru": {
+      "A": [
+        "185.71.67.112"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kuper.ru": {
+      "A": [
+        "194.190.0.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "samokat.ru": {
+      "A": [
+        "109.238.88.243"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "eda.yandex.ru": {
+      "A": [
+        "87.250.251.213"
+      ],
+      "AAAA": [
+        "2a02:6b8::15a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "lavka.yandex.ru": {
+      "A": [
+        "87.250.250.116"
+      ],
+      "AAAA": [
+        "2a02:6b8::33c"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "delivery-club.ru": {
+      "A": [
+        "87.250.254.102"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sbermarket.ru": {
+      "A": [
+        "195.208.66.164"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "victoria-group.ru": {
+      "A": [
+        "194.190.0.144"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "a101.ru": {
+      "A": [
+        "161.104.61.165"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "brusnika.ru": {
+      "A": [
+        "178.248.234.207"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "setlgroup.ru": {
+      "A": [
+        "91.214.41.10"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "fsk.ru": {
+      "A": [
+        "51.250.55.105"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "pik.ru": {
+      "A": [
+        "178.248.233.49"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "lsr.ru": {
+      "A": [
+        "91.223.109.85"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "aliexpress.ru": {
+      "A": [
+        "47.246.133.141",
+        "47.246.133.142",
+        "47.246.133.143",
+        "47.246.133.144",
+        "47.246.133.147",
+        "47.246.133.148"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "avito.ru": {
+      "A": [
+        "176.114.120.24",
+        "176.114.122.24",
+        "176.114.124.24"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "avito.st": {
+      "A": [
+        "176.114.120.6",
+        "176.114.122.6",
+        "176.114.124.6"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "auto.ru": {
+      "A": [
+        "51.250.126.110"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "emex.ru": {
+      "A": [
+        "83.242.98.105"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "api.megamarket.tech": {
+      "A": [
+        "91.206.127.245"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "api.sbermarket.ru": {
+      "A": [
+        "109.238.90.23"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "megamarket.ru": {
+      "A": [
+        "91.206.127.39"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sbermegamarket.ru": {
+      "A": [
+        "91.206.127.39"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ozon.by": {
+      "A": [
+        "185.73.194.77",
+        "185.73.195.108"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ozon.com": {
+      "A": [
+        "185.73.193.68",
+        "185.73.194.82"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ozon.com.by": {
+      "A": [
+        "185.99.142.184",
+        "185.99.142.185"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ozon.com.kz": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ozon.kz": {
+      "A": [
+        "188.0.150.134"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ozon.ru": {
+      "A": [
+        "185.73.193.68",
+        "185.73.194.82"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ozon.tm": {
+      "A": [
+        "185.73.193.68",
+        "185.73.194.82"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ozone.ru": {
+      "A": [
+        "185.73.193.119",
+        "185.73.195.116"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ozonru.me": {
+      "A": [
+        "185.73.195.97",
+        "185.73.195.98"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ozonusercontent.com": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sberauto.com": {
+      "A": [
+        "185.169.155.9"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "geobasket.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "paywb.com": {
+      "A": [
+        "185.62.201.65"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rwb.ru": {
+      "A": [
+        "213.184.155.74",
+        "85.198.77.14",
+        "85.198.79.101"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "wb-basket.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "wb.ru": {
+      "A": [
+        "185.138.253.1",
+        "185.138.255.1",
+        "213.184.155.142"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "wbbasket.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "wbpay.ru": {
+      "A": [
+        "91.230.107.48",
+        "91.230.107.49"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "wibes.ru": {
+      "A": [
+        "185.62.202.1"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "wildberries.ru": {
+      "A": [
+        "185.62.202.2"
+      ],
+      "AAAA": [
+        "2a03:720::173:2"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "market.yandex.ru": {
+      "A": [
+        "87.250.250.22"
+      ],
+      "AAAA": [
+        "2a02:6b8::2:22"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "youla.ru": {
+      "A": [
+        "95.163.61.105"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "lamoda.ru": {
+      "A": [
+        "81.161.98.78"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "drom.ru": {
+      "A": [
+        "185.65.149.115"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dnevnik.ru": {
+      "A": [
+        "178.248.232.13"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "foxford.ru": {
+      "A": [
+        "178.248.235.201"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "interneturok.ru": {
+      "A": [
+        "178.248.235.158"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sferum.ru": {
+      "A": [
+        "79.137.183.48",
+        "79.137.183.49",
+        "79.137.183.50",
+        "79.137.183.51",
+        "79.137.183.52",
+        "79.137.183.53"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "uchi.ru": {
+      "A": [
+        "109.238.90.119"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "yaklass.ru": {
+      "A": [
+        "109.238.88.251"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "infourok.ru": {
+      "A": [
+        "178.248.232.117"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "school.mos.ru": {
+      "A": [
+        "94.79.51.184",
+        "94.79.51.185",
+        "94.79.51.186"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "koronapay.com": {
+      "A": [
+        "193.232.20.100",
+        "193.232.94.100",
+        "194.85.18.104"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "moex.com": {
+      "A": [
+        "85.118.181.8"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sbp.nspk.ru": {
+      "A": [
+        "194.190.0.23"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "unistream.ru": {
+      "A": [
+        "185.71.67.208"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "yoomoney.ru": {
+      "A": [
+        "109.235.165.222",
+        "185.71.78.222"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gov.ru": {
+      "A": [
+        "95.173.128.89",
+        "95.173.128.90"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "government.ru": {
+      "A": [
+        "95.173.136.162",
+        "95.173.136.163",
+        "95.173.136.168"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gosuslugi.ru": {
+      "A": [
+        "213.59.253.7",
+        "213.59.254.7"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gu-st.ru": {
+      "A": [
+        "93.93.91.103",
+        "93.93.91.133",
+        "93.93.91.187",
+        "93.93.91.201",
+        "93.93.91.220",
+        "93.93.91.88"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "emias.info": {
+      "A": [
+        "82.202.189.136"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mgfoms.ru": {
+      "A": [
+        "195.133.255.86"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ro-edu.ru": {
+      "A": [
+        "84.47.134.154"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rosseti.ru": {
+      "A": [
+        "91.214.119.200"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rosatom.ru": {
+      "A": [
+        "185.179.36.228"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rostec.ru": {
+      "A": [
+        "185.163.159.23"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rosneft.ru": {
+      "A": [
+        "91.142.135.123"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "aoglonass.ru": {
+      "A": [
+        "193.232.47.4"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rskrf.ru": {
+      "A": [
+        "185.71.67.15"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rosreestr.gov.ru": {
+      "A": [
+        "217.77.104.150"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sfr.gov.ru": {
+      "A": [
+        "195.161.52.80"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "minzdrav.gov.ru": {
+      "A": [
+        "194.0.219.107"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "digital.gov.ru": {
+      "A": [
+        "109.207.1.110"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mintrud.gov.ru": {
+      "A": [
+        "95.173.157.45"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "гибдд.рф": {
+      "A": [
+        "185.6.47.14",
+        "185.6.47.15"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mchs.gov.ru": {
+      "A": [
+        "84.42.111.247",
+        "95.173.146.182"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "epp.genproc.gov.ru": {
+      "A": [
+        "82.202.190.211"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "roskazna.gov.ru": {
+      "A": [
+        "194.226.91.205"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "fas.gov.ru": {
+      "A": [
+        "194.226.26.36"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rospotrebnadzor.ru": {
+      "A": [
+        "82.202.190.187"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "epd-portal.ru": {
+      "A": [
+        "178.185.169.4"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "arbitr.ru": {
+      "A": [
+        "95.167.220.237"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdep.ru": {
+      "A": [
+        "84.42.111.138"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ssrf.ru": {
+      "A": [
+        "95.167.220.236"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sudrf.ru": {
+      "A": [
+        "84.42.111.139"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vekrf.ru": {
+      "A": [
+        "95.167.220.236"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkks.ru": {
+      "A": [
+        "95.167.220.236"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vsrf.ru": {
+      "A": [
+        "95.173.156.120"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cbr.ru": {
+      "A": [
+        "185.178.208.7"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cikrf.ru": {
+      "A": [
+        "5.143.246.137"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ebs.ru": {
+      "A": [
+        "95.167.154.115"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "goskey.ru": {
+      "A": [
+        "193.162.30.87"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "grfc.ru": {
+      "A": [
+        "212.192.156.10"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "izbirkom.ru": {
+      "A": [
+        "5.143.246.137"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kremlin.ru": {
+      "A": [
+        "95.173.136.70",
+        "95.173.136.71",
+        "95.173.136.72"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mil.ru": {
+      "A": [
+        "212.192.156.38"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "nalog.ru": {
+      "A": [
+        "195.208.66.236"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "честныйзнак.рф": {
+      "A": [
+        "95.129.236.157"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "мвд.рф": {
+      "A": [
+        "185.6.47.14",
+        "185.6.47.15"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "объясняем.рф": {
+      "A": [
+        "185.169.155.16"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "moskva-putinu.ru": {
+      "A": [
+        "195.209.66.46",
+        "195.209.80.35",
+        "195.209.80.47",
+        "195.209.81.52",
+        "212.193.156.33",
+        "212.193.156.36",
+        "212.193.156.38",
+        "46.235.186.36",
+        "46.235.188.34",
+        "46.235.188.35",
+        "46.235.188.36"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mos.ru": {
+      "A": [
+        "94.79.51.169"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sevastopol.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "spb.ru": {
+      "A": [
+        "178.210.74.11"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kchr.ru": {
+      "A": [
+        "91.215.43.43"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mosreg.ru": {
+      "A": [
+        "185.169.155.145"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tatarstan.ru": {
+      "A": [
+        "85.233.75.12"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "липецкаяобласть.рф": {
+      "A": [
+        "195.34.235.86"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "i-ola.ru": {
+      "A": [
+        "5.35.94.77"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kemerovo.ru": {
+      "A": [
+        "178.248.239.182"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "krd.ru": {
+      "A": [
+        "95.181.181.126"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kursk.ru": {
+      "A": [
+        "185.71.67.154"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "pskov.ru": {
+      "A": [
+        "91.215.42.140"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vlc.ru": {
+      "A": [
+        "37.200.76.142"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "екатеринбург.рф": {
+      "A": [
+        "194.213.117.42"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "er.ru": {
+      "A": [
+        "178.248.232.136"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kprf.ru": {
+      "A": [
+        "178.248.237.108"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ldpr.ru": {
+      "A": [
+        "185.33.175.180",
+        "46.46.151.76"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "newpeople.ru": {
+      "A": [
+        "178.248.235.127"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rsv.ru": {
+      "A": [
+        "185.71.64.165"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "будьвдвижении.рф": {
+      "A": [
+        "91.215.41.46"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "myrosmol.ru": {
+      "A": [
+        "178.185.170.244"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tvoyhod.online": {
+      "A": [
+        "195.19.99.168"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "znanierussia.ru": {
+      "A": [
+        "185.65.150.53"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "onf.ru": {
+      "A": [
+        "91.215.41.97"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "pos.gosuslugi.ru": {
+      "A": [
+        "109.207.9.85"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tinsurance.ru": {
+      "A": [
+        "178.130.128.27"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ingos.ru": {
+      "A": [
+        "195.245.206.101"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "reso.ru": {
+      "A": [
+        "195.66.78.2"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vsk.ru": {
+      "A": [
+        "185.71.67.58"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "makc.ru": {
+      "A": [
+        "178.176.229.208"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "energogarant.ru": {
+      "A": [
+        "185.71.67.208"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rgs.ru": {
+      "A": [
+        "132.243.178.72"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sogaz.ru": {
+      "A": [
+        "185.173.80.30"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "alfastrah.ru": {
+      "A": [
+        "185.65.151.250"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "renaissance.ru": {
+      "A": [
+        "87.226.166.137"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "autoins.ru": {
+      "A": [
+        "90.156.206.245"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dom.gosuslugi.ru": {
+      "A": [
+        "217.107.108.114"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mosenergosbyt.ru": {
+      "A": [
+        "195.82.140.164"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "nesk.ru": {
+      "A": [
+        "188.43.92.25"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek-am.com": {
+      "A": [
+        "155.212.234.107"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek-bd.com": {
+      "A": [
+        "185.215.4.28"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek-express.cn": {
+      "A": [
+        "176.57.66.95"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek-express.in": {
+      "A": [
+        "185.215.4.28"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek-express.uz": {
+      "A": [
+        "155.212.234.126"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek-hk.com": {
+      "A": [
+        "185.215.4.28"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek-il.com": {
+      "A": [
+        "185.215.4.28"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek-th.com": {
+      "A": [
+        "185.215.4.28"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek-tm.com": {
+      "A": [
+        "185.215.4.28"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek.by": {
+      "A": [
+        "212.67.25.16"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek.ge": {
+      "A": [
+        "155.212.234.107"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek.id": {
+      "A": [
+        "185.215.4.28"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek.kg": {
+      "A": [
+        "155.212.234.107"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek.kz": {
+      "A": [
+        "212.67.24.4"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek.media": {
+      "A": [
+        "185.215.4.20"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek.ru": {
+      "A": [
+        "91.206.127.236"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdek.vn": {
+      "A": [
+        "185.215.4.28"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdektr.com": {
+      "A": [
+        "185.215.4.28"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dellin.ru": {
+      "A": [
+        "178.248.238.211"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "topdelivery.ru": {
+      "A": [
+        "81.177.165.117"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "pochta.ru": {
+      "A": [
+        "212.164.140.129",
+        "212.164.140.151",
+        "212.164.140.153"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "russianpost.ru": {
+      "A": [
+        "91.215.36.177"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "boxberry.ru": {
+      "A": [
+        "5.45.196.38"
+      ],
+      "AAAA": [
+        "2a02:6b8::5c1"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "baikalsr.ru": {
+      "A": [
+        "185.178.210.41"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "jde.ru": {
+      "A": [
+        "168.113.179.139"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tk-kit.ru": {
+      "A": [
+        "89.22.170.122"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dpd.ru": {
+      "A": [
+        "185.169.155.177"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "360.ru": {
+      "A": [
+        "185.178.208.169"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "aif.ru": {
+      "A": [
+        "91.214.119.200",
+        "91.214.119.234"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "domashniy.ru": {
+      "A": [
+        "155.212.235.134"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dumatv.ru": {
+      "A": [
+        "193.107.234.251"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "friday.ru": {
+      "A": [
+        "185.178.210.70"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gazeta.ru": {
+      "A": [
+        "81.19.72.0",
+        "81.19.72.1",
+        "81.19.72.2"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "iz.ru": {
+      "A": [
+        "185.178.208.4"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kommersant.ru": {
+      "A": [
+        "178.248.238.19"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kp.ru": {
+      "A": [
+        "185.71.64.65"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "lenta.ru": {
+      "A": [
+        "81.19.72.32",
+        "81.19.72.33",
+        "81.19.72.34"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "matchtv.ru": {
+      "A": [
+        "95.181.177.110"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mir24.tv": {
+      "A": [
+        "195.128.157.168"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mk.ru": {
+      "A": [
+        "85.193.70.155"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "muz-tv.ru": {
+      "A": [
+        "155.212.235.135"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "newizv.ru": {
+      "A": [
+        "185.71.67.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ntv.ru": {
+      "A": [
+        "185.129.100.162",
+        "185.129.100.166"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "radiomir.fm": {
+      "A": [
+        "195.128.157.168"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "radioplayer.ru": {
+      "A": [
+        "23.105.253.197"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rbc.ru": {
+      "A": [
+        "178.248.235.46"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ria.ru": {
+      "A": [
+        "194.190.139.47"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "spastv.ru": {
+      "A": [
+        "89.223.25.35"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "soloviev.live": {
+      "A": [
+        "90.156.201.113",
+        "90.156.201.36",
+        "90.156.201.38",
+        "90.156.201.46"
+      ],
+      "AAAA": [
+        "2a00:15f8:a000:5:1:11:3:633a",
+        "2a00:15f8:a000:5:1:12:3:633a",
+        "2a00:15f8:a000:5:1:13:3:633a",
+        "2a00:15f8:a000:5:1:14:3:633a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "sport24.ru": {
+      "A": [
+        "178.248.238.127"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tass.ru": {
+      "A": [
+        "91.221.165.118"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tnt-online.ru": {
+      "A": [
+        "185.65.148.81"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vedomosti.ru": {
+      "A": [
+        "185.65.148.33"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vitrina.tv": {
+      "A": [
+        "95.129.236.190"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vgtrk.ru": {
+      "A": [
+        "185.65.150.49"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tvzvezda.ru": {
+      "A": [
+        "95.129.232.3"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rambler.ru": {
+      "A": [
+        "81.19.82.0",
+        "81.19.82.1",
+        "81.19.82.2"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "1tv.ru": {
+      "A": [
+        "178.248.233.188"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ren.tv": {
+      "A": [
+        "185.178.208.3"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tvc.ru": {
+      "A": [
+        "178.248.233.127"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "5-tv.ru": {
+      "A": [
+        "91.215.42.192"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tv3.ru": {
+      "A": [
+        "193.232.151.164"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rg.ru": {
+      "A": [
+        "185.65.148.114"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rusradio.ru": {
+      "A": [
+        "178.248.232.163"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "europaplus.ru": {
+      "A": [
+        "45.145.65.156"
+      ],
+      "AAAA": [
+        "2a00:f940:4::9"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "retrofm.ru": {
+      "A": [
+        "37.139.62.51"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "habr.com": {
+      "A": [
+        "178.248.237.68"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ctc.ru": {
+      "A": [
+        "91.206.127.24"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "forbes.ru": {
+      "A": [
+        "5.252.32.223"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "1tv.com": {
+      "A": [
+        "185.129.100.25"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rt.com": {
+      "A": [
+        "91.215.41.4"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mamadeti.ru": {
+      "A": [
+        "185.65.148.202"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "medsi.ru": {
+      "A": [
+        "212.109.215.214"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "smartmed.pro": {
+      "A": [
+        "212.109.215.139",
+        "213.108.128.246"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "invitro.ru": {
+      "A": [
+        "185.129.103.93"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gemotest.ru": {
+      "A": [
+        "185.11.199.148"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "apteka.ru": {
+      "A": [
+        "178.248.238.97"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "eapteka.ru": {
+      "A": [
+        "195.209.81.113",
+        "195.209.81.215",
+        "195.209.83.135",
+        "212.193.147.238",
+        "212.193.155.44",
+        "212.193.155.92"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "zdravcity.ru": {
+      "A": [
+        "185.178.208.215"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "docdoc.ru": {
+      "A": [
+        "109.238.88.151"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sberhealth.ru": {
+      "A": [
+        "91.206.127.224"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "aptekamos.ru": {
+      "A": [
+        "185.165.123.34"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "prodoctorov.ru": {
+      "A": [
+        "91.221.164.73"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "av.ru": {
+      "A": [
+        "109.238.90.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "auchan.ru": {
+      "A": [
+        "178.248.232.180"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "bristol.ru": {
+      "A": [
+        "178.248.233.140"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "burgerkingrus.ru": {
+      "A": [
+        "194.190.0.37"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "detmir.ru": {
+      "A": [
+        "95.129.232.159"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dixy.ru": {
+      "A": [
+        "178.248.233.46"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dns-shop.ru": {
+      "A": [
+        "185.65.148.196"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dodois.com": {
+      "A": [
+        "150.171.109.100"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dodois.io": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dodopizza.com": {
+      "A": [
+        "91.221.165.34"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dodopizza.ru": {
+      "A": [
+        "91.221.164.120"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dodostatic.net": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dostaevsky.ru": {
+      "A": [
+        "178.248.236.74"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "evrasia.rest": {
+      "A": [
+        "217.197.238.66"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkusnoitochka.ru": {
+      "A": [
+        "185.65.148.127",
+        "185.65.149.127"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "fix-price.com": {
+      "A": [
+        "37.139.43.125",
+        "89.208.86.157"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "krasyar.ru": {
+      "A": [
+        "178.248.239.241"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "lemanapro.ru": {
+      "A": [
+        "185.65.151.100"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "lenta.com": {
+      "A": [
+        "178.248.232.88"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "lenta.tech": {
+      "A": [
+        "178.248.235.78"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kazanexpress.ru": {
+      "A": [
+        "158.160.102.60"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "magnit.ru": {
+      "A": [
+        "155.212.234.29"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mm.ru": {
+      "A": [
+        "158.160.102.60"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "metro-cc.ru": {
+      "A": [
+        "95.181.177.3"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "5ka.ru": {
+      "A": [
+        "91.221.164.42"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "5post.market": {
+      "A": [
+        "193.232.108.210"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "chizhik.club": {
+      "A": [
+        "91.221.164.93"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "clubx5.ru": {
+      "A": [
+        "193.232.108.22"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dialogx5.ru": {
+      "A": [
+        "109.70.26.37",
+        "194.85.61.76"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "e5.ru": {
+      "A": [
+        "188.72.103.101"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "fivepost.ru": {
+      "A": [
+        "193.232.108.16"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "idx5.ru": {
+      "A": [
+        "193.232.108.22"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "jx5.ru": {
+      "A": [
+        "188.72.103.101"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "keyx5.ru": {
+      "A": [
+        "193.232.108.22"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mnogolososya.ru": {
+      "A": [
+        "158.160.150.74"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "myapelsin.ru": {
+      "A": [
+        "193.232.108.68"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "okolo.app": {
+      "A": [
+        "46.173.21.100",
+        "46.173.21.101",
+        "46.173.21.99"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "perekrestok.com": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "perekrestok.ru": {
+      "A": [
+        "109.238.90.201"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5.ai": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5.com": {
+      "A": [
+        "85.10.159.177"
+      ],
+      "AAAA": [
+        "2a01:7c8:f0:10f1:0:2:b75b:68a8"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "x5.digital": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": "NXDOMAIN"
+    },
+    "x5.group": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": "NXDOMAIN"
+    },
+    "x5.media": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": "NXDOMAIN"
+    },
+    "x5.ru": {
+      "A": [
+        "91.206.100.17"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5.team": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": "NXDOMAIN"
+    },
+    "x5.tech": {
+      "A": [
+        "91.206.100.17"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5club.ru": {
+      "A": [
+        "193.232.108.201"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5id.ru": {
+      "A": [
+        "91.206.100.36"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5l.ru": {
+      "A": [
+        "188.72.103.101"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5media.ru": {
+      "A": [
+        "176.57.65.141"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5paket.ru": {
+      "A": [
+        "193.232.108.16"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5q.ru": {
+      "A": [
+        "188.72.103.101"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5static.net": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "x5w.ru": {
+      "A": [
+        "95.181.182.182"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "krasnoeibeloe.ru": {
+      "A": [
+        "95.181.177.105"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "okmarket.ru": {
+      "A": [
+        "194.190.0.47"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rostics.ru": {
+      "A": [
+        "212.193.152.243",
+        "212.193.157.159",
+        "212.193.157.24"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "uni.rest": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "unirest.tech": {
+      "A": [
+        "51.250.45.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ilovesakura.ru": {
+      "A": [
+        "178.248.235.113"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "myspar.ru": {
+      "A": [
+        "185.165.123.103"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sushiwok.ru": {
+      "A": [
+        "138.16.207.46"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "winelab.ru": {
+      "A": [
+        "178.248.238.7"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkusvill.ru": {
+      "A": [
+        "178.248.232.221"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mvideo.ru": {
+      "A": [
+        "185.71.67.88"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "citilink.ru": {
+      "A": [
+        "178.248.234.66"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "goldapple.ru": {
+      "A": [
+        "93.93.89.173"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "letu.ru": {
+      "A": [
+        "93.93.89.201"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rivegosh.ru": {
+      "A": [
+        "82.97.243.107"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sportmaster.ru": {
+      "A": [
+        "178.248.232.80"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "eldorado.ru": {
+      "A": [
+        "185.71.67.56"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "petrovich.ru": {
+      "A": [
+        "78.155.198.17"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vseinstrumenti.ru": {
+      "A": [
+        "185.169.155.85"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "1c-bitrix.ru": {
+      "A": [
+        "178.248.233.117"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "1c.ru": {
+      "A": [
+        "185.12.152.144"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "1cfresh.com": {
+      "A": [
+        "185.98.85.241",
+        "193.32.190.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "bitrix24.ru": {
+      "A": [
+        "178.248.238.120"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "2gis.ae": {
+      "A": [
+        "91.236.51.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "2gis.am": {
+      "A": [
+        "91.236.51.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "2gis.az": {
+      "A": [
+        "91.236.51.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "2gis.by": {
+      "A": [
+        "91.236.51.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "2gis.com": {
+      "A": [
+        "91.236.51.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "2gis.ge": {
+      "A": [
+        "91.236.51.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "2gis.kg": {
+      "A": [
+        "91.236.51.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "2gis.ru": {
+      "A": [
+        "91.236.51.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "2gis.tj": {
+      "A": [
+        "91.236.51.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "2gis.uz": {
+      "A": [
+        "91.236.51.50"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "atomen.ru": {
+      "A": [
+        "185.179.36.228"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "belkacar.ru": {
+      "A": [
+        "94.139.240.134",
+        "94.139.240.135"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "delimobil.ru": {
+      "A": [
+        "178.248.237.193"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "markirovka.ru": {
+      "A": [
+        "91.215.43.140"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "meteum.ai": {
+      "A": [
+        "213.180.193.146"
+      ],
+      "AAAA": [
+        "2a02:6b8::17f"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "citydrive.ru": {
+      "A": [
+        "178.248.239.67"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "crrintegro.ru": {
+      "A": [
+        "176.57.67.161"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "csat.ru": {
+      "A": [
+        "195.149.197.11"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "diginetica.net": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dmclk.ru": {
+      "A": [
+        "194.58.112.174"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "domclick.ru": {
+      "A": [
+        "178.248.234.210"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "evotor.ru": {
+      "A": [
+        "185.170.207.139"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "f6.ru": {
+      "A": [
+        "84.38.188.134",
+        "84.38.189.59"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "facct.ru": {
+      "A": [
+        "77.223.101.245"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "giga.chat": {
+      "A": [
+        "178.248.234.251"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gismeteo.ru": {
+      "A": [
+        "31.172.76.57",
+        "31.172.76.58",
+        "31.172.76.59",
+        "31.172.76.60"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gismeteo.st": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gpmdi.ru": {
+      "A": [
+        "176.57.66.94"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gpnbonus.ru": {
+      "A": [
+        "213.221.41.242"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "hh.ru": {
+      "A": [
+        "94.124.200.0"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "hr-link.ru": {
+      "A": [
+        "185.165.123.36"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "iitrust.ru": {
+      "A": [
+        "193.162.30.87"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "jivo.ru": {
+      "A": [
+        "95.181.182.182"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "jivochat.com": {
+      "A": [
+        "95.181.182.182"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "jivosite.com": {
+      "A": [
+        "95.181.182.182"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kaspersky-labs.com": {
+      "A": [
+        "127.0.0.1"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kaspersky.com": {
+      "A": [
+        "185.85.15.46"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kaspersky.ru": {
+      "A": [
+        "82.202.191.110"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cntd.ru": {
+      "A": [
+        "5.61.15.145"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kodeks.ru": {
+      "A": [
+        "5.61.15.145"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kontur.ru": {
+      "A": [
+        "46.17.206.11"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "lizaalert.org": {
+      "A": [
+        "89.208.78.55"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "imgsmail.ru": {
+      "A": [
+        "89.221.239.2",
+        "90.156.232.41"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mail.ru": {
+      "A": [
+        "185.180.201.1",
+        "89.221.239.1",
+        "90.156.232.4"
+      ],
+      "AAAA": [
+        "2a00:1148:9100:b000::1",
+        "2a00:b4c0:9100:b000::1",
+        "2a14:25c0:9100:b000::1"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "memealerts.com": {
+      "A": [
+        "91.215.42.81"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mindbox.ru": {
+      "A": [
+        "178.248.234.187"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "xn--80afnfom.xn--80ahmohdapg.xn--80asehdb": {
+      "A": [
+        "194.226.55.22"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "xn--80asg7a0b.xn--80ahmohdapg.xn--80asehdb": {
+      "A": [
+        "194.226.55.22"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "netmonet.co": {
+      "A": [
+        "185.65.148.240"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "pravo.ru": {
+      "A": [
+        "89.108.74.51"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "retailrocket.ru": {
+      "A": [
+        "92.53.65.172",
+        "95.143.190.232",
+        "95.143.190.233"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rustore.ru": {
+      "A": [
+        "95.163.61.31"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ruwiki.ru": {
+      "A": [
+        "178.248.238.63"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sbermarketing.ru": {
+      "A": [
+        "185.71.64.196"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "shedevrum.ai": {
+      "A": [
+        "87.250.254.169"
+      ],
+      "AAAA": [
+        "2a02:6b8::52b"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "sleza.media": {
+      "A": [
+        "185.65.148.108"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sourcecraft.dev": {
+      "A": [
+        "158.160.46.143"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "targetads.io": {
+      "A": [
+        "185.215.4.40"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tilda.cc": {
+      "A": [
+        "194.48.203.4"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tildacdn.com": {
+      "A": [
+        "95.213.201.187"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tensor.ru": {
+      "A": [
+        "91.232.93.39"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "trueconf.ru": {
+      "A": [
+        "185.71.64.152"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "zentotem.net": {
+      "A": [
+        "185.151.241.25"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "usedesk.ru": {
+      "A": [
+        "176.57.65.17"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "uxfeedback.ru": {
+      "A": [
+        "213.180.193.247"
+      ],
+      "AAAA": [
+        "2a02:6b8::1da"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "whoosh.bike": {
+      "A": [
+        "185.129.100.112"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "adfox.ru": {
+      "A": [
+        "213.180.193.191"
+      ],
+      "AAAA": [
+        "2a02:6b8::366"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "dzen.ru": {
+      "A": [
+        "95.163.218.220"
+      ],
+      "AAAA": [
+        "2a00:b4c0:9100:b000::1:b0"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "naydex.net": {
+      "A": [
+        "87.250.251.92"
+      ],
+      "AAAA": [
+        "2a02:6b8::402"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "rostaxi.org": {
+      "A": [
+        "87.250.251.140"
+      ],
+      "AAAA": [
+        "2a02:6b8::1:140"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "webvisor.com": {
+      "A": [
+        "87.250.251.77"
+      ],
+      "AAAA": [
+        "2a02:6b8::2b1"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "ya.ru": {
+      "A": [
+        "5.255.255.242",
+        "77.88.44.242",
+        "77.88.55.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::2:242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex-images.clstorage.net": {
+      "A": [
+        "87.250.251.92"
+      ],
+      "AAAA": [
+        "2a02:6b8::402"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex-net.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "yandex-team.ru": {
+      "A": [
+        "93.158.134.170"
+      ],
+      "AAAA": [
+        "2a02:6b8::3fe"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.aero": {
+      "A": [
+        "213.180.204.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.az": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.by": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.co.il": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.com": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.com.am": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.com.ge": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.com.ru": {
+      "A": [
+        "213.180.204.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.de": {
+      "A": [
+        "213.180.204.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.ee": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.eu": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.fi": {
+      "A": [
+        "213.180.204.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.fr": {
+      "A": [
+        "213.180.204.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.jobs": {
+      "A": [
+        "213.180.204.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.lt": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.lv": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.md": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.net": {
+      "A": [
+        "213.180.204.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.org": {
+      "A": [
+        "213.180.204.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.pl": {
+      "A": [
+        "213.180.204.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.ru": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.st": {
+      "A": [
+        "37.9.64.225"
+      ],
+      "AAAA": [
+        "2a02:6b8:23::225"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.tj": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.tm": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandex.uz": {
+      "A": [
+        "5.255.255.77",
+        "77.88.44.55",
+        "77.88.55.88"
+      ],
+      "AAAA": [
+        "2a02:6b8:a::a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandexadexchange.net": {
+      "A": [
+        "213.180.193.90",
+        "213.180.204.90",
+        "77.88.21.90",
+        "87.250.250.90",
+        "93.158.134.90"
+      ],
+      "AAAA": [
+        "2a02:6b8::90"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yandexcloud.net": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "yandexcom.net": {
+      "A": [
+        "35.71.159.45",
+        "75.2.53.3"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "yastat.net": {
+      "A": [
+        "37.9.64.225"
+      ],
+      "AAAA": [
+        "2a02:6b8:23::225"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yastatic-net.ru": {
+      "A": [
+        "37.9.64.225"
+      ],
+      "AAAA": [
+        "2a02:6b8:23::225"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "yastatic.net": {
+      "A": [
+        "37.9.64.225"
+      ],
+      "AAAA": [
+        "2a02:6b8:23::225"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "яндекс.рф": {
+      "A": [
+        "213.180.204.242"
+      ],
+      "AAAA": [
+        "2a02:6b8::242"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "inappdb.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": "NXDOMAIN"
+    },
+    "inappstory.com": {
+      "A": [
+        "54.93.71.214",
+        "63.185.111.41"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "inappstory.ru": {
+      "A": [
+        "158.160.210.100"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "yandex-pogoda.static-storage.net": {
+      "A": [
+        "87.250.251.92"
+      ],
+      "AAAA": [
+        "2a02:6b8::402"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "edadeal.io": {
+      "A": [
+        "93.158.134.210"
+      ],
+      "AAAA": [
+        "2a02:6b8::26d"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "edadeal.ru": {
+      "A": [
+        "93.158.134.210"
+      ],
+      "AAAA": [
+        "2a02:6b8::26d"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "cian.ru": {
+      "A": [
+        "51.250.123.126"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rabota.ru": {
+      "A": [
+        "155.212.235.180"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "moysklad.ru": {
+      "A": [
+        "185.71.67.15"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sbis.ru": {
+      "A": [
+        "91.213.144.237"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "myoffice.ru": {
+      "A": [
+        "193.32.60.27"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mycdn.me": {
+      "A": [
+        "217.20.152.226",
+        "217.20.155.82",
+        "217.20.156.72"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ok.ru": {
+      "A": [
+        "217.20.157.145",
+        "5.61.21.121"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "okcdn.ru": {
+      "A": [
+        "217.20.152.226",
+        "217.20.155.82",
+        "217.20.156.72"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "apptracer.ru": {
+      "A": [
+        "217.20.147.7",
+        "217.20.155.82",
+        "217.20.156.72"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "max.ru": {
+      "A": [
+        "155.212.204.140",
+        "155.212.204.5",
+        "155.212.204.74"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "oneme.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tamtam.chat": {
+      "A": [
+        "185.16.148.2",
+        "185.16.148.34",
+        "185.16.148.66"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mvk.com": {
+      "A": [
+        "87.240.129.133",
+        "87.240.132.67",
+        "87.240.132.72",
+        "87.240.132.78",
+        "87.240.137.164",
+        "93.186.225.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "my.com": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "userapi.com": {
+      "A": [
+        "87.240.129.187",
+        "87.240.190.64"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk-analytics.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk-apps.com": {
+      "A": [
+        "95.213.27.254"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk-apps.ru": {
+      "A": [
+        "95.213.27.254"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk-cdn.me": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": "NXDOMAIN"
+    },
+    "vk.cc": {
+      "A": [
+        "87.240.129.133",
+        "87.240.132.67",
+        "87.240.132.72",
+        "87.240.132.78",
+        "87.240.137.164",
+        "93.186.225.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk.com": {
+      "A": [
+        "87.240.129.133",
+        "87.240.132.67",
+        "87.240.132.72",
+        "87.240.132.78",
+        "87.240.137.164",
+        "93.186.225.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk.company": {
+      "A": [
+        "89.221.239.148"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk.design": {
+      "A": [
+        "87.240.129.187",
+        "87.240.190.64"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk.link": {
+      "A": [
+        "87.240.129.187",
+        "87.240.190.64"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk.me": {
+      "A": [
+        "87.240.129.133",
+        "87.240.132.67",
+        "87.240.132.72",
+        "87.240.132.78",
+        "87.240.137.164",
+        "93.186.225.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk.ru": {
+      "A": [
+        "87.240.129.133",
+        "87.240.132.67",
+        "87.240.132.72",
+        "87.240.132.78",
+        "87.240.137.164",
+        "93.186.225.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vk.team": {
+      "A": [
+        "89.221.239.148"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkcloud-static.ru": {
+      "A": [
+        "95.163.254.192",
+        "95.163.254.193",
+        "95.163.254.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkontakte.ru": {
+      "A": [
+        "87.240.129.133",
+        "87.240.132.67",
+        "87.240.132.72",
+        "87.240.132.78",
+        "87.240.137.164",
+        "93.186.225.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkuser.net": {
+      "A": [
+        "95.213.37.126"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkuserphoto.ru": {
+      "A": [
+        "87.240.129.187",
+        "87.240.190.64"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "livejournal.com": {
+      "A": [
+        "81.19.74.0",
+        "81.19.74.1"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "my.mail.ru": {
+      "A": [
+        "89.221.236.44"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "pikabu.ru": {
+      "A": [
+        "185.178.210.201"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "t.me": {
+      "A": [
+        "149.154.167.99"
+      ],
+      "AAAA": [
+        "2001:67c:4e8:f004::9"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "telegram.org": {
+      "A": [
+        "149.154.167.99"
+      ],
+      "AAAA": [
+        "2001:67c:4e8:f004::9"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "championat.com": {
+      "A": [
+        "81.19.86.0",
+        "81.19.86.1",
+        "81.19.86.2"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "khl.ru": {
+      "A": [
+        "109.238.88.141"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sport-express.ru": {
+      "A": [
+        "95.129.236.96"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rfs.ru": {
+      "A": [
+        "178.176.229.212"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "24h.tv": {
+      "A": [
+        "178.248.235.155"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "beeline.tv": {
+      "A": [
+        "80.243.79.211"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ivi.ru": {
+      "A": [
+        "80.67.43.1",
+        "80.67.43.33",
+        "80.67.43.65"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kinopoisk-ru.clstorage.net": {
+      "A": [
+        "87.250.251.92"
+      ],
+      "AAAA": [
+        "2a02:6b8::402"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "kinopoisk.ru": {
+      "A": [
+        "213.180.199.9"
+      ],
+      "AAAA": [
+        "2a02:6b8::473"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "okko.sport": {
+      "A": [
+        "109.238.90.217"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "okko.tv": {
+      "A": [
+        "185.169.155.118"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "playfamily.ru": {
+      "A": [
+        "178.18.218.7"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "premier.one": {
+      "A": [
+        "155.212.235.231",
+        "185.65.149.69"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rutube.ru": {
+      "A": [
+        "109.238.90.239",
+        "178.248.233.148"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rutubelist.ru": {
+      "A": [
+        "89.248.230.8"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "smotrim.ru": {
+      "A": [
+        "178.248.234.241"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkuseraudio.com": {
+      "A": [
+        "87.240.129.187"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkuseraudio.net": {
+      "A": [
+        "87.240.129.187"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkuseraudio.ru": {
+      "A": [
+        "87.240.129.187"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkuservideo.com": {
+      "A": [
+        "87.240.129.187"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkuservideo.net": {
+      "A": [
+        "87.240.129.187"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkuservideo.ru": {
+      "A": [
+        "87.240.129.187"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vkvideo.ru": {
+      "A": [
+        "87.240.129.133",
+        "87.240.132.67",
+        "87.240.132.72",
+        "87.240.132.78",
+        "87.240.137.164",
+        "93.186.225.194"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "wink.ru": {
+      "A": [
+        "93.93.89.134",
+        "93.93.89.138",
+        "93.93.89.154"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "zvuk-b2b.com": {
+      "A": [
+        "185.215.4.42"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "zvuk.com": {
+      "A": [
+        "91.221.164.24"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "kion.ru": {
+      "A": [
+        "185.65.148.187"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "start.ru": {
+      "A": [
+        "185.243.86.7"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "more.tv": {
+      "A": [
+        "212.193.147.144",
+        "212.193.147.145"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "amediateka.ru": {
+      "A": [
+        "108.157.229.112",
+        "108.157.229.129",
+        "108.157.229.79",
+        "108.157.229.90"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "viju.tv": {
+      "A": [
+        "178.248.237.198"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "1cloud.ru": {
+      "A": [
+        "178.248.236.173"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "beeline.ru": {
+      "A": [
+        "217.118.87.98"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdnvideo.com": {
+      "A": [
+        "151.236.80.17"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdn-vk.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sentry-cdn.com": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "servicecdn.ru": {
+      "A": [
+        "193.17.93.93"
+      ],
+      "AAAA": [
+        "2a11:27c0::93"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "fastvps.ru": {
+      "A": [
+        "185.71.67.74"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "megafon.ru": {
+      "A": [
+        "178.177.13.149",
+        "188.162.60.210"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "motivtelecom.ru": {
+      "A": [
+        "217.148.54.180"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mts.ru": {
+      "A": [
+        "178.248.238.27"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mwscdn.ru": {
+      "A": [],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "nextmobile.ru": {
+      "A": [
+        "92.246.149.217"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ngenix.net": {
+      "A": [
+        "212.193.156.135"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "qms.ru": {
+      "A": [
+        "87.226.249.86"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rt.ru": {
+      "A": [
+        "87.226.162.216"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sbermobile.ru": {
+      "A": [
+        "185.163.159.108"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "t2.ru": {
+      "A": [
+        "212.193.146.117",
+        "212.193.146.120",
+        "212.193.146.58"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tele2.ru": {
+      "A": [
+        "212.193.146.140",
+        "212.193.146.142",
+        "212.193.147.114",
+        "212.193.147.121",
+        "78.41.111.154"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ertelecom.ru": {
+      "A": [
+        "91.221.164.66"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "vtbmobile.ru": {
+      "A": [
+        "178.248.232.252"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "yota.ru": {
+      "A": [
+        "178.177.13.241",
+        "188.170.66.75"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mgts.ru": {
+      "A": [
+        "195.178.108.240"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dom.ru": {
+      "A": [
+        "194.190.0.234"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ttk.ru": {
+      "A": [
+        "62.33.186.12"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "volnamobile.ru": {
+      "A": [
+        "185.15.39.100"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "akado.ru": {
+      "A": [
+        "185.169.155.180"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ufanet.ru": {
+      "A": [
+        "81.30.199.238"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "cdnvideo.ru": {
+      "A": [
+        "81.94.148.36"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "edgecenter.ru": {
+      "A": [
+        "95.181.177.64"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "gcorelabs.com": {
+      "A": [
+        "92.223.84.84"
+      ],
+      "AAAA": [
+        "2a03:90c0:9994::9994"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "mtt.ru": {
+      "A": [
+        "185.200.242.8"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "tinkoffmobile.ru": {
+      "A": [
+        "91.226.31.83"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "aeroflot.ru": {
+      "A": [
+        "195.208.65.204",
+        "93.93.88.21",
+        "93.93.89.38",
+        "93.93.91.63"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "dzvr.ru": {
+      "A": [
+        "188.43.103.240"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rzd-bonus.ru": {
+      "A": [
+        "185.71.67.111"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rzd.ru": {
+      "A": [
+        "212.164.138.120",
+        "212.164.138.121",
+        "212.164.138.122",
+        "212.164.138.123",
+        "212.164.138.124",
+        "212.164.138.125",
+        "212.164.138.126",
+        "212.164.138.127",
+        "212.164.138.128",
+        "212.164.138.129",
+        "212.164.138.130",
+        "212.164.138.131",
+        "212.164.140.170",
+        "212.164.140.180"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "grandtrain.ru": {
+      "A": [
+        "95.129.236.237"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "taximaxim.ru": {
+      "A": [
+        "178.248.237.53"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "taxsee.ru": {
+      "A": [
+        "195.209.117.20"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mosmetro.ru": {
+      "A": [
+        "178.178.127.20"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "pobeda.aero": {
+      "A": [
+        "194.190.0.152"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "rossiya-airlines.com": {
+      "A": [
+        "217.195.76.247"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "flyredwings.com": {
+      "A": [
+        "91.215.43.65"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "nordwind.aero": {
+      "A": [
+        "193.24.8.15"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "uralairlines.ru": {
+      "A": [
+        "178.248.239.188"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "s7.ru": {
+      "A": [
+        "155.212.234.239"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "mosgortrans.ru": {
+      "A": [
+        "213.79.86.139"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "azurair.ru": {
+      "A": [
+        "212.193.147.242",
+        "212.193.147.243"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "city-mobil.ru": {
+      "A": [
+        "185.169.155.2"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "taxi.yandex.ru": {
+      "A": [
+        "37.9.112.5"
+      ],
+      "AAAA": [
+        "2a02:6b8::316"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "onetwotrip.com": {
+      "A": [
+        "178.248.238.70"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "ostrovok.ru": {
+      "A": [
+        "78.155.198.20"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "sutochno.ru": {
+      "A": [
+        "194.190.0.245"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    },
+    "travel.yandex.ru": {
+      "A": [
+        "93.158.134.81"
+      ],
+      "AAAA": [
+        "2a02:6b8::45a"
+      ],
+      "ech": false,
+      "error": null
+    },
+    "tutu.ru": {
+      "A": [
+        "178.248.234.61"
+      ],
+      "AAAA": [],
+      "ech": false,
+      "error": null
+    }
+  }
+}
