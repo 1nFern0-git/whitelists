@@ -50,12 +50,14 @@
 
 ```
 whitelists/
+├── tools/lte/Dockerfile        # Образ с зависимостями для работы в LTE
 ├── tools/                      # Скрипты проверки
 │   ├── check-domains.py        # Проверка доменов (DNS + HTTP)
 │   ├── check_pairs.py          # Проверка пар (SNI, IP) в сети оператора
 │   ├── cache_dns.py            # Кэш DNS для работы при фильтрации имён
 │   ├── pairs_report.py         # Отчёт: домены и IP из наблюдений
 │   ├── field_test.sh           # Автономный полевой прогон
+│   ├── lte_docker.sh           # Прогон в контейнере через сеть оператора
 │   ├── check_ips.py            # Проверка IP/CIDR (TCP-connect или ICMP)
 │   └── merged.py               # Консолидация результатов
 ├── src/
@@ -537,6 +539,34 @@ python3 tools/pairs_report.py build/field-*/pairs-*.jsonl -o build/report --doma
 Результат: `domains.txt` (домены с PASS), `ips.txt` (прошедшие адреса,
 агрегированные в CIDR), `pairs.tsv` (только прошедшие пары), `report.md`
 (сводка по статусам и категориям, включая частично доступные домены).
+
+### lte_docker.sh
+
+Полевые проверки из сети оператора **без потери связи на хосте**. Контейнер
+получает собственный адрес в сети модема через `ipvlan` (или `macvlan`) и ходит
+только через LTE, а маршруты, DNS и iptables хоста не меняются — Wi-Fi остаётся
+для остальных задач.
+
+```bash
+# образ собирается заранее, пока есть обычный интернет
+docker build -t whitelists-lte:latest tools/lte
+
+tools/lte_docker.sh up                 # автоопределение модема (rndis_host)
+tools/lte_docker.sh up enp3s0f3u2      # или явно
+tools/lte_docker.sh check              # адреса, маршрут, DNS, доступность
+tools/lte_docker.sh run Megafon 250-01 --repeat 3
+tools/lte_docker.sh shell              # отладка внутри контейнера
+tools/lte_docker.sh down               # убрать сеть
+```
+
+Почему `ipvlan`, а не bridged-сеть Docker: при `ipvlan l2` контейнер работает
+с MAC хоста, поэтому модем (RNDIS) не отбрасывает пакеты. `macvlan` требует
+второй MAC и на USB-модемах часто не работает; скрипт пробует `ipvlan` первым
+и откатывается на `macvlan`, если первый не подошёл. Адрес контейнера
+подбирается свободный: Docker по умолчанию может взять `.1`, занятый шлюзом.
+
+DNS внутри контейнера — Docker-прокси `127.0.0.11`, который форвардит на DNS
+оператора из сети модема, поэтому фильтрация имён измеряется корректно.
 
 ### field_test.sh
 
