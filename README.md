@@ -59,6 +59,7 @@ whitelists/
 │   ├── cache_dns.py            # Кэш DNS для работы при фильтрации имён
 │   ├── pairs_report.py         # Отчёт: домены и IP из наблюдений
 │   ├── merge_runs.py           # Агрегация прогонов: устойчиво / флап
+│   ├── build_release.py        # Итоговый список из разных проверок
 │   ├── cell_watch.py           # Монитор соты через adb (EARFCN, RSRP)
 │   ├── field_test.sh           # Автономный полевой прогон
 │   ├── lte_docker.sh           # Прогон в контейнере через сеть оператора
@@ -536,6 +537,22 @@ python3 tools/cache_dns.py -o build/dns-cache.json
 На практике это открывает домены, которые скрыты только на DNS: в первом
 полевом прогоне `dbo-dengi.online`, `t-bank-app.ru` и `uralsib.ru` получили
 `DNS_NX` у оператора, но прошли по IP через публичный DNS.
+
+### build_release.py
+
+Сборка итогового списка из результатов разных проверок:
+
+```bash
+python3 tools/build_release.py -o release/whitelist-x.txt --mode intersection \
+    build/domains_checked/whitelist-*-Megafon.txt \
+    build/field-lte-*/report/domains.txt
+```
+
+`intersection` (по умолчанию) оставляет домены, подтверждённые **всеми**
+источниками: TCP/TLS-проверкой (`check_pairs.py`) и HTTP-проверкой
+(`check-domains.py`). `union` — объединение, если нужно ничего не потерять.
+Понимает и txt-списки, и JSONL наблюдений; пишет отчёт с разбором
+«только в первом / только во втором».
 
 ### merge_runs.py
 
