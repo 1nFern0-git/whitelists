@@ -141,7 +141,8 @@ def load_dns_cache(path: Optional[str]) -> Dict[str, Any]:
         return {}
     cache_path = Path(path)
     if not cache_path.is_absolute():
-        cache_path = PROJECT_ROOT / path
+        candidate = Path.cwd() / cache_path
+        cache_path = candidate if candidate.exists() else PROJECT_ROOT / cache_path
     if not cache_path.exists():
         print(f"⚠️  Кэш DNS не найден: {cache_path}")
         return {}
@@ -349,8 +350,107 @@ def make_record(kind: str, domain: str, ip: str, sni: str, family: str,
     return record
 
 
+class Progress:
+    """Живой индикатор прогресса: видно, что скрипт работает, а не завис.
+
+    В терминале строка перерисовывается на месте; при перенаправлении вывода
+    в файл (лог полевого прогона) печатаются отдельные строки раз в N секунд.
+    """
+
+    def __init__(self, total: int, domains_total: int, interactive: Optional[bool] = None):
+        self.total = max(total, 1)
+        self.domains_total = max(domains_total, 1)
+        self.interactive = sys.stdout.isatty() if interactive is None else interactive
+        self.done = 0
+        self.domains_seen: Set[str] = set()
+        self.counters: Dict[str, int] = {}
+        self.started = time.perf_counter()
+        self.last_line = 0.0
+        self._closed = False
+
+    def add(self, record: Dict[str, Any]) -> None:
+        self.done += 1
+        if record.get("domain"):
+            self.domains_seen.add(record["domain"])
+        status = record.get("status") or "-"
+        self.counters[status] = self.counters.get(status, 0) + 1
+
+    def _bar(self, width: int = 22) -> str:
+        filled = int(width * self.done / self.total)
+        return "#" * filled + "-" * (width - filled)
+
+    def _line(self) -> str:
+        elapsed = time.perf_counter() - self.started
+        rate = self.done / elapsed if elapsed > 0 else 0
+        left = (self.total - self.done) / rate if rate > 0 else 0
+        parts = [f"{status} {count}" for status, count in
+                 sorted(self.counters.items(), key=lambda x: -x[1])]
+        counters = " ".join(parts) if parts else "нет результатов"
+        return (f"[{self._bar()}] {100 * self.done / self.total:3.0f}% "
+                f"{self.done}/{self.total} проб | "
+                f"домены {len(self.domains_seen)}/{self.domains_total} | "
+                f"{counters} | {rate:5.1f} проб/с | осталось ~{left:4.0f} с")
+
+    def tick(self, force: bool = False) -> None:
+        if self._closed:
+            return
+        now = time.perf_counter()
+        elapsed = now - self.started
+        if not force:
+            if elapsed < 1.0:                      # слишком рано — скорость недостоверна
+                return
+            if now - self.last_line < (0.4 if self.interactive else 2.0):
+                return
+        self.last_line = now
+        line = self._line()
+        if self.interactive:
+            sys.stdout.write("\r" + line[:150] + "\033[K")
+        else:
+            print(line, flush=True)
+        sys.stdout.flush()
+
+    async def heartbeat(self, interval: float = 1.0) -> None:
+        while not self._closed:
+            await asyncio.sleep(interval)
+            self.tick()
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self.tick(force=True)
+        if self.interactive:
+            sys.stdout.write("\n")
+        sys.stdout.flush()
+        self._closed = True
+
+
+async def resolve_all(domains: List[str], args: argparse.Namespace
+                      ) -> Dict[str, Tuple[List[str], bool]]:
+    """Резолвит все домены заранее: так известно точное число проб для прогресса."""
+    resolved: Dict[str, Tuple[List[str], bool]] = {}
+    cache = getattr(args, "dns_cache_data", None)
+    cache_only = getattr(args, "cache_only", False)
+    semaphore = asyncio.Semaphore(max(args.concurrency, 20))
+    total = len(domains)
+    done = 0
+
+    async def one(domain: str) -> None:
+        nonlocal done
+        async with semaphore:
+            resolved[domain] = await resolve_addresses(
+                domain, args.families, args.dns or [], args.timeout, cache, cache_only)
+            done += 1
+            if done % 100 == 0 or done == total:
+                print(f"   резолв: {done}/{total} доменов", flush=True)
+
+    await asyncio.gather(*(one(d) for d in domains))
+    return resolved
+
+
 async def run_matrix(domains: List[str], args: argparse.Namespace,
-                     meta: Dict[str, Any], emit=None) -> List[Dict[str, Any]]:
+                     meta: Dict[str, Any], emit=None,
+                     resolved: Optional[Dict[str, Tuple[List[str], bool]]] = None
+                     ) -> List[Dict[str, Any]]:
     semaphore = asyncio.Semaphore(args.concurrency)
     records: List[Dict[str, Any]] = []
 
@@ -362,10 +462,10 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
     async def one(domain: str) -> None:
         if SHUTDOWN_REQUESTED:
             return
-        addresses, ech = await resolve_addresses(domain, args.families,
-                                                 args.dns or [], args.timeout,
-                                                 getattr(args, "dns_cache_data", None),
-                                                 getattr(args, "cache_only", False))
+        addresses, ech = resolved[domain] if resolved is not None else await resolve_addresses(
+            domain, args.families, args.dns or [], args.timeout,
+            getattr(args, "dns_cache_data", None),
+            getattr(args, "cache_only", False))
         if not addresses:
             add(make_record("matrix", domain, "", domain, "", ech, {
                 "status": "DNS_NX", "error": "нет A/AAAA", "duration_ms": 0,
@@ -565,8 +665,10 @@ async def main() -> None:
                         help="Определить внешний IP и провайдера перед прогоном")
     parser.add_argument("--limit", type=int, default=0,
                         help="Проверить только первые N доменов (0 — все)")
-    parser.add_argument("--progress", type=int, default=0,
-                        help="Печатать прогресс каждые N проб (0 — не печатать)")
+    parser.add_argument("--progress-bar", dest="progress_bar", action="store_true", default=None,
+                        help="Принудительно рисовать прогресс в одну строку (\r)")
+    parser.add_argument("--no-progress-bar", dest="progress_bar", action="store_false",
+                        help="Печатать прогресс отдельными строками (для логов)")
     parser.add_argument("--out-dir", help="Каталог результатов")
     parser.add_argument("--format", choices=["jsonl", "tsv", "both"],
                         help="Формат сырых результатов")
@@ -649,25 +751,40 @@ async def main() -> None:
 
     started = time.perf_counter()
     out_dir, jsonl_path, _, _ = output_paths(args, ts)
+
+    print("\n1/3 Резолв доменов")
+    resolved = await resolve_all(domains, args)
+    total_probes = sum(len(addresses) for addresses, _ in resolved.values())
+    without_addresses = sum(1 for addresses, _ in resolved.values() if not addresses)
+    total_records = total_probes + without_addresses
+    print(f"    доменов: {len(domains)} | адресов: {total_probes}"
+          f" | без адресов: {without_addresses} | записей: {total_records}")
+
+    print(f"2/3 TLS-пробы (таймаут {args.timeout} с, параллельно {args.concurrency})")
+    bar = Progress(total_records, len(domains), interactive=args.progress_bar)
     # Пишем каждую пробу сразу: при обрыве связи или Ctrl+C наблюдения сохранятся.
     jsonl_file = open(jsonl_path, "w", encoding="utf-8")
-    progress = {"done": 0}
 
     def emit(record: Dict[str, Any]) -> None:
         jsonl_file.write(json.dumps(record, ensure_ascii=False) + "\n")
         jsonl_file.flush()
-        progress["done"] += 1
-        if args.progress and progress["done"] % args.progress == 0:
-            print(f"   … {progress['done']} проб")
+        if record.get("probe") == "matrix":
+            bar.add(record)
+            bar.tick()
 
+    heartbeat_task = asyncio.create_task(bar.heartbeat(1.0))
     try:
-        records = await run_matrix(domains, args, meta, emit)
-        print(f"\n🔎 Матрица: {len(records)} проб за {time.perf_counter() - started:.1f} с")
+        records = await run_matrix(domains, args, meta, emit, resolved)
+        bar.close()
 
+        print(f"3/3 Контрольные пробы типа фильтрации")
         extra, summary = await run_controls(records, args, meta, emit)
         records.extend(extra)
     finally:
+        bar.close()
+        heartbeat_task.cancel()
         jsonl_file.close()
+    print(f"    матрица: {len(records)} проб за {time.perf_counter() - started:.1f} с")
 
     summary.update({
         "started_at": ts,

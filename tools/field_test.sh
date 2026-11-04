@@ -10,6 +10,10 @@
 #   bash tools/field_test.sh Megafon 250-01        # оператор и код сети
 #   LIMIT=50 bash tools/field_test.sh Megafon      # быстрый пробный прогон
 #
+# Проверка IP-сетей намеренно не выполняется: белый список состоит из
+# конкретных адресов сервисов, а не из диапазонов, и перебор 36k сетей
+# ничего не даёт. Адреса проверяются внутри матрицы пар (SNI, IP).
+#
 # Результаты: build/field-<timestamp>/ (журнал, пары, домены, IP, сводка).
 
 set -uo pipefail
@@ -19,13 +23,13 @@ MCC_MNC="${2:-}"
 LIMIT="${LIMIT:-0}"
 PROBE_TIMEOUT="${PROBE_TIMEOUT:-3}"
 CONCURRENCY="${CONCURRENCY:-50}"
-CIDR_LIMIT="${CIDR_LIMIT:-150}"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TS="$(date +%Y%m%d-%H%M%S)"
 OUT="$ROOT/build/field-$TS"
 mkdir -p "$OUT"
 LOG="$OUT/field.log"
+START_TS=$(date +%s)
 
 exec > >(tee -a "$LOG") 2>&1
 
@@ -34,9 +38,9 @@ echo "корень: $ROOT"
 echo "оператор: $OPERATOR ${MCC_MNC}"
 echo
 
-echo "--- 1. Сетевое окружение ---"
+echo "[$(date +%H:%M:%S)] --- 1. Сетевое окружение ---"
 if command -v ip >/dev/null 2>&1; then
-    ip -brief addr | grep -vE ' (DOWN|UNKNOWN)$' || true
+    ip -brief addr | grep -vE '^(lo|br-|veth|docker)' | grep -vE ' +DOWN' || true
     echo "маршрут по умолчанию:"
     ip route show default || echo "  (нет маршрута по умолчанию)"
     ip -6 route show default || true
@@ -68,7 +72,7 @@ esac
 echo "канал измерения: $CHANNEL"
 
 echo
-echo "--- 2. Внешний адрес (подтверждение, что мы в сети оператора) ---"
+echo "[$(date +%H:%M:%S)] --- 2. Внешний адрес (подтверждение, что мы в сети оператора) ---"
 EGRESS_OK=0
 if command -v curl >/dev/null 2>&1; then
     EGRESS_IP="$(curl -s --max-time 8 https://api.ipify.org || true)"
@@ -94,7 +98,7 @@ else
 fi
 
 echo
-echo "--- 3. Проверка пар (SNI, IP) ---"
+echo "[$(date +%H:%M:%S)] --- 3. Проверка пар (SNI, IP) ---"
 echo "каждый домен проверяется на ВСЕХ своих A/AAAA; таймаут ${PROBE_TIMEOUT}s, конкуренция ${CONCURRENCY}"
 cd "$ROOT/tools" || exit 1
 
@@ -111,7 +115,7 @@ else
 fi
 
 PAIR_ARGS=(--out-dir "$OUT" --format both --timeout "$PROBE_TIMEOUT"
-           -c "$CONCURRENCY" --http --progress 200 --ipv6-check
+           -c "$CONCURRENCY" --http --ipv6-check
            -o "$OPERATOR" --channel "$CHANNEL")
 [ ${#CACHE_ARGS[@]} -gt 0 ] && PAIR_ARGS+=("${CACHE_ARGS[@]}")
 [ -n "$MCC_MNC" ] && PAIR_ARGS+=(--mcc-mnc "$MCC_MNC")
@@ -123,7 +127,7 @@ PAIRS_RC=$?
 echo "код возврата check_pairs.py: $PAIRS_RC"
 
 echo
-echo "--- 3a. Отчёт: домены и IP, прошедшие в сети оператора ---"
+echo "[$(date +%H:%M:%S)] --- 3a. Отчёт: домены и IP, прошедшие в сети оператора ---"
 if compgen -G "$OUT/pairs-*.jsonl" >/dev/null; then
     python3 pairs_report.py "$OUT"/pairs-*.jsonl -o "$OUT/report" --domains-dir "$ROOT/src/domains"
     echo "код возврата pairs_report.py: $?"
@@ -132,7 +136,7 @@ else
 fi
 
 echo
-echo "--- 3b. DNS оператора без кэша (фиксация DNS-фильтра) ---"
+echo "[$(date +%H:%M:%S)] --- 3b. DNS оператора без кэша (фиксация DNS-фильтра) ---"
 DNS_SAMPLE_PROBE="${DNS_SAMPLE_PROBE:-40}"
 python3 check_pairs.py --out-dir "$OUT/dns-operator" --format jsonl --timeout "$PROBE_TIMEOUT" \
     -c "$CONCURRENCY" --limit "$DNS_SAMPLE_PROBE" --no-control \
@@ -141,7 +145,7 @@ echo "код возврата (DNS оператора): $?"
 
 echo
 echo
-echo "--- 3c. Сравнение DNS: оператор vs публичный ---"
+echo "[$(date +%H:%M:%S)] --- 3c. Сравнение DNS: оператор vs публичный ---"
 DNS_SAMPLE="${DNS_SAMPLE:-40}"
 echo "если публичный DNS не отвечает — фильтрация идёт и на уровне DNS"
 python3 check_pairs.py --out-dir "$OUT/dns-check" --format jsonl --timeout "$PROBE_TIMEOUT" \
@@ -150,11 +154,11 @@ python3 check_pairs.py --out-dir "$OUT/dns-check" --format jsonl --timeout "$PRO
 echo "код возврата (публичный DNS): $?"
 
 echo
-echo "--- 3d. DNS-резолвер системы ---"
+echo "[$(date +%H:%M:%S)] --- 3d. DNS-резолвер системы ---"
 grep -vE '^#' /etc/resolv.conf 2>/dev/null | head -8 || echo "(нет /etc/resolv.conf)"
 resolvectl status 2>/dev/null | head -20 || true
 
-echo "--- 4. Проверка доменов по HTTP (второе мнение) ---"
+echo "[$(date +%H:%M:%S)] --- 4. Проверка доменов по HTTP (второе мнение) ---"
 # HTTP-проверка дороже TLS-пробы, поэтому по умолчанию берём подмножество.
 HTTP_SUBSET="${HTTP_SUBSET:-80}"
 mkdir -p "$OUT/domains-subset"
@@ -182,27 +186,16 @@ else
 fi
 
 echo
-echo "--- 5. Проверка IP по TCP (первые ${CIDR_LIMIT} сетей) ---"
-echo "полный перебор 36k сетей в поле нецелесообразен; ограничиваемся выборкой"
-mkdir -p "$OUT/ip-in" "$OUT/ip-out"
-head -n "$CIDR_LIMIT" "$ROOT/src/IPs/CIDR-ru.txt" > "$OUT/ip-in/subset.txt" 2>/dev/null || true
-echo "сетей в выборке: $(wc -l < "$OUT/ip-in/subset.txt")"
-
-python3 check_ips.py --cidr --cidr-checks 40 --probe-timeout "$PROBE_TIMEOUT" \
-    --input-dir "$OUT/ip-in" --results-dir "$OUT/ip-out" -q
-IPS_RC=$?
-echo "код возврата check_ips.py: $IPS_RC"
-echo "живых сетей: $(wc -l < "$OUT/ip-out/CIDR-whitelist.txt" 2>/dev/null || echo 0)"
-
+echo "[$(date +%H:%M:%S)] --- Итог ---"
+if [ -f "$OUT/report/report.md" ]; then
+    sed -n '1,14p' "$OUT/report/report.md"
+    echo "  (полностью: $OUT/report/report.md)"
+fi
+ELAPSED=$(( $(date +%s) - START_TS ))
 echo
-echo "--- Готово: $OUT ---"
-echo "сводка:"
-for f in "$OUT"/summary-*.json; do
-    [ -f "$f" ] && { echo "== $f"; cat "$f"; echo; }
-done
-echo
-echo "Файлы результатов:"
-ls -1 "$OUT"
+echo "⏱  Время прогона: $((ELAPSED / 60)) мин $((ELAPSED % 60)) с"
+echo "📁 Результаты: $OUT"
+ls -1 "$OUT" | sed 's/^/   /'
 
 if [ "$EGRESS_OK" -eq 0 ] && [ "$PAIRS_RC" -ne 0 ]; then
     echo
