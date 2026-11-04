@@ -8,7 +8,7 @@
 еженедельно в GitHub Actions), и в поле позволяет проверять пары (SNI, IP)
 без обращения к DNS оператора.
 
-Результат — dns-cache.json в корне репозитория; его читает check.py.
+Результат — configs/dns-cache.json; его читает check.py.
 
 Зависимости: pip install dnspython
 """
@@ -94,7 +94,7 @@ async def main() -> None:
         if not output.is_absolute():
             output = Path.cwd() / output      # относительный путь — от текущего каталога
     else:
-        output = PROJECT_ROOT / "dns-cache.json"
+        output = PROJECT_ROOT / "configs" / "dns-cache.json"
     output.parent.mkdir(parents=True, exist_ok=True)
 
     domains = load_domains(directory)

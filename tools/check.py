@@ -32,7 +32,7 @@ RELEASE_CONFIG = ROOT / "configs" / "release.json"
 DOMAINS_DIR = ROOT / "src" / "domains"
 # Кэш адресов, который собирает workflow: в сети оператора DNS не отвечает,
 # и без готовых адресов домен нечем проверять.
-DNS_CACHE = ROOT / "dns-cache.json"
+DNS_CACHE = ROOT / "configs" / "dns-cache.json"
 
 MOBILE_PREFIXES = ("ww", "ppp", "rmnet", "usb", "enx")
 
@@ -186,7 +186,7 @@ def main():
     parser.add_argument("--dns", nargs="+", default=None,
                         help="DNS-серверы для резолва (по умолчанию системные)")
     parser.add_argument("--no-cache", action="store_true",
-                        help="Не использовать кэш адресов dns-cache.json")
+                        help="Не использовать кэш адресов configs/dns-cache.json")
     parser.add_argument("--no-http", action="store_true",
                         help="Не делать HTTP-проверку (быстрее, но одно мнение)")
     parser.add_argument("--http-limit", type=int, default=0,
