@@ -1,7 +1,6 @@
 {
   "comment": "Основной конфиг для check-domains.py",
   "version": "2.2",
-  
   "network": {
     "timeout_total": 15,
     "timeout_dns": 10,
@@ -10,12 +9,11 @@
     "jitter": 0.1,
     "verify_ssl": false
   },
-  
   "pipeline": {
     "use_impersonate": true,
-    "http_fallback": true
+    "http_fallback": false,
+    "enable_http3": false
   },
-  
   "curl_cffi": {
     "enabled": true,
     "default_impersonate": "chrome124",
@@ -27,7 +25,6 @@
       "edge": "edge122"
     }
   },
-  
   "headers": {
     "User-Agent": "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.144 Mobile Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
@@ -44,13 +41,11 @@
     "Priority": "u=0, i",
     "Connection": "keep-alive"
   },
-  
   "paths": {
     "domains_directory": "../src/domains",
     "output_directory": "build/domains_checked",
     "exclude_categories": []
   },
-  
   "operators": {
     "1": "Megafon",
     "2": "Beeline",
@@ -62,11 +57,16 @@
     "9": "Rostelecom",
     "10": "VTB Mobile"
   },
-  
   "error_classification": {
-    "retriable_statuses": ["TIMEOUT", "PORT_BLOCK", "SSL_ERR", "TLS_ERR", "UNKNOWN", "RST"]
+    "retriable_statuses": [
+      "TIMEOUT",
+      "PORT_BLOCK",
+      "SSL_ERR",
+      "TLS_ERR",
+      "UNKNOWN",
+      "RST"
+    ]
   },
-  
   "logging": {
     "quiet": false,
     "show_progress_every": 100
