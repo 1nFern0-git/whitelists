@@ -36,7 +36,6 @@ import argparse
 import asyncio
 import hashlib
 import json
-import os
 import signal
 import socket
 import ssl
@@ -749,7 +748,7 @@ async def detect_egress() -> Dict[str, Any]:
 
 
 async def main() -> None:
-    global CONFIG, SHUTDOWN_REQUESTED
+    global CONFIG
     CONFIG = load_config()
 
     parser = argparse.ArgumentParser(
@@ -919,7 +918,7 @@ async def main() -> None:
         records = await run_matrix(domains, args, meta, emit, resolved)
         bar.close()
 
-        print(f"3/3 Контрольные пробы типа фильтрации")
+        print("3/3 Контрольные пробы типа фильтрации")
         extra, summary = await run_controls(records, args, meta, emit)
         records.extend(extra)
     finally:

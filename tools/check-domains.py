@@ -11,7 +11,6 @@
 """
 import asyncio
 import sys
-import os
 import time
 import socket
 import ssl
@@ -515,7 +514,6 @@ async def _read_head(client, url: str, max_bytes: int = 4096) -> Tuple[int, str,
 
 
 async def _do_curl_cffi(pool: HTTPClientPool, url: str, enable_http3: bool) -> Dict[str, Any]:
-    settings = pool.s
     domain = url.split("://")[1].split('/')[0]
     start = time.time()
     res = _new_result(domain, "curl_cffi", "?")
@@ -567,7 +565,6 @@ async def _do_curl_cffi(pool: HTTPClientPool, url: str, enable_http3: bool) -> D
 
 
 async def _do_httpx(pool: HTTPClientPool, url: str, http2: bool) -> Dict[str, Any]:
-    settings = pool.s
     domain = url.split("://")[1].split('/')[0]
     is_http = url.startswith("http://")
     start = time.time()
@@ -700,7 +697,6 @@ async def check_domain_pipeline(domain: str, pool: HTTPClientPool, address: str)
 
 
 async def run_checker(domains: List[str], args: argparse.Namespace) -> Dict[str, Dict[str, Any]]:
-    global SHUTDOWN_REQUESTED
     settings = Settings(args)
     resolver = Resolver(args.dns or [], settings.timeout_dns)
 
@@ -798,73 +794,6 @@ async def run_checker(domains: List[str], args: argparse.Namespace) -> Dict[str,
         tasks = [one(d, a) for d, a in targets]
         if TQDM_AVAILABLE and not args.quiet:
             pbar = tqdm(total=total_domains, desc="  HTTP прогресс", unit="домен")
-            for coro in asyncio.as_completed(tasks):
-                await coro
-                pbar.update(1)
-            pbar.close()
-        else:
-            for coro in asyncio.as_completed(tasks):
-                await coro
-    finally:
-        reporter.cancel()
-        await pool.close()
-
-    return results
-
-    print(f"\n🔍 HTTP-проверка пар (таймаут {settings.timeout_total} с, параллельно {settings.concurrency})")
-    pool = HTTPClientPool(settings)
-    sem = asyncio.Semaphore(settings.concurrency)
-    done = 0
-    total = len(pairs)
-    started = time.perf_counter()
-
-    state = {"done": 0, "alive": 0}
-    checked_certs: Set[str] = set()
-    started_progress = time.perf_counter()
-
-    async def progress_reporter() -> None:
-        while True:
-            await asyncio.sleep(5)
-            elapsed = time.perf_counter() - started_progress
-            rate = state["done"] / elapsed if elapsed else 0
-            left = (total - state["done"]) / rate if rate else 0
-            print(f"  → {state['done']}/{total} пар | доступно {state['alive']} | "
-                  f"{rate:.1f} пар/с | осталось ~{left:.0f} с", flush=True)
-
-    async def one(domain: str, ip: str) -> None:
-        nonlocal done
-        async with sem:
-            if SHUTDOWN_REQUESTED:
-                return
-            if settings.jitter > 0:
-                await asyncio.sleep(random.uniform(0, settings.jitter))
-            result = await check_domain_pipeline(domain, pool, ip)
-
-            cert_checked = domain in checked_certs
-            if settings.verify_cert and result["status"] in ALIVE_STATUSES and not cert_checked:
-                checked_certs.add(domain)
-                cn, sans = await fetch_cert_names(ip, domain, settings.timeout_total)
-                result["cert_cn"] = cn
-                if cn or sans:
-                    if not _cert_matches(domain, cn, sans):
-                        result["status"] = "SUSPECT_CERT"
-                        result["details"] = f"сертификат не для домена (CN={cn})"
-
-            previous = results.get(domain)
-            if previous is None:
-                results[domain] = result
-            else:
-                results[domain] = _better(previous, result)
-            done += 1
-            state["done"] = done
-            if result["status"] in ALIVE_STATUSES:
-                state["alive"] += 1
-
-    reporter = asyncio.create_task(progress_reporter())
-    try:
-        tasks = [one(d, ip) for d, ip in pairs]
-        if TQDM_AVAILABLE and not args.quiet:
-            pbar = tqdm(total=total, desc="  HTTP прогресс", unit="пара")
             for coro in asyncio.as_completed(tasks):
                 await coro
                 pbar.update(1)
@@ -1023,7 +952,7 @@ async def main() -> None:
         print("   или увеличьте таймауты в configs/check-domains.json")
 
     if SHUTDOWN_REQUESTED:
-        print(f"\n⚠️  Проверка прервана; домены без результата помечены INTERRUPTED")
+        print("\n⚠️  Проверка прервана; домены без результата помечены INTERRUPTED")
 
 
 if __name__ == "__main__":

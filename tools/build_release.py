@@ -24,7 +24,7 @@ import ipaddress
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Set
 
 DOMAIN_MIN_LEN = 3
 
@@ -163,7 +163,7 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(result) + "\n", encoding="utf-8")
 
-    print(f"📊 источники:")
+    print("📊 источники:")
     for name, values in sets.items():
         print(f"   {len(values):4} доменов — {name}")
     label = {"intersection": "∩ пересечение", "union": "∪ объединение"}.get(

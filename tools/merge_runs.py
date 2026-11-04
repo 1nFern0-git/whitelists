@@ -17,7 +17,7 @@ import argparse
 import json
 from collections import Counter
 from pathlib import Path
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 
 PASS = "PASS"
 
@@ -41,8 +41,6 @@ def load_runs(paths: List[Path]) -> Dict[str, Dict[str, str]]:
                 records.setdefault(record["domain"], Counter())[record.get("status")] += 1
 
         label = path.stem.replace("pairs-", "")
-        stamp = next((r.get("ts") for r in (json.loads(l) for l in
-                      open(path, "r", encoding="utf-8") if l.strip())), "") or ""
         run: Dict[str, str] = {}
         for domain, counter in records.items():
             # Домен считается прошедшим, если хотя бы одна его пара PASS.
@@ -125,7 +123,7 @@ def main() -> None:
     print(f"   флап: {len(flap)} → flap-pass.txt")
     print(f"   проверены один раз: {len(thin)}")
     print(f"   не проходят ни разу: {len(blocked)} → stable-blocked.txt")
-    print(f"   сводка: report.md")
+    print("   сводка: report.md")
 
 
 if __name__ == "__main__":

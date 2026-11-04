@@ -153,7 +153,7 @@ def main() -> None:
     print(f"✅ Домены с PASS: {len(passed_domains)} → domains.txt")
     print(f"✅ Адреса с PASS: {len(passed_ips)} → {len(networks)} сетей в ips.txt")
     print(f"✅ Пары: {len(passed)} → pairs.tsv")
-    print(f"✅ Сводка: report.md")
+    print("✅ Сводка: report.md")
     if partial:
         print(f"ℹ️  Частично доступных доменов: {len(partial)}")
 

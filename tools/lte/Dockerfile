@@ -4,7 +4,10 @@
 # в режиме «белого списка» pip до PyPI не достучится.
 FROM python:3.12-slim
 
+# PYTHONDONTWRITEBYTECODE: /work — это смонтированный репозиторий, байткод
+# в нём не нужен и остаётся мусором (а при запуске от root ещё и чужим).
 ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
