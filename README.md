@@ -499,6 +499,39 @@ yandex.ru
 domain  ip  family  sni  status  http  tls  cert_cn  ech  duration_ms  operator  mcc_mnc  channel  ts
 ```
 
+### field_test.sh
+
+Автономный полевой прогон: запускается на ноутбуке с телефоном в режиме модема,
+ничего не спрашивает и всё пишет на диск — работает, когда доступен только
+белый список и внешней связи нет.
+
+```bash
+# оператор и код сети (MCC-MNC): МегаФон 250-01, МТС 250-02,
+# Билайн 250-99, Tele2 250-20, Yota 250-11
+bash tools/field_test.sh Megafon 250-01
+
+# быстрый пробный прогон
+LIMIT=50 HTTP_SUBSET=20 CIDR_LIMIT=20 bash tools/field_test.sh Megafon 250-01
+```
+
+Что делает по шагам:
+
+| Шаг | Действие |
+|---|---|
+| 1 | показывает интерфейсы и маршрут, определяет канал (mobile/wifi) |
+| 2 | проверяет внешний IP и провайдера — подтверждение, что мы в сети оператора |
+| 3 | `check_pairs.py`: матрица SNI × IP по всем доменам, запись каждой пробы сразу |
+| 3b | сравнение с публичным DNS (77.88.8.8) — отличает DNS-фильтрацию |
+| 3c | сохраняет состояние системного резолвера |
+| 4 | `check-domains.py` по подмножеству — второе мнение по HTTP |
+| 5 | `check_ips.py` по выборке сетей — TCP-пробы вместо ping |
+
+Результаты: `build/field-<timestamp>/` — `field.log`, `pairs-*.jsonl`,
+`pairs-*.tsv`, `summary-*.json`, `egress.json`, `ip-out/`, `dns-check/`.
+
+Переменные окружения: `LIMIT`, `HTTP_SUBSET`, `CIDR_LIMIT`, `DNS_SAMPLE`,
+`PROBE_TIMEOUT`, `CONCURRENCY`.
+
 ### merged.py
 
 Редактируются в начале файла:

@@ -25,4 +25,5 @@ __pycache__/
 .codebase-memory/status.json
 .mcp.json
 data/
+build/
 

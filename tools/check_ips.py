@@ -450,7 +450,11 @@ def process_cidr_file(filepath, results_dir, checkpoint_state: dict):
         logger.warning("❌ Нет валидных CIDR.")
         return 0
     
-    logger.info(f"📋 Найдено CIDR сетей: {len(cidrs)}")
+    if max_cidrs and len(cidrs) > max_cidrs:
+        logger.info(f"📋 Найдено CIDR сетей: {len(cidrs)} → берём первые {max_cidrs}")
+        cidrs = cidrs[:max_cidrs]
+    else:
+        logger.info(f"📋 Найдено CIDR сетей: {len(cidrs)}")
     
     total_found = 0
     for i, cidr in enumerate(cidrs):
@@ -533,7 +537,8 @@ def check_cidr_parallel(cidr_str, max_checks_per_batch=40, timeout: Optional[int
         logger.error(f"Ошибка проверки CIDR {cidr_str}: {e}")
         return False, None
 
-def process_cidr_file_fast(filepath, results_dir, checkpoint_state: dict, max_checks_per_batch: int):
+def process_cidr_file_fast(filepath, results_dir, checkpoint_state: dict, max_checks_per_batch: int,
+                           max_cidrs: Optional[int] = None):
     """Быстрая обработка CIDR файла (параллельная проверка порциями до первого живого IP)"""
     logger.info(f"\n📄 Быстрая обработка CIDR файла: {os.path.basename(filepath)}")
     
@@ -732,7 +737,7 @@ def determine_file_type(filepath):
         return "unknown"
 
 def main():
-    global PROBE_MODE, PROBE_PORTS, PROBE_TIMEOUT
+    global PROBE_MODE, PROBE_PORTS, PROBE_TIMEOUT, LOG_FILE, CHECKPOINT_FILE
 
     parser = argparse.ArgumentParser(description='IP Scanner с поддержкой resume и логирования')
     parser.add_argument('-q', '--quiet', action='store_true', help='Тихий режим (вывод только в scan.log)')
@@ -748,6 +753,12 @@ def main():
                         help=f'Порты для TCP-проверки через запятую (по умолч. {",".join(map(str, PROBE_PORTS))})')
     parser.add_argument('--probe-timeout', type=float, default=None,
                         help=f'Таймаут одной TCP-пробы, сек (по умолч. {PROBE_TIMEOUT})')
+    parser.add_argument('--input-dir', default=None,
+                        help='Каталог с .txt-файлами IP/CIDR (по умолч. из конфига)')
+    parser.add_argument('--results-dir', default=None,
+                        help='Каталог результатов (по умолч. из конфига)')
+    parser.add_argument('--max-cidrs', type=int, default=None,
+                        help='Обработать не более N CIDR из каждого файла')
     parser.add_argument('--version', action='version', version='IP Scanner v2.1')
     args = parser.parse_args()
 
@@ -757,9 +768,15 @@ def main():
         PROBE_PORTS = [int(p) for p in args.ports.replace(",", " ").split() if p.strip()]
     if args.probe_timeout:
         PROBE_TIMEOUT = args.probe_timeout
+
+    input_dir = _resolve_path(args.input_dir) if args.input_dir else INPUT_DIRECTORY
+    results_dir = _resolve_path(args.results_dir) if args.results_dir else RESULTS_DIR
+    if args.results_dir:
+        LOG_FILE = os.path.join(results_dir, "scan.log")
+        CHECKPOINT_FILE = os.path.join(results_dir, "scan_checkpoint.json")
     
+    os.makedirs(results_dir, exist_ok=True)
     setup_logging(quiet=args.quiet)
-    os.makedirs(RESULTS_DIR, exist_ok=True)
     
     if args.reset and os.path.exists(CHECKPOINT_FILE):
         os.remove(CHECKPOINT_FILE)
@@ -778,15 +795,15 @@ def main():
     logger.info(f"⚙️ Конфиг: {CONFIG_FILE}")
     logger.info("="*60)
     
-    if not os.path.exists(INPUT_DIRECTORY):
-        logger.error(f"❌ Директория '{INPUT_DIRECTORY}' не существует.")
+    if not os.path.exists(input_dir):
+        logger.error(f"❌ Директория '{input_dir}' не существует.")
         return
     
-    all_files = [f for f in os.listdir(INPUT_DIRECTORY) if f.lower().endswith('.txt')]
+    all_files = [f for f in os.listdir(input_dir) if f.lower().endswith('.txt')]
     txt_files = []
     
     for f in all_files:
-        full_path = os.path.join(INPUT_DIRECTORY, f)
+        full_path = os.path.join(input_dir, f)
         if os.path.isfile(full_path):
             txt_files.append(f)
     
@@ -820,21 +837,21 @@ def main():
             logger.info(f"⏭ Пропуск обработанного файла: {filename}")
             continue
         
-        full_path = os.path.join(INPUT_DIRECTORY, filename)
+        full_path = os.path.join(input_dir, filename)
         file_type = determine_file_type(full_path)
         logger.info(f"🧐 Анализ '{filename}': тип - {file_type.upper()}")
         
         try:
             if file_type == "cidr":
                 if args.cidr:
-                    process_cidr_file_fast(full_path, RESULTS_DIR, state, args.cidr_checks)
+                    process_cidr_file_fast(full_path, results_dir, state, args.cidr_checks, args.max_cidrs)
                 else:
-                    process_cidr_file(full_path, RESULTS_DIR, state)
+                    process_cidr_file(full_path, results_dir, state)
             elif file_type == "ip_list":
                 if args.cidr:
                     logger.warning(f"⚠️ Файл '{filename}' содержит IP, а не CIDR. Режим --cidr не применим. Пропускаем.")
                     continue
-                process_ip_list_file(full_path, RESULTS_DIR, state)
+                process_ip_list_file(full_path, results_dir, state)
             else:
                 logger.warning(f"⚠️ Тип файла '{filename}' не распознан. Пропускаем.")
                 continue
@@ -856,9 +873,9 @@ def main():
     
     if not SHUTDOWN_REQUESTED.is_set():
         if args.cidr:
-            finalize_ip_results(RESULTS_DIR, CIDR_WHITELIST_FILE, aggregate=False)
+            finalize_ip_results(results_dir, CIDR_WHITELIST_FILE, aggregate=False)
         else:
-            finalize_ip_results(RESULTS_DIR)
+            finalize_ip_results(results_dir)
     
     if SHUTDOWN_REQUESTED.is_set():
         logger.info("\n⏸️ Сканирование прервано пользователем")

@@ -285,9 +285,14 @@ def make_record(kind: str, domain: str, ip: str, sni: str, family: str,
 
 
 async def run_matrix(domains: List[str], args: argparse.Namespace,
-                     meta: Dict[str, Any]) -> List[Dict[str, Any]]:
+                     meta: Dict[str, Any], emit=None) -> List[Dict[str, Any]]:
     semaphore = asyncio.Semaphore(args.concurrency)
     records: List[Dict[str, Any]] = []
+
+    def add(record: Dict[str, Any]) -> None:
+        records.append(record)
+        if emit is not None:
+            emit(record)
 
     async def one(domain: str) -> None:
         if SHUTDOWN_REQUESTED:
@@ -295,7 +300,7 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
         addresses, ech = await resolve_addresses(domain, args.families,
                                                  args.dns or [], args.timeout)
         if not addresses:
-            records.append(make_record("matrix", domain, "", domain, "", ech, {
+            add(make_record("matrix", domain, "", domain, "", ech, {
                 "status": "DNS_NX", "error": "нет A/AAAA", "duration_ms": 0,
                 "tls": None, "cipher": None, "http": None, "cert_cn": None,
                 "cert_issuer": None, "cert_sha256": None, "cert_not_after": None,
@@ -307,15 +312,15 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
                     return
                 family = "AAAA" if ":" in ip else "A"
                 outcome = await probe(ip, domain, args.port, args.timeout, args.http)
-                records.append(make_record("matrix", domain, ip, domain, family,
-                                           ech, outcome, meta))
+                add(make_record("matrix", domain, ip, domain, family,
+                                ech, outcome, meta))
 
     await asyncio.gather(*(one(d) for d in domains))
     return records
 
 
 async def run_controls(records: List[Dict[str, Any]], args: argparse.Namespace,
-                       meta: Dict[str, Any]) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+                       meta: Dict[str, Any], emit=None) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """Контрольные пробы: отделяют фильтр по IP от фильтра по SNI и парного."""
     matrix = [r for r in records if r["probe"] == "matrix"]
     passed = [r for r in matrix if r["status"] == STATUS_PASS]
@@ -345,9 +350,12 @@ async def run_controls(records: List[Dict[str, Any]], args: argparse.Namespace,
     if blocked_domains and sample_ips:
         for ip in sample_ips:
             outcome = await probe(ip, blocked_domains[0], args.port, args.timeout, False)
-            extra.append(make_record("ip_control", blocked_domains[0], ip,
-                                     blocked_domains[0],
-                                     "AAAA" if ":" in ip else "A", False, outcome, meta))
+            control = make_record("ip_control", blocked_domains[0], ip,
+                                  blocked_domains[0],
+                                  "AAAA" if ":" in ip else "A", False, outcome, meta)
+            extra.append(control)
+            if emit is not None:
+                emit(control)
             summary["ip_control_total"] += 1
             if outcome["status"] == STATUS_PASS:
                 summary["ip_control_passed"] += 1
@@ -357,9 +365,12 @@ async def run_controls(records: List[Dict[str, Any]], args: argparse.Namespace,
         for index, domain in enumerate(sample_domains):
             ip = blocked_ips[index % len(blocked_ips)]
             outcome = await probe(ip, domain, args.port, args.timeout, False)
-            extra.append(make_record("sni_control", domain, ip, domain,
-                                     "AAAA" if ":" in ip else "A",
-                                     False, outcome, meta))
+            control = make_record("sni_control", domain, ip, domain,
+                                  "AAAA" if ":" in ip else "A",
+                                  False, outcome, meta)
+            extra.append(control)
+            if emit is not None:
+                emit(control)
             summary["sni_control_total"] += 1
             if outcome["status"] == STATUS_PASS:
                 summary["sni_control_passed"] += 1
@@ -381,22 +392,27 @@ async def run_controls(records: List[Dict[str, Any]], args: argparse.Namespace,
     return extra, summary
 
 
-def write_outputs(records: List[Dict[str, Any]], summary: Dict[str, Any],
-                  args: argparse.Namespace, ts: str) -> Path:
+def output_paths(args: argparse.Namespace, ts: str) -> Tuple[Path, Path, Path, Path]:
     out_dir = Path(args.out_dir)
     if not out_dir.is_absolute():
         out_dir = PROJECT_ROOT / out_dir
     out_dir.mkdir(parents=True, exist_ok=True)
+    return (out_dir,
+            out_dir / args.jsonl.format(ts=ts),
+            out_dir / args.tsv.format(ts=ts),
+            out_dir / args.summary.format(ts=ts))
 
-    jsonl_path = out_dir / args.jsonl.format(ts=ts)
-    tsv_path = out_dir / args.tsv.format(ts=ts)
-    summary_path = out_dir / args.summary.format(ts=ts)
+
+def write_outputs(records: List[Dict[str, Any]], summary: Dict[str, Any],
+                  args: argparse.Namespace, ts: str, jsonl_path: Optional[Path] = None) -> Path:
+    out_dir, default_jsonl, tsv_path, summary_path = output_paths(args, ts)
+    jsonl_path = jsonl_path or default_jsonl
 
     columns = ["ts", "probe", "domain", "ip", "family", "sni", "status", "http",
                "tls", "cipher", "cert_cn", "cert_sha256", "ech", "duration_ms",
                "error", "operator", "mcc_mnc", "channel"]
 
-    if args.format in ("jsonl", "both"):
+    if args.format == "jsonl" and jsonl_path != default_jsonl:
         with open(jsonl_path, "w", encoding="utf-8") as f:
             for record in records:
                 f.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -471,6 +487,10 @@ async def main() -> None:
                         help="Сколько пар проверять в контроле")
     parser.add_argument("--detect-egress", action="store_true",
                         help="Определить внешний IP и провайдера перед прогоном")
+    parser.add_argument("--limit", type=int, default=0,
+                        help="Проверить только первые N доменов (0 — все)")
+    parser.add_argument("--progress", type=int, default=0,
+                        help="Печатать прогресс каждые N проб (0 — не печатать)")
     parser.add_argument("--out-dir", help="Каталог результатов")
     parser.add_argument("--format", choices=["jsonl", "tsv", "both"],
                         help="Формат сырых результатов")
@@ -507,6 +527,8 @@ async def main() -> None:
                             "channel": args.channel}
 
     domains = load_domains(directory)
+    if args.limit and args.limit > 0:
+        domains = domains[: args.limit]
     print("⚙️  Проверка пар (SNI, IP)")
     print(f"   Домены: {directory} ({len(domains)} шт.)")
     print(f"   Порт: {args.port} | таймаут: {args.timeout} с | конкуренция: {args.concurrency}")
@@ -527,15 +549,32 @@ async def main() -> None:
         return
 
     started = time.perf_counter()
-    records = await run_matrix(domains, args, meta)
-    print(f"\n🔎 Матрица: {len(records)} проб за {time.perf_counter() - started:.1f} с")
+    out_dir, jsonl_path, _, _ = output_paths(args, ts)
+    # Пишем каждую пробу сразу: при обрыве связи или Ctrl+C наблюдения сохранятся.
+    jsonl_file = open(jsonl_path, "w", encoding="utf-8")
+    progress = {"done": 0}
 
-    extra, summary = await run_controls(records, args, meta)
-    records.extend(extra)
+    def emit(record: Dict[str, Any]) -> None:
+        jsonl_file.write(json.dumps(record, ensure_ascii=False) + "\n")
+        jsonl_file.flush()
+        progress["done"] += 1
+        if args.progress and progress["done"] % args.progress == 0:
+            print(f"   … {progress['done']} проб")
+
+    try:
+        records = await run_matrix(domains, args, meta, emit)
+        print(f"\n🔎 Матрица: {len(records)} проб за {time.perf_counter() - started:.1f} с")
+
+        extra, summary = await run_controls(records, args, meta, emit)
+        records.extend(extra)
+    finally:
+        jsonl_file.close()
+
     summary.update({
         "started_at": ts,
         "domains_total": len(domains),
         "probes_total": len(records),
+        "interrupted": SHUTDOWN_REQUESTED,
         "operator": args.operator,
         "mcc_mnc": args.mcc_mnc,
         "egress": {k: v for k, v in meta.items() if k.startswith("egress")},
@@ -547,7 +586,7 @@ async def main() -> None:
             by_status[record["status"]] = by_status.get(record["status"], 0) + 1
     summary["status_counts"] = by_status
 
-    out_dir = write_outputs(records, summary, args, ts)
+    write_outputs(records, summary, args, ts, jsonl_path)
 
     print("\n📊 Статусы пар (SNI + IP):")
     for status, count in sorted(by_status.items(), key=lambda item: -item[1]):

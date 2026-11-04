@@ -487,7 +487,11 @@ def save_whitelist(domains: List[str], operator: str, out_dir: str):
     print(f"💾 Сохранено: {path}")
     print(f"   Всего доменов в whitelist: {len(domains)}")
 
-def select_operator(operators: dict) -> str:
+def select_operator(operators: dict, name: Optional[str] = None) -> str:
+    """Возвращает имя оператора. С --operator работает без интерактивного ввода,
+    что нужно при запуске из мобильной сети без доступа к терминалу."""
+    if name:
+        return name
     print("\n📱 Выберите оператора:")
     for k, v in operators.items():
         print(f"  {k}. {v}")
@@ -520,6 +524,8 @@ async def main():
     parser.add_argument('--no-http3', action='store_false', dest='enable_http3', help='Отключить HTTP/3')
     parser.add_argument('--retries', type=int, help='Количество ретраев')
     parser.add_argument('--show-config', action='store_true', help='Показать текущую конфигурацию')
+    parser.add_argument('--operator', default=None,
+                        help='Имя оператора для имени файла (без интерактивного выбора)')
     parser.add_argument('--show-fingerprints', action='store_true', help='Показать информацию об отпечатках curl_cffi')
     parser.set_defaults(http_fallback=None, enable_http3=True)
     args = parser.parse_args()
@@ -596,7 +602,7 @@ async def main():
     
     if alive_domains:
         operators = get_config_value("operators", default={"1": "Default"})
-        op = select_operator(operators)
+        op = select_operator(operators, args.operator)
         out_dir = paths.get("output_directory", "build/domains_checked")
         save_whitelist(alive_domains, op, out_dir)
     
