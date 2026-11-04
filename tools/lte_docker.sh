@@ -149,8 +149,80 @@ cmd_run() {
         -o "$operator" --channel mobile --out-dir "/work/build/field-lte-$RUN_TS")
     [ -n "$mcc" ] && args+=(--mcc-mnc "$mcc")
     args+=("$@")
+    local run_dir="$ROOT/build/field-lte-$RUN_TS"
+    mkdir -p "$run_dir"
+
+    # Мониторинг соты: покажет, переключался ли телефон во время прогона.
+    local cell_pid=""
+    if command -v adb >/dev/null 2>&1 && adb devices 2>/dev/null | grep -q "\bdevice$"; then
+        python3 "$ROOT/tools/cell_watch.py" --interval 3 --quiet \
+            --out "$run_dir/cell-log.csv" &
+        cell_pid=$!
+        echo "📶 монитор соты запущен (pid $cell_pid) → $run_dir/cell-log.csv"
+    else
+        echo "ℹ️  adb недоступен или телефон не авторизован: монитор соты пропущен"
+    fi
+
     echo "▶ прогон: ${args[*]}"
     docker_run "$IMAGE" "${args[@]}"
+    local rc=$?
+
+    if [ -n "$cell_pid" ]; then
+        kill "$cell_pid" 2>/dev/null
+        wait "$cell_pid" 2>/dev/null
+        local changes
+        changes="$(awk -F, 'NR>1 && $NF==1' "$run_dir/cell-log.csv" 2>/dev/null | wc -l)"
+        echo "📶 смен соты за прогон: ${changes:-0}"
+        [ "${changes:-0}" -gt 0 ] && echo "   ⚠️  телефон переключался — результат мог измениться по этой причине"
+    fi
+    return $rc
+}
+
+cmd_pulse() {
+    # Частые короткие прогоны по подмножеству доменов: временной ряд,
+    # по которому видно, когда меняется фильтрация и совпадает ли это
+    # со сменой соты (cell-log.csv).
+    read_network_info
+    local iterations="${1:-20}"
+    local interval="${2:-60}"
+    local limit="${3:-40}"
+    local operator="${4:-Pulse}"
+
+    local run_dir="$ROOT/build/pulse-$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "$run_dir"
+    echo "▶ пульс: $iterations итераций по $limit доменов, пауза ${interval}s"
+    echo "   результаты: $run_dir"
+
+    local cell_pid=""
+    if command -v adb >/dev/null 2>&1 && adb devices 2>/dev/null | grep -q "\bdevice$"; then
+        python3 "$ROOT/tools/cell_watch.py" --interval 3 --quiet --out "$run_dir/cell-log.csv" &
+        cell_pid=$!
+        echo "📶 монитор соты: pid $cell_pid"
+    fi
+
+    local dns_args=()
+    for d in $DNS_SERVERS; do dns_args+=(--dns "$d"); done
+    local i
+    for i in $(seq 1 "$iterations"); do
+        echo "[$(date +%H:%M:%S)] итерация $i/$iterations"
+        docker run --rm \
+            --network "$NETWORK" --ip "$CONTAINER_IP" "${dns_args[@]}" \
+            --user "$(id -u):$(id -g)" -e HOME=/tmp \
+            -v /etc/localtime:/etc/localtime:ro \
+            -v "$ROOT":/work:z -w /work/tools \
+            "$IMAGE" python3 check_pairs.py \
+                --dns-cache /work/build/dns-cache.json --cache-only \
+                -c 20 --timeout 3 --no-control --limit "$limit" \
+                -o "$operator" --channel mobile \
+                --out-dir "/work/build/$(basename "$run_dir")" 2>&1 | grep -E "PASS|DROP|REFUSED|DNS_NX|UNREACH|матрица"
+        [ "$i" -lt "$iterations" ] && sleep "$interval"
+    done
+
+    if [ -n "$cell_pid" ]; then
+        kill "$cell_pid" 2>/dev/null
+        wait "$cell_pid" 2>/dev/null
+        echo "📶 смен соты: $(awk -F, 'NR>1 && $NF==1' "$run_dir/cell-log.csv" 2>/dev/null | wc -l)"
+    fi
 }
 
 cmd_shell() {
@@ -171,7 +243,7 @@ cmd_down() {
 }
 
 if [ $# -eq 0 ]; then
-    echo "Команды: up [iface] | check | run <оператор> [mcc-mnc] [флаги check_pairs] | shell | down"
+    echo "Команды: up [iface] | check | run <оператор> [mcc-mnc] [флаги] | pulse [N пауза лимит] | shell | down"
     exit 0
 fi
 
@@ -179,7 +251,8 @@ case "$1" in
     up)    shift; cmd_up "$@" ;;
     check) cmd_check ;;
     run)   shift; cmd_run "$@" ;;
+    pulse) shift; cmd_pulse "$@" ;;
     shell) cmd_shell ;;
     down)  cmd_down ;;
-    *)     echo "Команды: up [iface] | check | run <оператор> [mcc-mnc] [флаги check_pairs] | shell | down"; exit 1 ;;
+    *)     echo "Команды: up [iface] | check | run <оператор> [mcc-mnc] [флаги] | pulse [N пауза лимит] | shell | down"; exit 1 ;;
 esac

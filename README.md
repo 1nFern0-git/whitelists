@@ -56,6 +56,8 @@ whitelists/
 │   ├── check_pairs.py          # Проверка пар (SNI, IP) в сети оператора
 │   ├── cache_dns.py            # Кэш DNS для работы при фильтрации имён
 │   ├── pairs_report.py         # Отчёт: домены и IP из наблюдений
+│   ├── merge_runs.py           # Агрегация прогонов: устойчиво / флап
+│   ├── cell_watch.py           # Монитор соты через adb (EARFCN, RSRP)
 │   ├── field_test.sh           # Автономный полевой прогон
 │   ├── lte_docker.sh           # Прогон в контейнере через сеть оператора
 │   ├── check_ips.py            # Проверка IP/CIDR (TCP-connect или ICMP)
@@ -527,6 +529,19 @@ python3 tools/cache_dns.py -o build/dns-cache.json
 На практике это открывает домены, которые скрыты только на DNS: в первом
 полевом прогоне `dbo-dengi.online`, `t-bank-app.ru` и `uralsib.ru` получили
 `DNS_NX` у оператора, но прошли по IP через публичный DNS.
+
+### merge_runs.py
+
+Агрегация нескольких прогонов — отделяет устойчивый результат от флапа:
+
+```bash
+python3 tools/merge_runs.py build/field-*\/pairs-*.jsonl -o build/merged
+```
+
+Результат: `stable-pass.txt` (проходят во всех прогонах), `flap-pass.txt`
+(проходят не везде, с долей), `stable-blocked.txt` (не проходят ни разу),
+`report.md`. Домен учитывается только в тех прогонах, где он проверялся,
+поэтому короткие прогоны по подмножеству не искажают картину.
 
 ### pairs_report.py
 
