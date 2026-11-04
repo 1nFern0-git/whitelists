@@ -16,7 +16,9 @@
     "port": 443,
     "families": ["A", "AAAA"],
     "control": true,
-    "control_sample": 5
+    "control_sample": 5,
+    "dns_cache": "../build/dns-cache.json",
+    "cache_only": false
   },
 
   "output": {

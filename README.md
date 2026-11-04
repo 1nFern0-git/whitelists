@@ -53,6 +53,9 @@ whitelists/
 ├── tools/                      # Скрипты проверки
 │   ├── check-domains.py        # Проверка доменов (DNS + HTTP)
 │   ├── check_pairs.py          # Проверка пар (SNI, IP) в сети оператора
+│   ├── cache_dns.py            # Кэш DNS для работы при фильтрации имён
+│   ├── pairs_report.py         # Отчёт: домены и IP из наблюдений
+│   ├── field_test.sh           # Автономный полевой прогон
 │   ├── check_ips.py            # Проверка IP/CIDR (TCP-connect или ICMP)
 │   └── merged.py               # Консолидация результатов
 ├── src/
@@ -479,6 +482,8 @@ yandex.ru
 | --no-control | False | Не выполнять контрольные пробы |
 | --control-sample | 5 | Сколько пар проверять в контроле |
 | --detect-egress | False | Определить внешний IP и провайдера перед прогоном |
+| --dns-cache | из конфига | Кэш DNS (`cache_dns.py`): адреса берутся из него |
+| --cache-only | False | Не обращаться к DNS вовсе, только кэш |
 | --out-dir | build/pairs | Каталог результатов |
 | --format | both | Формат сырых данных: jsonl, tsv, both |
 | --show-config | — | Показать конфигурацию и выйти |
@@ -498,6 +503,35 @@ yandex.ru
 ```
 domain  ip  family  sni  status  http  tls  cert_cn  ech  duration_ms  operator  mcc_mnc  channel  ts
 ```
+
+### cache_dns.py
+
+Сбор кэша DNS перед выездом в мобильную сеть:
+
+```bash
+python3 tools/cache_dns.py -o build/dns-cache.json
+```
+
+Зачем: в режиме «белого списка» DNS оператора не резолвит домены вне списка —
+проверить их IP из мобильной сети невозможно, адрес просто неизвестен.
+Кэш собирается заранее, пока есть обычный интернет, и `check_pairs.py`
+использует его с `--cache-only`, не обращаясь к DNS оператора.
+
+На практике это открывает домены, которые скрыты только на DNS: в первом
+полевом прогоне `dbo-dengi.online`, `t-bank-app.ru` и `uralsib.ru` получили
+`DNS_NX` у оператора, но прошли по IP через публичный DNS.
+
+### pairs_report.py
+
+Превращает наблюдения `check_pairs.py` в списки:
+
+```bash
+python3 tools/pairs_report.py build/field-*/pairs-*.jsonl -o build/report --domains-dir src/domains
+```
+
+Результат: `domains.txt` (домены с PASS), `ips.txt` (прошедшие адреса,
+агрегированные в CIDR), `pairs.tsv` (только прошедшие пары), `report.md`
+(сводка по статусам и категориям, включая частично доступные домены).
 
 ### field_test.sh
 
@@ -520,14 +554,17 @@ LIMIT=50 HTTP_SUBSET=20 CIDR_LIMIT=20 bash tools/field_test.sh Megafon 250-01
 |---|---|
 | 1 | показывает интерфейсы и маршрут, определяет канал (mobile/wifi) |
 | 2 | проверяет внешний IP и провайдера — подтверждение, что мы в сети оператора |
-| 3 | `check_pairs.py`: матрица SNI × IP по всем доменам, запись каждой пробы сразу |
-| 3b | сравнение с публичным DNS (77.88.8.8) — отличает DNS-фильтрацию |
-| 3c | сохраняет состояние системного резолвера |
+| 3 | `check_pairs.py`: матрица SNI × IP по всем доменам через кэш DNS |
+| 3a | `pairs_report.py`: списки доменов и IP, прошедших в сети оператора |
+| 3b | прогон без кэша — фиксация того, что именно не отдаёт DNS оператора |
+| 3c | сравнение с публичным DNS (77.88.8.8) |
+| 3d | состояние системного резолвера |
 | 4 | `check-domains.py` по подмножеству — второе мнение по HTTP |
 | 5 | `check_ips.py` по выборке сетей — TCP-пробы вместо ping |
 
 Результаты: `build/field-<timestamp>/` — `field.log`, `pairs-*.jsonl`,
-`pairs-*.tsv`, `summary-*.json`, `egress.json`, `ip-out/`, `dns-check/`.
+`pairs-*.tsv`, `summary-*.json`, `egress.json`, `report/` (домены, IP, сводка),
+`ip-out/`, `dns-check/`, `dns-operator/`.
 
 Переменные окружения: `LIMIT`, `HTTP_SUBSET`, `CIDR_LIMIT`, `DNS_SAMPLE`,
 `PROBE_TIMEOUT`, `CONCURRENCY`.

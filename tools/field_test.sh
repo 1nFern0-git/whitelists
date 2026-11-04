@@ -98,9 +98,22 @@ echo "--- 3. Проверка пар (SNI, IP) ---"
 echo "каждый домен проверяется на ВСЕХ своих A/AAAA; таймаут ${PROBE_TIMEOUT}s, конкуренция ${CONCURRENCY}"
 cd "$ROOT/tools" || exit 1
 
+DNS_CACHE="${DNS_CACHE:-$ROOT/build/dns-cache.json}"
+CACHE_ARGS=()
+if [ -f "$DNS_CACHE" ]; then
+    echo "📦 кэш DNS: $DNS_CACHE (адреса берутся из него, DNS оператора не нужен)"
+    CACHE_ARGS=(--dns-cache "$DNS_CACHE" --cache-only)
+else
+    echo "⚠️  Кэш DNS не найден: $DNS_CACHE"
+    echo "    При фильтрации DNS многие домены получат DNS_NX и их IP не проверить."
+    echo "    Соберите кэш заранее, пока есть обычный интернет:"
+    echo "      python3 tools/cache_dns.py -o build/dns-cache.json"
+fi
+
 PAIR_ARGS=(--out-dir "$OUT" --format both --timeout "$PROBE_TIMEOUT"
            -c "$CONCURRENCY" --http --progress 200
            -o "$OPERATOR" --channel "$CHANNEL")
+[ ${#CACHE_ARGS[@]} -gt 0 ] && PAIR_ARGS+=("${CACHE_ARGS[@]}")
 [ -n "$MCC_MNC" ] && PAIR_ARGS+=(--mcc-mnc "$MCC_MNC")
 [ "$LIMIT" -gt 0 ] && PAIR_ARGS+=(--limit "$LIMIT")
 
@@ -110,8 +123,25 @@ PAIRS_RC=$?
 echo "код возврата check_pairs.py: $PAIRS_RC"
 
 echo
+echo "--- 3a. Отчёт: домены и IP, прошедшие в сети оператора ---"
+if compgen -G "$OUT/pairs-*.jsonl" >/dev/null; then
+    python3 pairs_report.py "$OUT"/pairs-*.jsonl -o "$OUT/report" --domains-dir "$ROOT/src/domains"
+    echo "код возврата pairs_report.py: $?"
+else
+    echo "⚠️  наблюдений нет, отчёт пропущен"
+fi
+
 echo
-echo "--- 3b. Сравнение DNS: оператор vs публичный ---"
+echo "--- 3b. DNS оператора без кэша (фиксация DNS-фильтра) ---"
+DNS_SAMPLE_PROBE="${DNS_SAMPLE_PROBE:-40}"
+python3 check_pairs.py --out-dir "$OUT/dns-operator" --format jsonl --timeout "$PROBE_TIMEOUT" \
+    -c "$CONCURRENCY" --limit "$DNS_SAMPLE_PROBE" --no-control \
+    -o "$OPERATOR" --channel "$CHANNEL" 2>&1 | tail -10
+echo "код возврата (DNS оператора): $?"
+
+echo
+echo
+echo "--- 3c. Сравнение DNS: оператор vs публичный ---"
 DNS_SAMPLE="${DNS_SAMPLE:-40}"
 echo "если публичный DNS не отвечает — фильтрация идёт и на уровне DNS"
 python3 check_pairs.py --out-dir "$OUT/dns-check" --format jsonl --timeout "$PROBE_TIMEOUT" \
@@ -120,7 +150,7 @@ python3 check_pairs.py --out-dir "$OUT/dns-check" --format jsonl --timeout "$PRO
 echo "код возврата (публичный DNS): $?"
 
 echo
-echo "--- 3c. DNS-резолвер системы ---"
+echo "--- 3d. DNS-резолвер системы ---"
 grep -vE '^#' /etc/resolv.conf 2>/dev/null | head -8 || echo "(нет /etc/resolv.conf)"
 resolvectl status 2>/dev/null | head -20 || true
 
