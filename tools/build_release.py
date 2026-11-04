@@ -60,8 +60,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Сборка release-списка из проверок")
     parser.add_argument("sources", nargs="+", help="Файлы с доменами (txt или JSONL)")
     parser.add_argument("-o", "--output", required=True, help="Куда записать результат")
-    parser.add_argument("--mode", choices=["intersection", "union"], default="intersection",
-                        help="intersection — подтверждённые всеми источниками (по умолчанию)")
+    parser.add_argument("--mode", choices=["intersection", "union", "min"], default="intersection",
+                        help="intersection — все источники, union — любой, "
+                             "min — не меньше --min-sources")
+    parser.add_argument("--min-sources", type=int, default=0,
+                        help="Для режима min: сколько источников должны подтвердить домен "
+                             "(по умолчанию — большинство)")
     parser.add_argument("--report", default=None, help="Путь к отчёту (markdown)")
     args = parser.parse_args()
 
@@ -78,8 +82,16 @@ def main() -> None:
 
     if args.mode == "intersection":
         result = set.intersection(*sets.values())
-    else:
+    elif args.mode == "union":
         result = set.union(*sets.values())
+    else:
+        required = args.min_sources or (len(sets) // 2 + 1)
+        counts: Dict[str, int] = {}
+        for values in sets.values():
+            for domain in values:
+                counts[domain] = counts.get(domain, 0) + 1
+        result = {d for d, c in counts.items() if c >= required}
+        print(f"   порог: подтверждение в {required} источниках из {len(sets)}")
     result = sorted(result)
 
     out = Path(args.output)
@@ -89,7 +101,9 @@ def main() -> None:
     print(f"📊 источники:")
     for name, values in sets.items():
         print(f"   {len(values):4} доменов — {name}")
-    print(f"\n{'∩ пересечение' if args.mode == 'intersection' else '∪ объединение'}: {len(result)} доменов")
+    label = {"intersection": "∩ пересечение", "union": "∪ объединение"}.get(
+        args.mode, f"≥{args.min_sources or (len(sets) // 2 + 1)} источников")
+    print(f"\n{label}: {len(result)} доменов")
     print(f"💾 записано: {out}")
 
     if args.report:
@@ -104,6 +118,14 @@ def main() -> None:
         for name, values in sets.items():
             lines.append(f"| `{name}` | {len(values)} |")
 
+        counts: Dict[str, int] = {}
+        for values in sets.values():
+            for domain in values:
+                counts[domain] = counts.get(domain, 0) + 1
+        lines += ["", "## Распределение подтверждений", "",
+                  "| Подтверждён в скольких источниках | Доменов |", "|---|---|"]
+        for level in range(len(sets), 0, -1):
+            lines.append(f"| {level} из {len(sets)} | {sum(1 for c in counts.values() if c == level)} |")
         union_all = set.union(*sets.values())
         lines += ["", "## Как считалось", ""]
         lines.append(f"- объединение всех источников: {len(union_all)} доменов")
