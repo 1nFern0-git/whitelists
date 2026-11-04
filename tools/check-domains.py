@@ -103,8 +103,9 @@ class Settings:
         pipeline = get_config_value("pipeline", default={})
         logging_conf = get_config_value("logging", default={})
 
-        self.timeout_total = float(network.get("timeout_total", 15))
-        self.timeout_dns = float(network.get("timeout_dns", 10))
+        override = getattr(args, "timeout", None)
+        self.timeout_total = float(override if override is not None else network.get("timeout_total", 15))
+        self.timeout_dns = float(override if override is not None else network.get("timeout_dns", 10))
 
         def opt(cli_value, key, default):
             # 0 — валидное значение, поэтому проверяем именно на None
@@ -306,20 +307,17 @@ class Resolver:
             return await self._addresses_custom(domain)
         return await self._addresses_system(domain)
 
+    async def _query(self, domain: str, rtype: str) -> List[str]:
+        # aiodns 4.x: query_dns, aiodns 3.x: query — поддерживаем оба
+        method = getattr(self._aiodns, "query_dns", None) or self._aiodns.query
+        try:
+            answer = await asyncio.wait_for(method(domain, rtype), timeout=self.timeout)
+            return [getattr(rr, "host", None) or rr.address for rr in answer]
+        except (Exception, asyncio.CancelledError):
+            return []
+
     async def _addresses_custom(self, domain: str) -> Tuple[List[str], List[str]]:
-        v4: List[str] = []
-        v6: List[str] = []
-        try:
-            answer = await asyncio.wait_for(self._aiodns.query_dns(domain, 'A'), timeout=self.timeout)
-            v4 = [rr.host for rr in answer]
-        except Exception:
-            pass
-        try:
-            answer = await asyncio.wait_for(self._aiodns.query_dns(domain, 'AAAA'), timeout=self.timeout)
-            v6 = [rr.host for rr in answer]
-        except Exception:
-            pass
-        return v4, v6
+        return await self._query(domain, 'A'), await self._query(domain, 'AAAA')
 
     async def _addresses_system(self, domain: str) -> Tuple[List[str], List[str]]:
         loop = asyncio.get_running_loop()
@@ -410,10 +408,12 @@ def _find_stub(text: str) -> Optional[str]:
 
 
 # Куда оператор обычно перенаправляет при ограничении доступа.
+# Бренды операторов, на которые ведут страницы-заглушки. Tele2/t2.ru сюда
+# НЕ входят: tele2.ru легитимно редиректит на t2.ru (переезд бренда).
 OPERATOR_HOSTS = (
-    "megafon.ru", "mts.ru", "beeline.ru", "t2.ru", "tele2.ru", "yota.ru",
+    "megafon.ru", "mts.ru", "beeline.ru", "yota.ru",
     "motiv.ru", "sbermobile.ru", "vtbmobile.ru", "tinkoffmobile.ru",
-    "megafon.pro", "mtsbank.ru",
+    "megafon.pro",
 )
 BLOCK_URL_MARKERS = ("blocked", "block.", "zapret", "restrict", "access-denied",
                      "access_denied", "warning", "limited", "blacklist")
@@ -487,10 +487,26 @@ async def _do_curl_cffi(pool: HTTPClientPool, url: str, enable_http3: bool) -> D
         client = await pool.get_curl()
         if client is None:
             raise RuntimeError("curl_cffi not available")
-        kwargs: Dict[str, Any] = {"url": url, "stream": True}
+        kwargs: Dict[str, Any] = {"url": url}
         if enable_http3:
             kwargs["http_version"] = "v3"
-        resp = await client.get(**kwargs)
+        # HEAD не тянет тело: в мобильной сети это разница в мегабайтах.
+        resp = await client.head(**kwargs)
+        if resp.status_code in (405, 501):
+            # Сервер не поддерживает HEAD — читаем только начало ответа.
+            resp = await client.get(**kwargs, stream=True)
+            try:
+                async for _ in resp.aiter_content():
+                    break
+            except BaseException:
+                pass
+            try:
+                await resp.aclose()
+            except asyncio.CancelledError:
+                if SHUTDOWN_REQUESTED:
+                    raise
+            except Exception:
+                pass
         version = getattr(resp, "http_version", 0)
         method = "H3" if version == 3 else ("H2" if version == 2 else "H1")
         res.update({
@@ -506,7 +522,6 @@ async def _do_curl_cffi(pool: HTTPClientPool, url: str, enable_http3: bool) -> D
             location = resp.headers.get("location") or ""
         except Exception:
             location = ""
-        await resp.aclose()
         _apply_redirect_check(res, domain, resp.status_code, location, url)
     except Exception as e:
         res["status"], res["details"] = classify_error(e)
@@ -617,24 +632,31 @@ async def check_domain_pipeline(domain: str, pool: HTTPClientPool, address: str)
     if settings.http_fallback:
         steps.append(("httpx/HTTP:80", lambda: _do_httpx(pool, f"http://{domain}", False)))
 
+    # Если TCP не поднялся, остальные протоколы по тому же адресу дадут то же самое.
+    DEAD_TRANSPORT = {"PORT_BLOCK", "RST", "UNREACH", "DPI_BLOCK", "DNS_ERR"}
+
     best: Optional[Dict[str, Any]] = None
-    for step_name, step_fn in steps:
+    for step_index, (step_name, step_fn) in enumerate(steps):
         if SHUTDOWN_REQUESTED:
             return {"domain": domain, "status": "INTERRUPTED", "method": "-",
                     "details": "Shutdown requested", "code": 0, "rtt_ms": 0,
                     "client": "-", "final_url": "", "stub": False, "cert_cn": None}
-        for attempt in range(settings.retries + 1):
+        # Повторы имеет смысл делать только на первом шаге: остальные всё равно
+        # идут по тому же адресу и протоколу.
+        attempts = settings.retries + 1 if step_index == 0 else 1
+        for attempt in range(attempts):
             result = await step_fn()
             result["pipeline_step"] = step_name
             result["address"] = address
             best = _better(best, result)
             if result["status"] in ALIVE_STATUSES:
                 break
-            if result["status"] in settings.retriable and attempt < settings.retries:
+            if result["status"] in settings.retriable and attempt < attempts - 1:
                 await asyncio.sleep(0.5 * (attempt + 1))
                 continue
             break
-        if best and best["status"] in ALIVE_STATUSES:
+        if best and (best["status"] in ALIVE_STATUSES
+                     or best.get("status") in DEAD_TRANSPORT):
             break
     return best or {"domain": domain, "status": "UNKNOWN", "method": "-",
                     "details": "No steps executed", "code": 0, "rtt_ms": 0,
@@ -659,22 +681,99 @@ async def run_checker(domains: List[str], args: argparse.Namespace) -> Dict[str,
     await asyncio.gather(*(resolve(d) for d in domains))
 
     results: Dict[str, Dict[str, Any]] = {}
-    pairs: List[Tuple[str, str]] = []
+    targets: List[Tuple[str, List[str]]] = []
     for domain in domains:
         v4, v6 = resolved.get(domain, ([], []))
-        for ip in v4 + v6:
-            pairs.append((domain, ip))
-        if not v4 and not v6:
+        addresses = v4 + v6
+        if addresses:
+            targets.append((domain, addresses))
+        else:
             results[domain] = {"domain": domain, "status": "DNS_ERR", "method": "-",
                                "details": "нет A/AAAA", "code": 0, "rtt_ms": 0,
                                "client": "-", "final_url": "", "stub": False,
                                "cert_cn": None, "addresses": 0}
 
-    with_addr = sum(1 for d in domains if resolved.get(d, ([], []))[0] or resolved.get(d, ([], []))[1])
-    print(f"  ✅ с адресами: {with_addr} | пар (домен, IP) к проверке: {len(pairs)}")
+    total_pairs = sum(len(a) for _, a in targets)
+    mode = "все адреса" if args.all_addresses else "до первого рабочего адреса"
+    print(f"  ✅ с адресами: {len(targets)} | всего адресов: {total_pairs} ({mode})")
 
-    if not pairs:
+    if not targets:
         return results
+
+    print(f"\n🔍 HTTP-проверка доменов (таймаут {settings.timeout_total} с, "
+          f"параллельно {settings.concurrency})")
+    pool = HTTPClientPool(settings)
+    sem = asyncio.Semaphore(settings.concurrency)
+    state = {"done": 0, "alive": 0, "pairs": 0}
+    checked_certs: Set[str] = set()
+    started_progress = time.perf_counter()
+    total_domains = len(targets)
+
+    async def progress_reporter() -> None:
+        while True:
+            await asyncio.sleep(5)
+            elapsed = time.perf_counter() - started_progress
+            rate = state["done"] / elapsed if elapsed else 0
+            left = (total_domains - state["done"]) / rate if rate else 0
+            print(f"  → доменов {state['done']}/{total_domains} | проб {state['pairs']} | "
+                  f"доступно {state['alive']} | {rate:.1f} дом/с | осталось ~{left:.0f} с",
+                  flush=True)
+
+    async def one(domain: str, addresses: List[str]) -> None:
+        if SHUTDOWN_REQUESTED:
+            return
+        async with sem:
+            best: Optional[Dict[str, Any]] = None
+            for ip in addresses:
+                if SHUTDOWN_REQUESTED:
+                    break
+                if settings.jitter > 0:
+                    await asyncio.sleep(random.uniform(0, settings.jitter))
+                result = await check_domain_pipeline(domain, pool, ip)
+                state["pairs"] += 1
+
+                if settings.verify_cert and result["status"] in ALIVE_STATUSES \
+                        and domain not in checked_certs:
+                    checked_certs.add(domain)
+                    cn, sans = await fetch_cert_names(ip, domain, settings.timeout_total)
+                    result["cert_cn"] = cn
+                    if (cn or sans) and not _cert_matches(domain, cn, sans):
+                        result["status"] = "SUSPECT_CERT"
+                        result["details"] = f"сертификат не для домена (CN={cn})"
+
+                best = _better(best, result)
+                # Домен уже подтверждён: остальные адреса нужны только по запросу.
+                if not args.all_addresses and best["status"] in ALIVE_STATUSES:
+                    break
+
+            if best is None:
+                best = {"domain": domain, "status": "INTERRUPTED", "method": "-",
+                        "details": "Shutdown requested", "code": 0, "rtt_ms": 0,
+                        "client": "-", "final_url": "", "stub": False,
+                        "cert_cn": None, "addresses": len(addresses)}
+            best["addresses"] = len(addresses)
+            results[domain] = best
+            state["done"] += 1
+            if best["status"] in ALIVE_STATUSES:
+                state["alive"] += 1
+
+    reporter = asyncio.create_task(progress_reporter())
+    try:
+        tasks = [one(d, a) for d, a in targets]
+        if TQDM_AVAILABLE and not args.quiet:
+            pbar = tqdm(total=total_domains, desc="  HTTP прогресс", unit="домен")
+            for coro in asyncio.as_completed(tasks):
+                await coro
+                pbar.update(1)
+            pbar.close()
+        else:
+            for coro in asyncio.as_completed(tasks):
+                await coro
+    finally:
+        reporter.cancel()
+        await pool.close()
+
+    return results
 
     print(f"\n🔍 HTTP-проверка пар (таймаут {settings.timeout_total} с, параллельно {settings.concurrency})")
     pool = HTTPClientPool(settings)
@@ -682,6 +781,19 @@ async def run_checker(domains: List[str], args: argparse.Namespace) -> Dict[str,
     done = 0
     total = len(pairs)
     started = time.perf_counter()
+
+    state = {"done": 0, "alive": 0}
+    checked_certs: Set[str] = set()
+    started_progress = time.perf_counter()
+
+    async def progress_reporter() -> None:
+        while True:
+            await asyncio.sleep(5)
+            elapsed = time.perf_counter() - started_progress
+            rate = state["done"] / elapsed if elapsed else 0
+            left = (total - state["done"]) / rate if rate else 0
+            print(f"  → {state['done']}/{total} пар | доступно {state['alive']} | "
+                  f"{rate:.1f} пар/с | осталось ~{left:.0f} с", flush=True)
 
     async def one(domain: str, ip: str) -> None:
         nonlocal done
@@ -692,7 +804,9 @@ async def run_checker(domains: List[str], args: argparse.Namespace) -> Dict[str,
                 await asyncio.sleep(random.uniform(0, settings.jitter))
             result = await check_domain_pipeline(domain, pool, ip)
 
-            if settings.verify_cert and result["status"] in ALIVE_STATUSES:
+            cert_checked = domain in checked_certs
+            if settings.verify_cert and result["status"] in ALIVE_STATUSES and not cert_checked:
+                checked_certs.add(domain)
                 cn, sans = await fetch_cert_names(ip, domain, settings.timeout_total)
                 result["cert_cn"] = cn
                 if cn or sans:
@@ -706,10 +820,11 @@ async def run_checker(domains: List[str], args: argparse.Namespace) -> Dict[str,
             else:
                 results[domain] = _better(previous, result)
             done += 1
-            if settings.verbose and done % settings.show_progress_every == 0:
-                elapsed = time.perf_counter() - started
-                print(f"  → {done}/{total} пар, {done / elapsed:.0f} пар/с")
+            state["done"] = done
+            if result["status"] in ALIVE_STATUSES:
+                state["alive"] += 1
 
+    reporter = asyncio.create_task(progress_reporter())
     try:
         tasks = [one(d, ip) for d, ip in pairs]
         if TQDM_AVAILABLE and not args.quiet:
@@ -722,6 +837,7 @@ async def run_checker(domains: List[str], args: argparse.Namespace) -> Dict[str,
             for coro in asyncio.as_completed(tasks):
                 await coro
     finally:
+        reporter.cancel()
         await pool.close()
 
     return results
@@ -782,6 +898,11 @@ async def main() -> None:
     parser.add_argument('--no-stub-detect', action='store_true',
                         help='Не искать признаки страницы-заглушки')
     parser.add_argument('--limit', type=int, default=0, help='Проверить только первые N доменов')
+    parser.add_argument('--timeout', type=float, default=None,
+                        help='Таймаут одного запроса, сек (переопределяет конфиг)')
+    parser.add_argument('--all-addresses', action='store_true',
+                        help='Проверять все адреса домена даже после успеха '
+                             '(по умолчанию проверка прекращается на первом рабочем)')
     parser.add_argument('--show-config', action='store_true', help='Показать текущую конфигурацию')
     parser.add_argument('--operator', default=None,
                         help='Имя оператора для имени файла (без интерактивного выбора)')
