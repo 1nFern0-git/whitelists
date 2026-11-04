@@ -126,7 +126,8 @@ resolvectl status 2>/dev/null | head -20 || true
 
 echo "--- 4. Проверка доменов по HTTP (второе мнение) ---"
 # HTTP-проверка дороже TLS-пробы, поэтому по умолчанию берём подмножество.
-HTTP_SUBSET="${HTTP_SUBSET:-80}"mkdir -p "$OUT/domains-subset"
+HTTP_SUBSET="${HTTP_SUBSET:-80}"
+mkdir -p "$OUT/domains-subset"
 python3 - "$ROOT/src/domains" "$OUT/domains-subset" "$HTTP_SUBSET" <<'PY'
 import sys, pathlib
 src, dst, limit = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), int(sys.argv[3])
