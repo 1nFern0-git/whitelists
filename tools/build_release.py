@@ -19,6 +19,7 @@
         build/field-lte-*/report/domains.txt
 """
 import argparse
+import ipaddress
 import json
 from datetime import datetime
 from pathlib import Path
@@ -56,6 +57,41 @@ def read_domains(path: Path) -> Set[str]:
     return domains
 
 
+def collect_ips(pairs_paths: List[str], domains: List[str]) -> List[str]:
+    """Собирает адреса, на которых итоговые домены прошли проверку пар."""
+    wanted = set(domains)
+    found = set()
+    for raw in pairs_paths:
+        path = Path(raw)
+        if not path.exists():
+            print(f"⚠️  нет файла наблюдений: {path}")
+            continue
+        with open(path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if (record.get("probe") == "matrix" and record.get("status") == "PASS"
+                        and record.get("ip") and record.get("domain") in wanted):
+                    found.add(record["ip"])
+    return sorted(found)
+
+
+def aggregate(ips: List[str]) -> List[ipaddress._BaseNetwork]:
+    """Схлопывает адреса в сети, раздельно по IPv4 и IPv6."""
+    import ipaddress as _ip
+    nets: List[Any] = []
+    for version in (4, 6):
+        addrs = [_ip.ip_address(i) for i in ips if _ip.ip_address(i).version == version]
+        if addrs:
+            nets.extend(sorted(_ip.collapse_addresses(addrs)))
+    return nets
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Сборка release-списка из проверок")
     parser.add_argument("sources", nargs="+", help="Файлы с доменами (txt или JSONL)")
@@ -67,6 +103,10 @@ def main() -> None:
                         help="Для режима min: сколько источников должны подтвердить домен "
                              "(по умолчанию — большинство)")
     parser.add_argument("--report", default=None, help="Путь к отчёту (markdown)")
+    parser.add_argument("--pairs", nargs="*", default=[], metavar="JSONL",
+                        help="Наблюдения check_pairs.py: из них собирается IP-список")
+    parser.add_argument("--ip-output", default=None,
+                        help="Куда записать IP-список (CIDR) для итоговых доменов")
     args = parser.parse_args()
 
     sets: Dict[str, Set[str]] = {}
@@ -105,6 +145,14 @@ def main() -> None:
         args.mode, f"≥{args.min_sources or (len(sets) // 2 + 1)} источников")
     print(f"\n{label}: {len(result)} доменов")
     print(f"💾 записано: {out}")
+
+    if args.ip_output and args.pairs:
+        ips = collect_ips(args.pairs, result)
+        nets = aggregate(ips)
+        ip_path = Path(args.ip_output)
+        ip_path.parent.mkdir(parents=True, exist_ok=True)
+        ip_path.write_text("\n".join(str(n) for n in nets) + "\n", encoding="utf-8")
+        print(f"🌐 IP-список: {len(ips)} адресов → {len(nets)} сетей → {ip_path}")
 
     if args.report:
         report = Path(args.report)

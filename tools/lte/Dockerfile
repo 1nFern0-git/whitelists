@@ -10,14 +10,14 @@ ENV PYTHONUNBUFFERED=1 \
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
-        curl ca-certificates iproute2 iputils-ping dnsutils \
+        curl ca-certificates iproute2 dnsutils \
  && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir \
         dnspython==2.7.0 \
         cryptography==43.0.3 \
         httpx==0.27.2 \
-        aiodns==3.2.0 \
+        aiodns==4.0.0 \
         tqdm==4.66.5 \
         curl_cffi==0.7.4
 
