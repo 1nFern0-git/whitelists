@@ -486,6 +486,7 @@ yandex.ru
 | --cache-only | False | Не обращаться к DNS вовсе, только кэш |
 | --progress-bar | авто | Рисовать прогресс в одну строку (`\r`) |
 | --no-progress-bar | авто | Печатать прогресс отдельными строками (для логов) |
+| --repeat N | 1 | Повторять каждую пару N раз: показывает стабильность фильтрации |
 | --no-ipv6 | False | Не проверять AAAA (когда IPv6 не выдаётся) |
 | --ipv6-check | False | Проверить IPv6 и предупредить, если его нет |
 | --out-dir | build/pairs | Каталог результатов |
@@ -577,8 +578,14 @@ LIMIT=50 HTTP_SUBSET=20 CIDR_LIMIT=20 bash tools/field_test.sh Megafon 250-01
 `pairs-*.tsv`, `summary-*.json`, `egress.json`, `report/` (домены, IP, сводка),
 `dns-check/`, `dns-operator/`. В конце печатается краткая сводка и время прогона.
 
-Переменные окружения: `LIMIT`, `HTTP_SUBSET`, `CIDR_LIMIT`, `DNS_SAMPLE`,
-`PROBE_TIMEOUT`, `CONCURRENCY`.
+Переменные окружения: `LIMIT`, `HTTP_SUBSET`, `DNS_SAMPLE`, `DNS_SAMPLE_PROBE`,
+`PROBE_TIMEOUT`, `CONCURRENCY`, `REPEAT`, `DNS_CACHE`.
+
+**Про нестабильность.** Фильтрация в режиме белого списка недетерминирована:
+один и тот же домен на одном и том же IP проходит в одном прогоне и блокируется
+в другом. В трёх прогонах подряд только 36 доменов из 364 прошли все три раза.
+Для оценки устойчивости используйте `REPEAT=3` — инструмент считает `pass_count`
+и `attempts` для каждой пары и помечает нестабильные (`unstable`) в отчёте.
 
 ### merged.py
 

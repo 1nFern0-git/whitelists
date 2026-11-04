@@ -9,6 +9,8 @@
 #   bash tools/field_test.sh                       # автоопределение оператора
 #   bash tools/field_test.sh Megafon 250-01        # оператор и код сети
 #   LIMIT=50 bash tools/field_test.sh Megafon      # быстрый пробный прогон
+#   REPEAT=3 bash tools/field_test.sh Megafon      # 3 повтора каждой пары:
+#                                                  # покажет, стабильна ли фильтрация
 #
 # Проверка IP-сетей намеренно не выполняется: белый список состоит из
 # конкретных адресов сервисов, а не из диапазонов, и перебор 36k сетей
@@ -23,6 +25,7 @@ MCC_MNC="${2:-}"
 LIMIT="${LIMIT:-0}"
 PROBE_TIMEOUT="${PROBE_TIMEOUT:-3}"
 CONCURRENCY="${CONCURRENCY:-50}"
+REPEAT="${REPEAT:-1}"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TS="$(date +%Y%m%d-%H%M%S)"
@@ -115,7 +118,7 @@ else
 fi
 
 PAIR_ARGS=(--out-dir "$OUT" --format both --timeout "$PROBE_TIMEOUT"
-           -c "$CONCURRENCY" --http --ipv6-check
+           -c "$CONCURRENCY" --http --ipv6-check --repeat "$REPEAT"
            -o "$OPERATOR" --channel "$CHANNEL")
 [ ${#CACHE_ARGS[@]} -gt 0 ] && PAIR_ARGS+=("${CACHE_ARGS[@]}")
 [ -n "$MCC_MNC" ] && PAIR_ARGS+=(--mcc-mnc "$MCC_MNC")

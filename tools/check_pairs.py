@@ -282,6 +282,41 @@ def classify_exception(exc: BaseException) -> Tuple[str, str]:
     return STATUS_UNREACH, f"{type(exc).__name__}: {exc}"
 
 
+async def probe_repeated(ip: str, sni: str, port: int, timeout: float,
+                         want_http: bool, repeat: int) -> Dict[str, Any]:
+    """Повторяет пробу N раз: одна и та же пара может то проходить, то нет."""
+    if repeat <= 1:
+        result = await probe(ip, sni, port, timeout, want_http)
+        result["attempts"] = 1
+        result["pass_count"] = 1 if result["status"] == STATUS_PASS else 0
+        return result
+
+    results = []
+    for attempt in range(repeat):
+        results.append(await probe(ip, sni, port, timeout, want_http))
+        if attempt + 1 < repeat:
+            await asyncio.sleep(0.3)
+
+    passes = sum(1 for r in results if r["status"] == STATUS_PASS)
+    counts = {}
+    for r in results:
+        counts[r["status"]] = counts.get(r["status"], 0) + 1
+    # Итоговый статус — самый частый; при равенстве приоритет PASS.
+    best_status, best_count = STATUS_PASS, passes
+    for status, count in sorted(counts.items(), key=lambda x: -x[1]):
+        if count > best_count:
+            best_status, best_count = status, count
+
+    merged = dict(results[0])
+    merged["status"] = best_status
+    merged["pass_count"] = passes
+    merged["attempts"] = repeat
+    merged["unstable"] = 0 < passes < repeat
+    if merged["unstable"]:
+        merged["error"] = f"нестабильно: {passes}/{repeat} PASS"
+    return merged
+
+
 async def probe(ip: str, sni: str, port: int, timeout: float,
                 want_http: bool) -> Dict[str, Any]:
     """TLS-connect к ip с указанным SNI. Проверка сертификата не выполняется:
@@ -478,7 +513,8 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
                 if SHUTDOWN_REQUESTED:
                     return
                 family = "AAAA" if ":" in ip else "A"
-                outcome = await probe(ip, domain, args.port, args.timeout, args.http)
+                outcome = await probe_repeated(ip, domain, args.port, args.timeout,
+                                               args.http, getattr(args, "repeat", 1))
                 add(make_record("matrix", domain, ip, domain, family,
                                 ech, outcome, meta))
 
@@ -655,6 +691,8 @@ async def main() -> None:
                         help="После TLS отправлять HEAD и писать HTTP-код")
     parser.add_argument("--no-control", dest="control", action="store_false",
                         help="Не выполнять контрольные пробы")
+    parser.add_argument("--repeat", type=int, default=1,
+                        help="Повторять каждую пару N раз: покажет, стабильна ли фильтрация")
     parser.add_argument("--no-ipv6", action="store_true",
                         help="Не проверять AAAA (когда IPv6 в сети не выдаётся)")
     parser.add_argument("--ipv6-check", action="store_true",
@@ -792,16 +830,24 @@ async def main() -> None:
         "probes_total": len(records),
         "interrupted": SHUTDOWN_REQUESTED,
         "ipv6_available": getattr(args, "ipv6_available", None),
+        "repeat": getattr(args, "repeat", 1),
         "operator": args.operator,
         "mcc_mnc": args.mcc_mnc,
         "egress": {k: v for k, v in meta.items() if k.startswith("egress")},
     })
 
     by_status: Dict[str, int] = {}
+    unstable = []
     for record in records:
         if record["probe"] == "matrix":
             by_status[record["status"]] = by_status.get(record["status"], 0) + 1
+            if record.get("unstable"):
+                unstable.append(f"{record['domain']} {record['ip']} "
+                                f"{record['pass_count']}/{record['attempts']}")
     summary["status_counts"] = by_status
+    if unstable:
+        summary["unstable_pairs"] = len(unstable)
+        summary["unstable_sample"] = unstable[:20]
 
     write_outputs(records, summary, args, ts, jsonl_path)
 

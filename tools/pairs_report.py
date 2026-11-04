@@ -82,11 +82,13 @@ def main() -> None:
     (out_dir / "ips.txt").write_text("\n".join(str(n) for n in networks) + "\n", encoding="utf-8")
 
     with open(out_dir / "pairs.tsv", "w", encoding="utf-8") as f:
-        f.write("domain\tip\tfamily\thttp\ttls\tcert_cn\toperator\tmcc_mnc\tchannel\tts\n")
+        f.write("domain\tip\tfamily\thttp\ttls\tpass_count\tattempts\tcert_cn"
+                "\toperator\tmcc_mnc\tchannel\tts\n")
         for r in sorted(passed, key=lambda r: (r["domain"], r["ip"])):
             f.write("\t".join(str(r.get(k) or "") for k in
-                              ("domain", "ip", "family", "http", "tls", "cert_cn",
-                               "operator", "mcc_mnc", "channel", "ts")) + "\n")
+                              ("domain", "ip", "family", "http", "tls", "pass_count",
+                               "attempts", "cert_cn", "operator", "mcc_mnc",
+                               "channel", "ts")) + "\n")
 
     status_counts = Counter(r.get("status") for r in matrix)
     by_domain_status: Dict[str, Counter] = defaultdict(Counter)
@@ -115,6 +117,16 @@ def main() -> None:
     for status, count in status_counts.most_common():
         domains = sum(1 for c in by_domain_status.values() if c.get(status))
         lines.append(f"| {status} | {count} | {domains} |")
+
+    unstable = [r for r in passed if r.get("unstable")]
+    if unstable:
+        lines += ["## Нестабильные пары", "",
+                  "Пара проходила не во всех повторах: фильтрация недетерминирована.",
+                  "", "| Домен | IP | PASS/попыток |", "|---|---|---|"]
+        for r in sorted(unstable, key=lambda r: (r["domain"], r["ip"]))[:50]:
+            lines.append(f"| `{r['domain']}` | `{r['ip']}` | "
+                         f"{r.get('pass_count')}/{r.get('attempts')} |")
+        lines.append("")
 
     lines += ["", "## Прошедшие домены по категориям", ""]
     for category in sorted(grouped, key=lambda c: -len(grouped[c])):
