@@ -37,11 +37,15 @@ def expand(patterns):
     return paths
 
 
+class NoSources(Exception):
+    """Оператор объявлен в манифесте, но наблюдений по нему ещё нет."""
+
+
 def build(operator, spec):
     """Считает домены оператора и возвращает (домены, число источников)."""
     sources = expand(spec.get("sources", []))
     if not sources:
-        raise SystemExit(f"❌ {operator}: нет источников доменов")
+        raise NoSources(operator)
 
     sets = {}
     for path in sources:
@@ -88,9 +92,8 @@ def main():
             continue
         try:
             domains, _ = build(operator, spec)
-        except SystemExit as error:
-            print(error)
-            failed.append(operator)
+        except NoSources:
+            print(f"\n{spec.get('title', operator)}: наблюдений пока нет — пропускаю")
             continue
 
         pairs = expand(spec.get("pairs", []))

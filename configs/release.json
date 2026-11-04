@@ -2,14 +2,66 @@
   "megafon": {
     "title": "МегаФон",
     "mode": "intersection",
-    "sources": ["runs/megafon/*.txt"],
-    "pairs": ["runs/megafon/*.tsv"]
+    "sources": [
+      "runs/megafon/*.txt"
+    ],
+    "pairs": [
+      "runs/megafon/*.tsv"
+    ]
   },
   "rostelecom": {
     "title": "Ростелеком",
     "mode": "min",
     "min_sources": 3,
-    "sources": ["runs/rostelecom/*.txt"],
-    "pairs": ["runs/rostelecom/*.tsv"]
+    "sources": [
+      "runs/rostelecom/*.txt"
+    ],
+    "pairs": [
+      "runs/rostelecom/*.tsv"
+    ]
+  },
+  "mts": {
+    "title": "МТС",
+    "mode": "min",
+    "min_sources": 2,
+    "sources": [
+      "runs/mts/*.txt"
+    ],
+    "pairs": [
+      "runs/mts/*.tsv"
+    ]
+  },
+  "beeline": {
+    "title": "Билайн",
+    "mode": "min",
+    "min_sources": 2,
+    "sources": [
+      "runs/beeline/*.txt"
+    ],
+    "pairs": [
+      "runs/beeline/*.tsv"
+    ]
+  },
+  "tele2": {
+    "title": "Tele2",
+    "mode": "min",
+    "min_sources": 2,
+    "sources": [
+      "runs/tele2/*.txt"
+    ],
+    "pairs": [
+      "runs/tele2/*.tsv"
+    ]
+  },
+  "yota": {
+    "title": "Yota",
+    "mode": "min",
+    "min_sources": 2,
+    "sources": [
+      "runs/yota/*.txt"
+    ],
+    "pairs": [
+      "runs/yota/*.tsv"
+    ]
   }
 }

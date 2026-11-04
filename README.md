@@ -117,12 +117,18 @@ whitelists/
 ## ✅ Актуальные данные
 
 Списки собираются под конкретного оператора: фильтрация у них разная и меняется
-во времени, поэтому общего «правильного» списка не существует.
+во времени, поэтому общего «правильного» списка не существует. Список появляется
+только после полевых замеров у этого оператора — придумать его нельзя.
 
 | Оператор | Домены | IP-адреса (CIDR) |
 |---|---|---|
 | МегаФон | [`whitelist-megafon.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/whitelist-megafon.txt) (351) | [`IP-whitelist-megafon.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/IP-whitelist-megafon.txt) (360 сетей) |
 | Ростелеком | [`whitelist-rostelecom.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/whitelist-rostelecom.txt) (143) | [`IP-whitelist-rostelecom.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/IP-whitelist-rostelecom.txt) (147 сетей) |
+| МТС, Билайн, Tele2, Yota | ждут замеров | — |
+
+Остальные операторы уже прописаны в `configs/release.json` и в меню `check.py`:
+достаточно один раз прогнать `python3 tools/check.py` в сети нужного оператора,
+и списки `whitelist-<оператор>.txt` с IP-адресами появятся сами.
 
 IP-список содержит только адреса доменов из соответствующего доменного списка —
 он не заменяет его, а дополняет: при вердикте `ip` фильтр смотрит на адреса,

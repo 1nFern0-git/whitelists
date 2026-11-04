@@ -36,6 +36,22 @@ DNS_CACHE = ROOT / "configs" / "dns-cache.json"
 
 MOBILE_PREFIXES = ("ww", "ppp", "rmnet", "usb", "enx")
 
+# Сеть оператора по названию: нужно, чтобы прогон попал в правильную папку runs/.
+NETWORKS = {
+    "megafon": "250-02",
+    "mts": "250-01",
+    "beeline": "250-99",
+    "tele2": "250-20",
+    "rostelecom": "250-20",
+    "yota": "250-11",
+}
+
+
+def slug(name):
+    """«Sber Mobile» → sber-mobile: одно имя на папку runs/ и ключ манифеста."""
+    cleaned = "".join(ch if ch.isalnum() or ch in " -_" else "" for ch in name.lower())
+    return "-".join(cleaned.replace("_", " ").split()) or "unknown"
+
 
 def run(cmd, title):
     """Запускает шаг и возвращает его код возврата.
@@ -115,10 +131,7 @@ def ask_operator(preset):
         return "unknown", ""
     if choice in known:
         return known[choice], ""
-    normalized = choice.replace(" ", "")
-    code = {"megafon": "250-02", "mts": "250-01", "beeline": "250-99",
-            "rostelecom": "250-20", "tele2": "250-20"}.get(normalized.lower(), "")
-    return choice, code
+    return choice, NETWORKS.get(slug(choice), "")
 
 
 def ensure_operator_in_manifest(operator):
@@ -203,6 +216,7 @@ def main():
     sys.stderr = Tee(sys.stderr, out / "run.log")
 
     operator, mcc_mnc = ask_operator(args.operator)
+    operator = slug(operator)
     print(f"\n=== Проверка доменов · оператор: {operator} ===")
     channel = check_channel()
 
