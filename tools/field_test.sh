@@ -75,33 +75,7 @@ esac
 echo "канал измерения: $CHANNEL"
 
 echo
-echo "[$(date +%H:%M:%S)] --- 2. Внешний адрес (подтверждение, что мы в сети оператора) ---"
-EGRESS_OK=0
-if command -v curl >/dev/null 2>&1; then
-    EGRESS_IP="$(curl -s --max-time 8 https://api.ipify.org || true)"
-    if [ -n "$EGRESS_IP" ]; then
-        EGRESS_OK=1
-        echo "внешний IP: $EGRESS_IP"
-        INFO="$(curl -s --max-time 8 "https://ipinfo.io/$EGRESS_IP/json" || true)"
-        if [ -n "$INFO" ]; then
-            echo "$INFO" | tr ',' '\n' | grep -E '"(org|country|city)"' || true
-            if echo "$INFO" | grep -q '"country": *"RU"'; then
-                echo "✅ Внешний IP российский."
-            else
-                echo "⚠️  Внешний IP не российский — измеряется не белый список."
-            fi
-        fi
-        echo "$INFO" > "$OUT/egress.json"
-    else
-        echo "⚠️  Внешний адрес не определён: возможно, мы уже в режиме ограничений"
-        echo "    (сервис определения IP не в белом списке). Это ожидаемо."
-    fi
-else
-    echo "⚠️  curl недоступен"
-fi
-
-echo
-echo "[$(date +%H:%M:%S)] --- 3. Проверка пар (SNI, IP) ---"
+echo "[$(date +%H:%M:%S)] --- 2. Проверка пар (SNI, IP) ---"
 echo "каждый домен проверяется на ВСЕХ своих A/AAAA; таймаут ${PROBE_TIMEOUT}s, конкуренция ${CONCURRENCY}"
 cd "$ROOT/tools" || exit 1
 
@@ -124,13 +98,12 @@ PAIR_ARGS=(--out-dir "$OUT" --format both --timeout "$PROBE_TIMEOUT"
 [ -n "$MCC_MNC" ] && PAIR_ARGS+=(--mcc-mnc "$MCC_MNC")
 [ "$LIMIT" -gt 0 ] && PAIR_ARGS+=(--limit "$LIMIT")
 
-# Без доступа к ipinfo (белый список) detect-egress не нужен: уже проверили выше.
 python3 check_pairs.py "${PAIR_ARGS[@]}"
 PAIRS_RC=$?
 echo "код возврата check_pairs.py: $PAIRS_RC"
 
 echo
-echo "[$(date +%H:%M:%S)] --- 3a. Отчёт: домены и IP, прошедшие в сети оператора ---"
+echo "[$(date +%H:%M:%S)] --- 2a. Отчёт: домены и IP, прошедшие в сети оператора ---"
 if compgen -G "$OUT/pairs-*.jsonl" >/dev/null; then
     python3 pairs_report.py "$OUT"/pairs-*.jsonl -o "$OUT/report" --domains-dir "$ROOT/src/domains"
     echo "код возврата pairs_report.py: $?"
@@ -139,7 +112,7 @@ else
 fi
 
 echo
-echo "[$(date +%H:%M:%S)] --- 3b. DNS оператора без кэша (фиксация DNS-фильтра) ---"
+echo "[$(date +%H:%M:%S)] --- 2b. DNS оператора без кэша (фиксация DNS-фильтра) ---"
 DNS_SAMPLE_PROBE="${DNS_SAMPLE_PROBE:-40}"
 python3 check_pairs.py --out-dir "$OUT/dns-operator" --format jsonl --timeout "$PROBE_TIMEOUT" \
     -c "$CONCURRENCY" --limit "$DNS_SAMPLE_PROBE" --no-control \
@@ -147,11 +120,11 @@ python3 check_pairs.py --out-dir "$OUT/dns-operator" --format jsonl --timeout "$
 echo "код возврата (DNS оператора): $?"
 
 echo
-echo "[$(date +%H:%M:%S)] --- 3c. DNS-резолвер системы ---"
+echo "[$(date +%H:%M:%S)] --- 2c. DNS-резолвер системы ---"
 grep -vE '^#' /etc/resolv.conf 2>/dev/null | head -8 || echo "(нет /etc/resolv.conf)"
 resolvectl status 2>/dev/null | head -20 || true
 
-echo "[$(date +%H:%M:%S)] --- 4. Проверка доменов по HTTP (второе мнение) ---"
+echo "[$(date +%H:%M:%S)] --- 3. Проверка доменов по HTTP (второе мнение) ---"
 # HTTP-проверка дороже TLS-пробы, поэтому по умолчанию берём подмножество.
 HTTP_SUBSET="${HTTP_SUBSET:-80}"
 mkdir -p "$OUT/domains-subset"
@@ -190,8 +163,8 @@ echo "⏱  Время прогона: $((ELAPSED / 60)) мин $((ELAPSED % 60))
 echo "📁 Результаты: $OUT"
 ls -1 "$OUT" | sed 's/^/   /'
 
-if [ "$EGRESS_OK" -eq 0 ] && [ "$PAIRS_RC" -ne 0 ]; then
+if [ "$PAIRS_RC" -ne 0 ]; then
     echo
-    echo "ℹ️  Прогон завершился с ошибкой и внешний адрес не определился."
+    echo "ℹ️  check_pairs.py завершился с ошибкой, результаты неполные."
     echo "    Проверьте журнал: $LOG"
 fi
