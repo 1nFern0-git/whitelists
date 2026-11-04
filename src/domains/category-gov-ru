@@ -13,9 +13,6 @@ mgfoms.ru
 # Федеральные образовательные сервисы
 ro-edu.ru
 
-# Цифровая образовательная платформа
-dnevnik.ru
-
 # Россети
 rosseti.ru
 
@@ -33,6 +30,39 @@ aoglonass.ru
 
 # Роскачество
 rskrf.ru
+
+# Росреестр
+rosreestr.gov.ru
+
+# Социальный фонд России
+sfr.gov.ru
+
+# Минздрав России
+minzdrav.gov.ru
+
+# Минцифры России
+digital.gov.ru
+
+# Минтруд России
+mintrud.gov.ru
+
+# ГИБДД
+гибдд.рф
+
+# МЧС России
+mchs.gov.ru
+
+# Генеральная прокуратура
+epp.genproc.gov.ru
+
+# Казначейство России
+roskazna.gov.ru
+
+# ФАС России
+fas.gov.ru
+
+# Роспотребнадзор
+rospotrebnadzor.ru
 
 # ГИС ЭПД
 epd-portal.ru
