@@ -63,8 +63,8 @@ whitelists/
 │   ├── domains_checked/        # Whitelist'ы по операторам
 │   ├── pairs/                  # Сырые наблюдения по парам SNI + IP (JSONL/TSV)
 └── release/                    # Финальные списки (создаётся автоматически)
-    ├── whitelist.txt           # Итоговый объединённый whitelist с доменами
-    └── IP-whitelist.txt        # Итоговый объединённый whitelist с IP адресами в CIDR
+    ├── whitelist-<оператор>.txt    # Проверенные домены для оператора
+    └── IP-whitelist-<оператор>.txt # Адреса этих же доменов в CIDR
 ```
 
 ### Категории доменов (`src/domains/`)
@@ -98,11 +98,17 @@ whitelists/
 
 ## ✅ Актуальные данные
 
-### Проверенные домены
--  [`whitelist.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/whitelist.txt)
+Списки собираются под конкретного оператора: фильтрация у них разная и меняется
+во времени, поэтому общего «правильного» списка не существует.
 
-### Проверенные IP-адреса
--  [`IP-whitelist.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/IP-whitelist.txt)
+| Оператор | Домены | IP-адреса (CIDR) |
+|---|---|---|
+| МегаФон | [`whitelist-megafon.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/whitelist-megafon.txt) (351) | [`IP-whitelist-megafon.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/IP-whitelist-megafon.txt) (360 сетей) |
+| Ростелеком | [`whitelist-rostelecom.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/whitelist-rostelecom.txt) (143) | [`IP-whitelist-rostelecom.txt`](https://raw.githubusercontent.com/kirilllavrov/whitelists/refs/heads/main/release/IP-whitelist-rostelecom.txt) (147 сетей) |
+
+IP-список содержит только адреса доменов из соответствующего доменного списка —
+он не заменяет его, а дополняет: при вердикте `ip` фильтр смотрит на адреса,
+при `sni` — на имя в TLS.
 
 ## 🚀 Быстрый старт
 
@@ -623,8 +629,10 @@ python3 check_pairs.py -c 50 --timeout 3 --http \
 - `RST` — соединение сброшено (DPI);
 - вердикт в `summary.json` говорит, фильтруют по IP, по SNI или по паре.
 
-Если вердикт `ip` — в `release/IP-whitelist.txt` достаточно адресов, домены не нужны.
-Если `sni` — наоборот. Если `pair` — нужны обе сущности вместе.
+Если вердикт `ip` — фильтр смотрит на адрес, и в `release/IP-whitelist-<оператор>.txt`
+достаточно сетей. Если `sni` — наоборот, важны домены. Если `pair` — нужны обе
+сущности вместе, и списки собираются согласованно (`build_release.py`
+генерирует IP только для доменов, прошедших отбор).
 
 ---
 
@@ -671,9 +679,9 @@ A: Убедитесь, что брандмауэр разрешает ICMP-за�
 ### Что мы делаем с полученными данными:
 
 1. Собираем все файлы `whitelist-*-<OPERATOR>.txt` от сообщества
-2. Еженедельно в автоматическом режиме запускаем `merged.py` для консолидации с порогом встречаемости 75%
+2. `merged.py` консолидирует прогоны одного оператора с порогом встречаемости 75%
 3. Добавляем обязательные домены из конфигурации
-4. Публикуем обновлённый `release/whitelist.txt` для всех пользователей
+4. `build_release.py` собирает `release/whitelist-<оператор>.txt` и IP-список к нему
 
 **Каждый присланный файл делает общий whitelist лучше! 🙏**
 
