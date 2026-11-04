@@ -60,15 +60,6 @@ def build(operator, spec):
                 counts[domain] = counts.get(domain, 0) + 1
         result = {d for d, c in counts.items() if c >= required}
 
-    mandatory = spec.get("mandatory")
-    if mandatory:
-        path = ROOT / mandatory
-        if path.exists():
-            required_domains = read_domains(path)
-            result |= required_domains
-        else:
-            print(f"   ⚠️  нет файла обязательных доменов: {mandatory}")
-
     title = spec.get("title", operator)
     print(f"\n{title}  (режим: {mode}, источников: {len(sets)})")
     for name, values in sets.items():

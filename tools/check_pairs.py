@@ -16,6 +16,9 @@ SNI (имя из TLS ClientHello) + IP назначения. Поэтому ед
 2. Резолвит ВСЕ A/AAAA-записи каждого домена.
 3. К каждому адресу выполняет TCP + TLS-connect с SNI = домен и записывает
    статус: PASS, DROP (SYN не дошёл), RST, REFUSED, TLS_ERR, UNREACH.
+   Если TLS не поднимается, повторяет пробу обычным HTTP (порт 80): часть
+   госсайтов живёт только по HTTP, и без этого они выглядят заблокированными.
+   Такая проба помечается transport=http и tls_error с причиной.
 4. Контрольные пробы (--control) отделяют типы фильтрации:
      ip   — разрешённый адрес проходит с любым SNI;
      sni  — разрешённое имя проходит на любом адресе;
@@ -282,18 +285,45 @@ def classify_exception(exc: BaseException) -> Tuple[str, str]:
     return STATUS_UNREACH, f"{type(exc).__name__}: {exc}"
 
 
+async def probe_http(ip: str, sni: str, port: int, timeout: float) -> Tuple[Optional[int], Optional[str]]:
+    """Плоский HTTP-запрос без TLS. Возвращает (код ответа, ошибку)."""
+    writer = None
+    try:
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(host=ip, port=port), timeout=timeout)
+        writer.write(f"GET / HTTP/1.0\r\nHost: {sni}\r\n"
+                     "User-Agent: Mozilla/5.0\r\n\r\n".encode())
+        await writer.drain()
+        line = await asyncio.wait_for(reader.readline(), timeout=min(timeout, 5))
+        parts = line.decode("latin-1", "replace").split()
+        code = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else None
+        return code, None
+    except BaseException as exc:  # noqa: BLE001
+        if isinstance(exc, (KeyboardInterrupt, SystemExit)):
+            raise
+        return None, f"{type(exc).__name__}: {exc}"
+    finally:
+        if writer is not None:
+            try:
+                writer.close()
+                await asyncio.wait_for(writer.wait_closed(), timeout=1)
+            except Exception:
+                pass
+
+
 async def probe_repeated(ip: str, sni: str, port: int, timeout: float,
-                         want_http: bool, repeat: int) -> Dict[str, Any]:
+                         want_http: bool, repeat: int,
+                         http_port: Optional[int] = None) -> Dict[str, Any]:
     """Повторяет пробу N раз: одна и та же пара может то проходить, то нет."""
     if repeat <= 1:
-        result = await probe(ip, sni, port, timeout, want_http)
+        result = await probe(ip, sni, port, timeout, want_http, http_port)
         result["attempts"] = 1
         result["pass_count"] = 1 if result["status"] == STATUS_PASS else 0
         return result
 
     results = []
     for attempt in range(repeat):
-        results.append(await probe(ip, sni, port, timeout, want_http))
+        results.append(await probe(ip, sni, port, timeout, want_http, http_port))
         if attempt + 1 < repeat:
             await asyncio.sleep(0.3)
 
@@ -318,25 +348,45 @@ async def probe_repeated(ip: str, sni: str, port: int, timeout: float,
 
 
 async def probe(ip: str, sni: str, port: int, timeout: float,
-                want_http: bool) -> Dict[str, Any]:
+                want_http: bool,
+                http_port: Optional[int] = None) -> Dict[str, Any]:
     """TLS-connect к ip с указанным SNI. Проверка сертификата не выполняется:
-    нас интересует факт прохождения соединения, а не доверие к сертификату."""
+    нас интересует факт прохождения соединения, а не доверие к сертификату.
+
+    TCP и TLS выполняются раздельно: иначе таймаут не различить — «SYN не
+    дошёл» (фильтр по адресу) и «TLS не ответил» (сервер без TLS или фильтр
+    по имени) выглядят одинаково.
+
+    Если TLS не поднимается, а http_port задан, пробуем обычный HTTP:
+    хост без TLS иначе неотличим от заблокированного. Успех помечается
+    transport=http и tls_error — чтобы отчёт не выдавал это за TLS-проход."""
     started = time.perf_counter()
     result: Dict[str, Any] = {
         "status": "", "tls": None, "cipher": None, "http": None,
         "error": None, "cert_cn": None, "cert_issuer": None,
         "cert_sha256": None, "cert_not_after": None,
+        "port": port, "transport": "tls", "tls_error": None,
     }
 
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.check_hostname = False
     context.verify_mode = ssl.CERT_NONE
-    writer = None
+    loop = asyncio.get_running_loop()
+    sock = socket.socket(socket.AF_INET6 if ":" in ip else socket.AF_INET,
+                         socket.SOCK_STREAM)
+    sock.setblocking(False)
+    reader = writer = None
+    phase = "tcp"
     try:
+        await asyncio.wait_for(loop.sock_connect(sock, (ip, port)), timeout=timeout)
+
+        phase = "tls"
         reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(host=ip, port=port, ssl=context, server_hostname=sni),
+            asyncio.open_connection(sock=sock, ssl=context, server_hostname=sni),
             timeout=timeout,
         )
+        sock = None  # владение сокетом перешло к writer
+
         ssl_object = writer.get_extra_info("ssl_object")
         if ssl_object is not None:
             result["tls"] = ssl_object.version()
@@ -345,6 +395,7 @@ async def probe(ip: str, sni: str, port: int, timeout: float,
             result.update(cert_info(ssl_object))
 
         if want_http:
+            phase = "http"
             writer.write(f"HEAD / HTTP/1.1\r\nHost: {sni}\r\n"
                          "User-Agent: Mozilla/5.0\r\nConnection: close\r\n\r\n".encode())
             await writer.drain()
@@ -356,8 +407,24 @@ async def probe(ip: str, sni: str, port: int, timeout: float,
     except BaseException as exc:  # noqa: BLE001 - статус важнее типа исключения
         if isinstance(exc, (KeyboardInterrupt, SystemExit)):
             raise
-        result["status"], result["error"] = classify_exception(exc)
+        if phase == "tls" and isinstance(exc, asyncio.TimeoutError):
+            result["status"] = STATUS_TLS_ERR
+            result["error"] = "TLS handshake timeout (TCP поднялся, ответа нет)"
+        else:
+            result["status"], result["error"] = classify_exception(exc)
+        result["tls_error"] = f"{result['status']}: {result['error']}"
+
+        if http_port and http_port != port:
+            code, http_error = await probe_http(ip, sni, http_port, timeout)
+            if http_error is None:
+                result.update({
+                    "status": STATUS_PASS, "port": http_port, "transport": "http",
+                    "http": code, "tls": None, "cipher": None,
+                    "error": None,
+                })
     finally:
+        if sock is not None:
+            sock.close()
         if writer is not None:
             try:
                 writer.close()
@@ -531,7 +598,8 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
                     return
                 family = "AAAA" if ":" in ip else "A"
                 outcome = await probe_repeated(ip, domain, args.port, args.timeout,
-                                               args.http, getattr(args, "repeat", 1))
+                                               args.http, getattr(args, "repeat", 1),
+                                               getattr(args, "http_port", None))
                 add(make_record("matrix", domain, ip, domain, family,
                                 ech, outcome, meta))
 
@@ -705,6 +773,10 @@ async def main() -> None:
                         help="Канал измерения: mobile (через мобильную сеть), wifi, unknown")
     parser.add_argument("--family", nargs="+", choices=["A", "AAAA"],
                         help="Какие записи проверять (по умолчанию A и AAAA)")
+    parser.add_argument("--http-port", type=int, default=None,
+                        help="HTTP-порт для проб, когда TLS не поднимается (по умолчанию 80)")
+    parser.add_argument("--no-http-fallback", action="store_true",
+                        help="Не пробовать HTTP, если TLS не поднялся")
     parser.add_argument("--http", action="store_true",
                         help="После TLS отправлять HEAD и писать HTTP-код")
     parser.add_argument("--no-control", dest="control", action="store_false",
@@ -744,6 +816,13 @@ async def main() -> None:
     args.concurrency = args.concurrency or cfg("network", "concurrency", default=50)
     args.timeout = args.timeout or cfg("network", "timeout", default=3.0)
     args.port = args.port or cfg("probe", "port", default=443)
+    fallback_allowed = cfg("probe", "http_fallback", default=True)
+    if args.no_http_fallback or not fallback_allowed:
+        args.http_port = None
+    else:
+        args.http_port = args.http_port or cfg("probe", "http_port", default=80)
+        if args.http_port == args.port:
+            args.http_port = None
     args.families = args.family or cfg("probe", "families", default=["A", "AAAA"])
     if args.no_ipv6 and "AAAA" in args.families:
         args.families = [f for f in args.families if f != "AAAA"]
@@ -781,7 +860,10 @@ async def main() -> None:
         domains = domains[: args.limit]
     print("⚙️  Проверка пар (SNI, IP)")
     print(f"   Домены: {directory} ({len(domains)} шт.)")
-    print(f"   Порт: {args.port} | таймаут: {args.timeout} с | конкуренция: {args.concurrency}")
+    fallback_note = (f", HTTP:{args.http_port} при провале TLS"
+                     if getattr(args, "http_port", None) else "")
+    print(f"   Порт: {args.port}{fallback_note} | таймаут: {args.timeout} с | "
+          f"конкуренция: {args.concurrency}")
     print(f"   Записи: {'/'.join(args.families)} | контроль типа фильтра: "
           f"{'да' if args.control else 'нет'}")
     print(f"   Оператор: {args.operator} {args.mcc_mnc}".rstrip())

@@ -18,7 +18,9 @@
     "control": true,
     "control_sample": 5,
     "dns_cache": "build/dns-cache.json",
-    "cache_only": false
+    "cache_only": false,
+    "http_fallback": true,
+    "http_port": 80
   },
 
   "output": {

@@ -11,7 +11,7 @@
   },
   "pipeline": {
     "use_impersonate": true,
-    "http_fallback": false,
+    "http_fallback": true,
     "enable_http3": false
   },
   "curl_cffi": {
