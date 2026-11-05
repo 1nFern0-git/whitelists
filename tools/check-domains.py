@@ -87,20 +87,49 @@ ICONS = {
     "UNKNOWN": "❌", "DPI_BLOCK": "🔒", "UNREACH": "🚫", "BOT_BLOCK": "🤖",
     "TLS_ERR": "🔐", "HTTP2_ERR": "⚠️", "PORT_BLOCK": "🚧",
     "INTERRUPTED": "⏹️", "SUSPECT_STUB": "🎭", "SUSPECT_REDIRECT": "↪️",
-    "SUSPECT_CERT": "🧾", "SUSPECT_EMPTY": "🕳️",
+    "SITE_CERT_MISMATCH": "🧾", "INTERCEPT_CERT": "🛡️", "SUSPECT_EMPTY": "🕳️",
 }
 
 # Чем выше приоритет, тем «лучше» результат для домена.
 STATUS_PRIORITY = {
     "OK": 100, "HTTP_ERR": 90, "BOT_BLOCK": 85,
-    "SUSPECT_STUB": 70, "SUSPECT_REDIRECT": 65, "SUSPECT_EMPTY": 60, "SUSPECT_CERT": 55,
+    "SUSPECT_STUB": 70, "SUSPECT_REDIRECT": 65, "SITE_CERT_MISMATCH": 60,
+    "SUSPECT_EMPTY": 58, "INTERCEPT_CERT": 55,
     "TLS_ERR": 50, "DPI_BLOCK": 45, "SSL_ERR": 40,
     "PORT_BLOCK": 35, "RST": 30, "TIMEOUT": 25, "UNREACH": 20,
     "UNKNOWN": 15, "DNS_ERR": 10, "INTERRUPTED": 0,
 }
 # Статусы, при которых сервер ответил: домен доступен.
 ALIVE_STATUSES = {"OK", "HTTP_ERR", "BOT_BLOCK"}
-SUSPECT_STATUSES = {"SUSPECT_STUB", "SUSPECT_REDIRECT", "SUSPECT_EMPTY", "SUSPECT_CERT"}
+
+# Подмена оператором: ответ пришёл, но не от сервиса. Это свидетельство
+# фильтрации — ровно то, что ищем в режиме белого списка.
+INTERCEPT_STATUSES = {"SUSPECT_STUB", "SUSPECT_REDIRECT", "INTERCEPT_CERT"}
+# Проблема самого сайта: фильтрация тут ни при чём, домен может быть разрешён,
+# но проверить его содержимое нельзя.
+SITE_ISSUE_STATUSES = {"SITE_CERT_MISMATCH", "SUSPECT_EMPTY"}
+SUSPECT_STATUSES = INTERCEPT_STATUSES | SITE_ISSUE_STATUSES
+
+# Признаки оператора в издателе сертификата: значит, в соединение вклинились.
+OPERATOR_ISSUER_MARKERS = ("megafon", "mts", "beeline", "vimpelcom", "tele2",
+                           "rostelecom", "yota", "scartel", "t2")
+
+
+def _cert_status(issuer: Optional[str]) -> str:
+    """Чей сертификат: подставленный фильтром или выданный сайту.
+
+    Эвристика: издатель с брендом оператора или без издателя — подмена
+    (в мобильной сети так выглядит DPI). Сертификат от публичного УЦ на чужое
+    имя — это ошибка сайта (парковка, перепутанный домен), фильтрация тут
+    не участвует. Издатель всё равно пишется в details, чтобы сомнительные
+    случаи можно было разобрать руками.
+    """
+    text = (issuer or "").strip().lower()
+    if not text:
+        return "INTERCEPT_CERT"
+    if any(marker in text for marker in OPERATOR_ISSUER_MARKERS):
+        return "INTERCEPT_CERT"
+    return "SITE_CERT_MISMATCH"
 
 # Признаки страницы-заглушки вместо запрошенного ресурса.
 STUB_MARKERS = (
@@ -868,10 +897,16 @@ def _cert_matches(domain: str, common_name: Optional[str], sans: List[str]) -> b
     return False
 
 
-async def fetch_cert_names(ip: str, sni: str, timeout: float) -> Tuple[Optional[str], List[str]]:
-    """Сертификат с конкретного адреса: нужен для детекта подмены (п.8)."""
+async def fetch_cert_names(ip: str, sni: str,
+                           timeout: float) -> Tuple[Optional[str], List[str], Optional[str]]:
+    """Сертификат с конкретного адреса: CN, SAN и издатель.
+
+    Издатель нужен, чтобы отличить подмену оператором от ошибки сайта:
+    сертификат от публичного УЦ на чужое имя — это парковка или чужой домен,
+    а не фильтрация.
+    """
     if not CRYPTO_AVAILABLE:
-        return None, []
+        return None, [], None
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.check_hostname = False
     context.verify_mode = ssl.CERT_NONE
@@ -883,19 +918,21 @@ async def fetch_cert_names(ip: str, sni: str, timeout: float) -> Tuple[Optional[
         ssl_object = writer.get_extra_info("ssl_object")
         der = ssl_object.getpeercert(binary_form=True) if ssl_object else None
         if not der:
-            return None, []
+            return None, [], None
         cert = x509.load_der_x509_certificate(der)
         cns = cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
         common_name = cns[0].value if cns else None
+        issuer_cns = cert.issuer.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+        issuer = issuer_cns[0].value if issuer_cns else None
         sans: List[str] = []
         try:
             san = cert.extensions.get_extension_for_class(x509.SubjectAlternativeName)
             sans = san.value.get_values_for_type(x509.DNSName)
         except x509.ExtensionNotFound:
             pass
-        return common_name, sans
+        return common_name, sans, issuer
     except Exception:
-        return None, []
+        return None, [], None
     finally:
         if writer is not None:
             try:
@@ -1043,11 +1080,14 @@ async def run_checker(domains: List[str], args: argparse.Namespace) -> Dict[str,
                 if settings.verify_cert and result["status"] in ALIVE_STATUSES \
                         and domain not in checked_certs:
                     checked_certs.add(domain)
-                    cn, sans = await fetch_cert_names(ip, domain, settings.timeout_total)
+                    cn, sans, issuer = await fetch_cert_names(ip, domain,
+                                                              settings.timeout_total)
                     result["cert_cn"] = cn
+                    result["cert_issuer"] = issuer
                     if (cn or sans) and not _cert_matches(domain, cn, sans):
-                        result["status"] = "SUSPECT_CERT"
-                        result["details"] = f"сертификат не для домена (CN={cn})"
+                        result["status"] = _cert_status(result.get("cert_issuer"))
+                        result["details"] = (f"сертификат не для домена "
+                                            f"(CN={cn}, издатель={result.get('cert_issuer')})")
 
                 best = _better(best, result)
                 # Домен уже подтверждён: остальные адреса нужны только по запросу.
@@ -1210,15 +1250,24 @@ async def main() -> None:
     results = await run_checker(domains, args)
 
     alive = sorted(d for d, r in results.items() if r.get('status') in ALIVE_STATUSES)
-    suspects = sorted(d for d, r in results.items() if r.get('status') in SUSPECT_STATUSES)
+    intercepted = sorted(d for d, r in results.items() if r.get('status') in INTERCEPT_STATUSES)
+    site_issues = sorted(d for d, r in results.items() if r.get('status') in SITE_ISSUE_STATUSES)
 
     print(f"\n✅ Успешных: {len(alive)}")
-    if suspects:
-        print(f"🎭 Подозрительных (возможно подмена): {len(suspects)}")
-        for d in suspects[:10]:
+    # Две разные причины «не в whitelist»: вклинился оператор или сайт сам
+    # отдаёт не то. Смешивать их нельзя — выводы о фильтрации будут неверными.
+    if intercepted:
+        print(f"\n🛡️  Подменяет оператор: {len(intercepted)}")
+        for d in intercepted[:15]:
             print(f"   {d}: {results[d].get('status')} — {results[d].get('details')}")
-        if len(suspects) > 10:
-            print(f"   ... и ещё {len(suspects) - 10}")
+        if len(intercepted) > 15:
+            print(f"   ... и ещё {len(intercepted) - 15}")
+    if site_issues:
+        print(f"\n🧾 Проблема на стороне сайта: {len(site_issues)}")
+        for d in site_issues[:15]:
+            print(f"   {d}: {results[d].get('status')} — {results[d].get('details')}")
+        if len(site_issues) > 15:
+            print(f"   ... и ещё {len(site_issues) - 15}")
 
     if alive:
         operators = get_config_value("operators", default={"1": "Default"})

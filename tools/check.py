@@ -324,6 +324,7 @@ def main():
              "--out-dir", str(out / "pairs"), "--format", "both",
              "--timeout", str(args.timeout), "-c", str(args.concurrency),
              "--repeat", str(args.repeat), "--ipv6-check", "--detect-egress",
+             "--dns-probe",
              "-o", operator, "--channel", channel, "--phase", args.phase, *cache_args]
     if mcc_mnc:
         pairs += ["--mcc-mnc", mcc_mnc]

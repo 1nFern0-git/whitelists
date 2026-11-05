@@ -49,6 +49,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 try:
     import dns.asyncresolver
     import dns.rdatatype
+    import dns.resolver
     DNS_LIB = True
 except ImportError:
     DNS_LIB = False
@@ -72,6 +73,18 @@ STATUS_RST = "RST"
 STATUS_REFUSED = "REFUSED"
 STATUS_TLS_ERR = "TLS_ERR"
 STATUS_UNREACH = "UNREACH"
+
+# DNS-проба: отдельный сигнал о том, отвечает ли DNS оператора.
+# В режиме белого списка часть операторов фильтрует именно по именам,
+# и NXDOMAIN на домен, который в обычной сети резолвится, — прямое
+# свидетельство фильтрации, независимое от TCP-проб.
+DNS_ANSWER = "ANSWER"
+DNS_NODATA = "NODATA"
+DNS_NXDOMAIN = "NXDOMAIN"
+DNS_SERVFAIL = "SERVFAIL"
+DNS_REFUSED = "REFUSED"
+DNS_TIMEOUT = "DNS_TIMEOUT"
+DNS_ERROR = "DNS_ERROR"
 
 
 def signal_handler(signum, frame):
@@ -636,6 +649,102 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
     return records
 
 
+async def probe_dns(domain: str, nameservers: List[str], timeout: float) -> Dict[str, Any]:
+    """Спрашивает DNS оператора про домен: отдельный сигнал фильтрации по именам.
+
+    Резолв для проверки пар берёт адреса из кэша и о DNS оператора ничего не
+    говорит. Здесь наоборот: важно именно то, что отвечает сеть оператора.
+    """
+    started = time.perf_counter()
+    result: Dict[str, Any] = {"status": "", "ips": [], "resolver": "", "error": None}
+    if not DNS_LIB:
+        loop = asyncio.get_running_loop()
+        result["resolver"] = "system"
+        try:
+            infos = await asyncio.wait_for(
+                loop.getaddrinfo(domain, 443, type=socket.SOCK_STREAM), timeout=timeout)
+            result["ips"] = sorted({info[4][0] for info in infos})
+            result["status"] = DNS_ANSWER if result["ips"] else DNS_NODATA
+        except asyncio.TimeoutError:
+            result["status"], result["error"] = DNS_TIMEOUT, "таймаут системного резолвера"
+        except socket.gaierror as exc:
+            result["status"] = DNS_NXDOMAIN
+            result["error"] = f"gaierror: {exc}"
+        except Exception as exc:
+            result["status"], result["error"] = DNS_ERROR, f"{type(exc).__name__}: {exc}"
+        result["duration_ms"] = round((time.perf_counter() - started) * 1000, 1)
+        return result
+
+    try:
+        resolver = dns.asyncresolver.Resolver(configure=not nameservers)
+        if nameservers:
+            resolver.nameservers = list(nameservers)
+        resolver.timeout = timeout
+        resolver.lifetime = timeout
+        result["resolver"] = ",".join(str(ns) for ns in resolver.nameservers)
+    except Exception as exc:
+        result["status"], result["error"] = DNS_ERROR, f"{type(exc).__name__}: {exc}"
+        result["duration_ms"] = round((time.perf_counter() - started) * 1000, 1)
+        return result
+
+    answered = False
+    for family in ("A", "AAAA"):
+        try:
+            answer = await resolver.resolve(domain, family, raise_on_no_answer=False)
+            for rr in answer:
+                address = getattr(rr, "address", None)
+                if address:
+                    result["ips"].append(address)
+            answered = True
+        except dns.resolver.NXDOMAIN:
+            result["status"], result["error"] = DNS_NXDOMAIN, "имени нет в DNS"
+            break
+        except dns.resolver.NoNameservers:
+            result["status"], result["error"] = DNS_SERVFAIL, "серверы не ответили"
+            break
+        except dns.resolver.NoAnswer:
+            answered = True
+        except (asyncio.TimeoutError, dns.resolver.LifetimeTimeout):
+            result["status"], result["error"] = DNS_TIMEOUT, "нет ответа за отведённое время"
+            break
+        except Exception as exc:
+            name = type(exc).__name__
+            status = DNS_REFUSED if "Refused" in name else DNS_ERROR
+            result["status"], result["error"] = status, f"{name}: {exc}"
+            break
+    else:
+        if not result["status"]:
+            result["status"] = DNS_ANSWER if result["ips"] else DNS_NODATA
+    if not result["status"]:
+        result["status"] = DNS_ANSWER if result["ips"] else (DNS_NODATA if answered else DNS_ERROR)
+    result["ips"] = sorted(set(result["ips"]))
+    result["duration_ms"] = round((time.perf_counter() - started) * 1000, 1)
+    return result
+
+
+async def run_dns_probes(domains: List[str], args: argparse.Namespace,
+                         meta: Dict[str, Any], emit=None) -> List[Dict[str, Any]]:
+    """По одной DNS-пробе на домен: видно, фильтрует ли оператор по именам."""
+    semaphore = asyncio.Semaphore(max(args.concurrency, 20))
+    records: List[Dict[str, Any]] = []
+
+    async def one(domain: str) -> None:
+        if SHUTDOWN_REQUESTED:
+            return
+        async with semaphore:
+            outcome = await probe_dns(domain, args.dns_probe_ns or [], args.timeout)
+            record = make_record("dns", domain, ",".join(outcome["ips"][:2]), domain, "",
+                                 False, outcome, meta)
+            record["ips"] = outcome["ips"]
+            record["resolver"] = outcome["resolver"]
+            records.append(record)
+            if emit is not None:
+                emit(record)
+
+    await asyncio.gather(*(one(d) for d in domains))
+    return records
+
+
 async def run_controls(records: List[Dict[str, Any]], args: argparse.Namespace,
                        meta: Dict[str, Any], emit=None) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """Контрольные пробы: отделяют фильтр по IP от фильтра по SNI и парного."""
@@ -743,6 +852,8 @@ def write_outputs(records: List[Dict[str, Any]], summary: Dict[str, Any],
         with open(tsv_path, "w", encoding="utf-8") as f:
             f.write("\t".join(columns) + "\n")
             for record in records:
+                if record.get("probe") == "dns":
+                    continue  # DNS-пробы лежат в JSONL: в TSV они не пара (SNI, IP)
                 row = []
                 for column in columns:
                     value = record.get(column)
@@ -817,6 +928,12 @@ async def main() -> None:
                         help="После TLS отправлять HEAD и писать HTTP-код")
     parser.add_argument("--no-control", dest="control", action="store_false",
                         help="Не выполнять контрольные пробы")
+    parser.add_argument("--dns-probe", action="store_true",
+                        help="Спросить DNS оператора по каждому домену: NXDOMAIN "
+                             "на работавший домен — признак фильтра по именам")
+    parser.add_argument("--dns-probe-ns", nargs="+", default=None,
+                        help="DNS-серверы для DNS-проб (по умолчанию системные, "
+                             "то есть DNS оператора)")
     parser.add_argument("--repeat", type=int, default=1,
                         help="Повторять каждую пару N раз: покажет, стабильна ли фильтрация")
     parser.add_argument("--no-ipv6", action="store_true",
@@ -935,7 +1052,31 @@ async def main() -> None:
     started = time.perf_counter()
     out_dir, jsonl_path, _, _ = output_paths(args, ts)
 
-    print("\n1/3 Резолв доменов")
+    bar: Optional[Progress] = None
+
+    # Пишем каждую пробу сразу: при обрыве связи или Ctrl+C наблюдения сохранятся.
+    jsonl_file = open(jsonl_path, "w", encoding="utf-8")
+
+    def emit(record: Dict[str, Any]) -> None:
+        jsonl_file.write(json.dumps(record, ensure_ascii=False) + "\n")
+        jsonl_file.flush()
+        if record.get("probe") == "matrix" and bar is not None:
+            bar.add(record)
+            bar.tick()
+
+    dns_records: List[Dict[str, Any]] = []
+    if args.dns_probe:
+        print("\n1/4 DNS-пробы (DNS оператора)")
+        dns_records = await run_dns_probes(domains, args, meta, emit)
+        dns_stats: Dict[str, int] = {}
+        for record in dns_records:
+            dns_stats[record["status"]] = dns_stats.get(record["status"], 0) + 1
+        print("    " + " | ".join(f"{k}: {v}" for k, v in
+                                  sorted(dns_stats.items(), key=lambda kv: -kv[1])))
+    else:
+        dns_stats = {}
+
+    print("\n2/4 Резолв доменов")
     resolved = await resolve_all(domains, args)
     total_probes = sum(len(addresses) for addresses, _ in resolved.values())
     without_addresses = sum(1 for addresses, _ in resolved.values() if not addresses)
@@ -943,24 +1084,15 @@ async def main() -> None:
     print(f"    доменов: {len(domains)} | адресов: {total_probes}"
           f" | без адресов: {without_addresses} | записей: {total_records}")
 
-    print(f"2/3 TLS-пробы (таймаут {args.timeout} с, параллельно {args.concurrency})")
+    print(f"3/4 TLS-пробы (таймаут {args.timeout} с, параллельно {args.concurrency})")
     bar = Progress(total_records, len(domains), interactive=args.progress_bar)
-    # Пишем каждую пробу сразу: при обрыве связи или Ctrl+C наблюдения сохранятся.
-    jsonl_file = open(jsonl_path, "w", encoding="utf-8")
-
-    def emit(record: Dict[str, Any]) -> None:
-        jsonl_file.write(json.dumps(record, ensure_ascii=False) + "\n")
-        jsonl_file.flush()
-        if record.get("probe") == "matrix":
-            bar.add(record)
-            bar.tick()
 
     heartbeat_task = asyncio.create_task(bar.heartbeat(1.0))
     try:
         records = await run_matrix(domains, args, meta, emit, resolved)
         bar.close()
 
-        print("3/3 Контрольные пробы типа фильтрации")
+        print("4/4 Контрольные пробы типа фильтрации")
         extra, summary = await run_controls(records, args, meta, emit)
         records.extend(extra)
     finally:
@@ -992,11 +1124,24 @@ async def main() -> None:
                 unstable.append(f"{record['domain']} {record['ip']} "
                                 f"{record['pass_count']}/{record['attempts']}")
     summary["status_counts"] = by_status
+    if dns_stats:
+        summary["dns_status_counts"] = dns_stats
     if unstable:
         summary["unstable_pairs"] = len(unstable)
         summary["unstable_sample"] = unstable[:20]
 
     write_outputs(records, summary, args, ts, jsonl_path)
+
+    if dns_stats:
+        blocked_dns = [r["domain"] for r in dns_records
+                       if r["status"] in (DNS_NXDOMAIN, DNS_SERVFAIL, DNS_REFUSED, DNS_TIMEOUT)]
+        print(f"\n🌐 DNS оператора: отвечает — {dns_stats.get(DNS_ANSWER, 0)}, "
+              f"NXDOMAIN — {dns_stats.get(DNS_NXDOMAIN, 0)}, "
+              f"без данных — {dns_stats.get(DNS_NODATA, 0)}, "
+              f"сбои — {dns_stats.get(DNS_SERVFAIL, 0) + dns_stats.get(DNS_TIMEOUT, 0) + dns_stats.get(DNS_REFUSED, 0)}")
+        if blocked_dns:
+            print(f"   не отдаёт имена ({len(blocked_dns)}): {', '.join(blocked_dns[:10])}"
+                  + (" …" if len(blocked_dns) > 10 else ""))
 
     print("\n📊 Статусы пар (SNI + IP):")
     for status, count in sorted(by_status.items(), key=lambda item: -item[1]):
