@@ -329,10 +329,10 @@ def main():
                         help="Интерфейс для проб (по умолчанию — интерфейс "
                              "маршрута по умолчанию)")
     parser.add_argument("--chunk", type=int,
-                        default=int(os.environ.get("CHUNK", 100)),
+                        default=int(os.environ.get("CHUNK", 40)),
                         help="Доменов в блоке перед паузой (0 — без блоков)")
     parser.add_argument("--chunk-pause", type=float,
-                        default=float(os.environ.get("CHUNK_PAUSE", 90)),
+                        default=float(os.environ.get("CHUNK_PAUSE", 60)),
                         help="Пауза между блоками, сек: возвращает модулю скорость")
     parser.add_argument("--pace", type=float,
                         default=float(os.environ.get("PACE", 0)),
@@ -442,9 +442,15 @@ def main():
 
     runs_dir = ROOT / "runs" / operator / args.phase
     runs_dir.mkdir(parents=True, exist_ok=True)
+    # Полные наблюдения кладём рядом: вердикт по адресам требует и провалов,
+    # а pairs.tsv содержит только прошедшие пары.
+    jsonl = sorted((out / "pairs").glob("pairs-*.jsonl"))
+    summary_file = sorted((out / "pairs").glob("summary-*.json"))
     saved = []
     for source, suffix in ((out / "report" / "domains.txt", "tls.txt"),
                            (out / "report" / "pairs.tsv", "tls.tsv"),
+                           (jsonl[0] if jsonl else None, "pairs.jsonl"),
+                           (summary_file[0] if summary_file else None, "summary.json"),
                            (http_file, "http.txt")):
         if source and Path(source).exists():
             target = runs_dir / f"{stamp}-{suffix}"

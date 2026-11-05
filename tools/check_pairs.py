@@ -1306,7 +1306,7 @@ async def main() -> None:
     parser.add_argument("--chunk", type=int, default=0,
                         help="Домены обрабатывать блоками по N с паузой между ними: "
                              "долгий прогон перегружает модем и замер врёт")
-    parser.add_argument("--chunk-pause", type=float, default=90.0,
+    parser.add_argument("--chunk-pause", type=float, default=60.0,
                         help="Пауза между блоками, сек")
     parser.add_argument("--pace", type=float, default=0.0,
                         help="Пауза между запусками проб, сек (снижает нагрузку)")

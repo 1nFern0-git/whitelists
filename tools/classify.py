@@ -1,0 +1,314 @@
+#!/usr/bin/env python3
+"""Вердикт по домену: разрешён, частично, не разрешён или нестабилен.
+
+Почему не «прошёл в N файлах»
+-----------------------------
+Фильтрация в режиме белого списка идёт по адресу: одно имя проходит на всех
+своих адресах, другое — только на части (проверено на Ростелекоме: у ok.ru
+217.20.157.145 проходит всегда, а 5.61.21.121 — никогда). Поэтому единица
+наблюдения — пара (домен, адрес), а вердикт домена собирается из вердиктов
+его адресов.
+
+Правило (согласовано):
+  разрешён     — каждый адрес домена проходит в ≥ --min-ratio попыток
+                 И содержимое подтверждено HTTP в ≥ --min-http доле прогонов
+  частично     — проходит не каждый адрес (в отчёте видно, какие проходят)
+  не разрешён  — ни один адрес не прошёл ни разу
+  нестабильно  — остальное: адрес проходит иногда, нужно ещё прогонов
+  не измеряется— у домена не было ни одного адреса в наблюдениях
+
+Домен, который проходит через адрес, общий с другими доменами, помечается
+как «общий IP»: доступ есть, но он держится на соседстве и пропадёт, если
+сервис сменит адрес (так работает wiki.freenternet.top на Yandex Cloud).
+
+Читает полные наблюдения `runs/<оператор>/<фаза>/*-pairs.jsonl`
+(их пишет check.py) и `*-http.txt` из тех же прогонов.
+"""
+import argparse
+import json
+import sys
+from collections import defaultdict
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+TOOLS_DIR = Path(__file__).resolve().parent
+ROOT = TOOLS_DIR.parent
+sys.path.insert(0, str(TOOLS_DIR))
+
+from build_release import read_domains  # noqa: E402
+from operators import canonical_key, display, load_manifest  # noqa: E402
+
+RELEASE_MANIFEST = ROOT / "configs" / "release.json"
+RUNS_DIR = ROOT / "runs"
+RELEASE_DIR = ROOT / "release"
+
+VERDICT_ALLOWED = "разрешён"
+VERDICT_PARTIAL = "частично"
+VERDICT_BLOCKED = "не разрешён"
+VERDICT_UNSTABLE = "нестабильно"
+VERDICT_UNKNOWN = "не измеряется"
+
+ADR_ALLOWED = "разрешён"
+ADR_BLOCKED = "не разрешён"
+ADR_UNSTABLE = "нестабилен"
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Вердикт по доменам из нескольких прогонов фазы on")
+    parser.add_argument("-o", "--operator", required=True,
+                        help="Оператор: ключ манифеста или каталог runs/<оператор>")
+    parser.add_argument("--phase", default="on",
+                        help="Фаза прогонов: on (по умолчанию) или off")
+    parser.add_argument("-d", "--runs-dir", default=None,
+                        help="Каталог наблюдений (по умолчанию runs/<оператор>/<фаза>)")
+    parser.add_argument("--min-ratio", type=float, default=0.8,
+                        help="Доля успешных попыток, при которой адрес считается "
+                             "разрешённым (по умолчанию 0.8: одна потеря из шести "
+                             "попыток — шум канала, половина провалов — уже нет)")
+    parser.add_argument("--min-http", type=float, default=0.9,
+                        help="Доля прогонов, где содержимое подтверждено HTTP")
+    parser.add_argument("--min-attempts", type=int, default=2,
+                        help="Сколько попыток нужно, чтобы судить об адресе")
+    parser.add_argument("-O", "--out-dir", default=None,
+                        help="Куда положить результат (по умолчанию build/classify/<оператор>-<фаза>)")
+    parser.add_argument("--write-release", action="store_true",
+                        help="Обновить release/whitelist-<оператор>.txt и IP-список")
+    return parser.parse_args()
+
+
+def find_runs(directory: Path) -> Tuple[List[Path], List[Path]]:
+    """Файлы наблюдений и файлы HTTP-подтверждений одного прогона."""
+    jsonl = sorted(directory.glob("*-pairs.jsonl"))
+    http = sorted(directory.glob("*-http.txt"))
+    if jsonl:
+        return jsonl, http
+    # Старый формат: только прошедшие пары. Провалов нет, вердикт будет неполным.
+    tsv = sorted(directory.glob("*-tls.tsv"))
+    if tsv:
+        print("⚠️  найдены только pairs.tsv (без провалов): "
+              "адреса «не разрешён» и «нестабилен» определить нельзя")
+    return tsv, http
+
+
+def load_run(path: Path) -> Dict[Tuple[str, str], List[int]]:
+    """Пары (домен, адрес) → [успехов, попыток] в одном прогоне."""
+    result: Dict[Tuple[str, str], List[int]] = defaultdict(lambda: [0, 0])
+    if path.suffix == ".tsv":
+        import csv
+        with open(path, "r", encoding="utf-8") as handle:
+            for row in csv.DictReader(handle, delimiter="\t"):
+                domain = (row.get("domain") or "").strip().lower()
+                address = (row.get("ip") or "").strip()
+                if not domain or not address:
+                    continue
+                try:
+                    passes = int(row.get("pass_count") or 0)
+                    attempts = int(row.get("attempts") or 1)
+                except ValueError:
+                    continue
+                result[(domain, address)][0] += passes
+                result[(domain, address)][1] += attempts
+        return result
+
+    with open(path, "r", encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if record.get("probe") != "matrix":
+                continue
+            domain = (record.get("domain") or "").strip().lower()
+            address = (record.get("ip") or "").strip()
+            if not domain or not address:
+                continue
+            attempts = int(record.get("attempts") or 1)
+            passes = int(record.get("pass_count") or 0)
+            result[(domain, address)][0] += passes
+            result[(domain, address)][1] += attempts
+    return result
+
+
+def address_verdict(passes: int, attempts: int, args: argparse.Namespace) -> str:
+    if passes == 0:
+        return ADR_BLOCKED
+    if attempts < args.min_attempts:
+        return ADR_UNSTABLE
+    ratio = passes / attempts
+    if ratio >= args.min_ratio:
+        return ADR_ALLOWED
+    return ADR_UNSTABLE
+
+
+def build(runs: List[Path], http_files: List[Path],
+          args: argparse.Namespace) -> Dict[str, Any]:
+    totals: Dict[Tuple[str, str], List[int]] = defaultdict(lambda: [0, 0])
+    for path in runs:
+        for key, (passes, attempts) in load_run(path).items():
+            totals[key][0] += passes
+            totals[key][1] += attempts
+
+    http_sets = [read_domains(path) for path in http_files]
+    http_count: Dict[str, int] = defaultdict(int)
+    for values in http_sets:
+        for domain in values:
+            http_count[domain] += 1
+    runs_total = len(runs) or 1
+
+    by_domain: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
+    for (domain, address), (passes, attempts) in totals.items():
+        by_domain[domain].append({
+            "ip": address,
+            "passes": passes,
+            "attempts": attempts,
+            "ratio": round(passes / attempts, 3) if attempts else 0.0,
+            "state": address_verdict(passes, attempts, args),
+        })
+
+    # адрес, на котором живёт больше одного домена, — общий (хостинг, CDN)
+    hosts: Dict[str, int] = defaultdict(int)
+    for domain, addresses in by_domain.items():
+        for item in addresses:
+            hosts[item["ip"]] += 1
+
+    domains: Dict[str, Any] = {}
+    for domain, addresses in by_domain.items():
+        allowed = [item for item in addresses if item["state"] == ADR_ALLOWED]
+        http_ok = http_count.get(domain, 0) / runs_total >= args.min_http
+
+        if not addresses:
+            verdict = VERDICT_UNKNOWN
+        elif not any(item["passes"] for item in addresses):
+            verdict = VERDICT_BLOCKED
+        elif len(allowed) == len(addresses) and http_ok:
+            verdict = VERDICT_ALLOWED
+        elif allowed:
+            verdict = VERDICT_PARTIAL
+        else:
+            verdict = VERDICT_UNSTABLE
+
+        shared = sorted({item["ip"] for item in allowed if hosts[item["ip"]] > 1})
+        domains[domain] = {
+            "verdict": verdict,
+            "http": round(http_count.get(domain, 0) / runs_total, 2),
+            "addresses": sorted(addresses, key=lambda item: (-item["passes"], item["ip"])),
+            "shared_ips": shared,
+        }
+    return {"runs": [path.name for path in runs], "domains": domains}
+
+
+def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    domains = data["domains"]
+    groups: Dict[str, List[str]] = defaultdict(list)
+    for domain, info in domains.items():
+        groups[info["verdict"]].append(domain)
+
+    names = {
+        VERDICT_ALLOWED: "allowed.txt",
+        VERDICT_PARTIAL: "partial.txt",
+        VERDICT_BLOCKED: "blocked.txt",
+        VERDICT_UNSTABLE: "unstable.txt",
+        VERDICT_UNKNOWN: "not-measured.txt",
+    }
+    for verdict, filename in names.items():
+        values = sorted(groups.get(verdict, []))
+        (out_dir / filename).write_text("\n".join(values) + ("\n" if values else ""),
+                                        encoding="utf-8")
+    (out_dir / "classify.json").write_text(
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    allowed_ips = sorted({item["ip"]
+                          for verdict in (VERDICT_ALLOWED, VERDICT_PARTIAL)
+                          for domain, info in domains.items() if info["verdict"] == verdict
+                          for item in info["addresses"] if item["state"] == ADR_ALLOWED})
+    (out_dir / "ips-allowed.txt").write_text(
+        "\n".join(allowed_ips) + ("\n" if allowed_ips else ""), encoding="utf-8")
+
+    lines = ["# Вердикт по доменам", "",
+             f"- прогонов: {len(data['runs'])}",
+             f"- доменов: {len(domains)}", ""]
+    for verdict in (VERDICT_ALLOWED, VERDICT_PARTIAL, VERDICT_BLOCKED,
+                    VERDICT_UNSTABLE, VERDICT_UNKNOWN):
+        lines.append(f"- {verdict}: **{len(groups.get(verdict, []))}**")
+    lines += ["", "## Прогоны", ""] + [f"- `{name}`" for name in data["runs"]]
+
+    partial = sorted(groups.get(VERDICT_PARTIAL, []))
+    if partial:
+        lines += ["", "## Частично доступные", "",
+                  "| Домен | Проходят адреса | Не проходят |", "|---|---|---|"]
+        for domain in partial:
+            info = domains[domain]
+            ok = [item["ip"] for item in info["addresses"] if item["state"] == ADR_ALLOWED]
+            bad = [item["ip"] for item in info["addresses"] if item["state"] != ADR_ALLOWED]
+            lines.append(f"| `{domain}` | {', '.join(ok) or '—'} | {', '.join(bad) or '—'} |")
+
+    shared = sorted(domain for domain, info in domains.items()
+                    if info["verdict"] == VERDICT_ALLOWED and info["shared_ips"])
+    if shared:
+        lines += ["", f"## Доступны через общий адрес ({len(shared)})", "",
+                  "Адрес проходит, но на нём живут и другие домены: доступ держится "
+                  "на соседстве и пропадёт, если сервис сменит адрес.", ""]
+        for domain in shared[:40]:
+            lines.append(f"- `{domain}` — {', '.join(domains[domain]['shared_ips'])}")
+
+    unstable = sorted(groups.get(VERDICT_UNSTABLE, []))
+    if unstable:
+        lines += ["", f"## Нестабильные ({len(unstable)})", "",
+                  "Адрес проходит не всегда: нужен ещё прогон, чтобы решить.", "",
+                  ", ".join(f"`{domain}`" for domain in unstable[:80])]
+    (out_dir / "report.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def write_release(operator: str, data: Dict[str, Any], out_dir: Path) -> None:
+    domains = data["domains"]
+    allowed = sorted(domain for domain, info in domains.items()
+                     if info["verdict"] in (VERDICT_ALLOWED, VERDICT_PARTIAL))
+    ips = sorted({item["ip"] for domain in allowed
+                  for item in domains[domain]["addresses"] if item["state"] == ADR_ALLOWED})
+    RELEASE_DIR.mkdir(parents=True, exist_ok=True)
+    (RELEASE_DIR / f"whitelist-{operator}.txt").write_text(
+        "\n".join(allowed) + ("\n" if allowed else ""), encoding="utf-8")
+    (RELEASE_DIR / f"IP-whitelist-{operator}.txt").write_text(
+        "\n".join(ips) + ("\n" if ips else ""), encoding="utf-8")
+    print(f"💾 release/whitelist-{operator}.txt: {len(allowed)} доменов")
+    print(f"💾 release/IP-whitelist-{operator}.txt: {len(ips)} адресов")
+
+
+def main() -> None:
+    args = parse_args()
+    manifest = load_manifest(RELEASE_MANIFEST)
+    operator = canonical_key(args.operator, manifest) or args.operator
+    runs_dir = Path(args.runs_dir) if args.runs_dir else RUNS_DIR / operator / args.phase
+    if not runs_dir.is_dir():
+        raise SystemExit(f"❌ нет каталога наблюдений: {runs_dir}")
+
+    runs, http_files = find_runs(runs_dir)
+    if not runs:
+        raise SystemExit(f"❌ в {runs_dir} нет наблюдений")
+
+    print(f"{display(operator, manifest)} · фаза {args.phase} · "
+          f"прогонов: {len(runs)} · HTTP-файлов: {len(http_files)}")
+    data = build(runs, http_files, args)
+    out_dir = Path(args.out_dir) if args.out_dir else ROOT / "build" / "classify" / f"{operator}-{args.phase}"
+    write_outputs(data, out_dir)
+
+    counts: Dict[str, int] = defaultdict(int)
+    for info in data["domains"].values():
+        counts[info["verdict"]] += 1
+    print(f"\nдоменов: {len(data['domains'])}")
+    for verdict in (VERDICT_ALLOWED, VERDICT_PARTIAL, VERDICT_BLOCKED,
+                    VERDICT_UNSTABLE, VERDICT_UNKNOWN):
+        print(f"   {verdict:14} {counts.get(verdict, 0)}")
+    print(f"\n💾 {out_dir.relative_to(ROOT)}: classify.json, report.md, *.txt")
+
+    if args.write_release:
+        write_release(operator, data, out_dir)
+
+
+if __name__ == "__main__":
+    main()
