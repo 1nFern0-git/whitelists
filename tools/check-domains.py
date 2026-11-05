@@ -174,6 +174,7 @@ class Settings:
         self.detect_stub = not getattr(args, "no_stub_detect", False)
         self.keep_redirects = not getattr(args, "no_keep_redirects", False)
 
+        self.interface = (getattr(args, "interface", None) or "").strip()
         self.impersonate = get_config_value("curl_cffi", "default_impersonate", default="chrome124")
         self.headers = get_config_value("headers", default={})
         self.retriable = set(get_config_value("error_classification", "retriable_statuses",
@@ -479,6 +480,68 @@ if HTTPCORE_AVAILABLE:
                                              socket_options)
 
 
+class _BoundStream:
+    """Поток для httpcore поверх asyncio с привязкой к интерфейсу."""
+
+    def __init__(self, reader: Any, writer: Any):
+        self._reader = reader
+        self._writer = writer
+
+    async def read(self, max_bytes: int, timeout: Optional[float] = None) -> bytes:
+        if timeout is None:
+            return await self._reader.read(max_bytes)
+        return await asyncio.wait_for(self._reader.read(max_bytes), timeout)
+
+    async def write(self, buffer: Any, timeout: Optional[float] = None) -> None:
+        self._writer.write(buffer)
+        if timeout is None:
+            await self._writer.drain()
+        else:
+            await asyncio.wait_for(self._writer.drain(), timeout)
+
+    async def aclose(self) -> None:
+        try:
+            self._writer.close()
+            await asyncio.wait_for(self._writer.wait_closed(), timeout=1)
+        except Exception:
+            pass
+
+    async def start_tls(self, ssl_context: Any, server_hostname: Optional[str] = None,
+                        timeout: Optional[float] = None) -> Any:
+        await self._writer.start_tls(ssl_context, server_hostname=server_hostname,
+                                     ssl_handshake_timeout=timeout)
+        return self
+
+    def get_extra_info(self, info: str) -> Any:
+        return self._writer.get_extra_info(info)
+
+
+class _BoundBackend(httpcore.AnyIOBackend):  # type: ignore[misc]
+    """TCP через заданный интерфейс (SO_BINDTODEVICE) и, если задан, адрес."""
+
+    def __init__(self, device: str, ip: Optional[str] = None):
+        self.device = device
+        self.ip = ip
+
+    async def connect_tcp(self, host: str, port: int, timeout: Optional[float] = None,
+                          local_address: Optional[str] = None,
+                          socket_options: Optional[Any] = None) -> Any:
+        target = self.ip or host
+        loop = asyncio.get_running_loop()
+        sock = socket.socket(socket.AF_INET6 if ":" in target else socket.AF_INET,
+                             socket.SOCK_STREAM)
+        sock.setblocking(False)
+        try:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE,
+                            self.device.encode() + b"\0")
+            await asyncio.wait_for(loop.sock_connect(sock, (target, port)), timeout)
+            reader, writer = await asyncio.open_connection(sock=sock)
+        except Exception as exc:
+            sock.close()
+            raise httpcore.ConnectError(str(exc)) from exc
+        return _BoundStream(reader, writer)
+
+
 def _pin_transport(transport: httpx.AsyncHTTPTransport, ip: str) -> bool:
     """Привязывает транспорт httpx к адресу. Возвращает признак успеха."""
     if not HTTPCORE_AVAILABLE:
@@ -536,6 +599,18 @@ class HTTPClientPool:
 
     def _new_httpx(self, http2: bool, ip: Optional[str]) -> httpx.AsyncClient:
         if not ip:
+            if self.s.interface and HTTPCORE_AVAILABLE:
+                transport = httpx.AsyncHTTPTransport(verify=self.s.verify_ssl, http2=http2)
+                pool_obj = getattr(transport, "_pool", None)
+                if pool_obj is not None:
+                    pool_obj._network_backend = _BoundBackend(self.s.interface, None)
+                return httpx.AsyncClient(
+                    transport=transport,
+                    timeout=httpx.Timeout(self.s.timeout_total),
+                    follow_redirects=False,
+                    headers=self.s.headers,
+                    limits=httpx.Limits(max_keepalive_connections=20),
+                )
             return httpx.AsyncClient(
                 http2=http2,
                 verify=self.s.verify_ssl,
@@ -545,7 +620,14 @@ class HTTPClientPool:
                 limits=httpx.Limits(max_keepalive_connections=20),
             )
         transport = httpx.AsyncHTTPTransport(verify=self.s.verify_ssl, http2=http2)
-        if not _pin_transport(transport, ip) and not self.warned_http_pin:
+        bound = bool(self.s.interface) and HTTPCORE_AVAILABLE
+        if bound:
+            pool_obj = getattr(transport, "_pool", None)
+            if pool_obj is not None:
+                pool_obj._network_backend = _BoundBackend(self.s.interface, ip)
+            else:
+                bound = False
+        if not bound and not _pin_transport(transport, ip) and not self.warned_http_pin:
             self.warned_http_pin = True
             print(f"⚠️  нет привязки httpx к адресу {ip}: проба пойдёт по имени")
         return httpx.AsyncClient(
@@ -584,12 +666,16 @@ class HTTPClientPool:
             # CURLOPT_RESOLVE: имя из SNI/Host, соединение — на проверяемый адрес.
             options[CurlOpt.RESOLVE] = [f"{domain}:443:{ip}", f"{domain}:80:{ip}"]
         try:
+            extra: Dict[str, Any] = {}
+            if self.s.interface:
+                extra["interface"] = self.s.interface
             return CurlCffiSession(
                 impersonate=self.s.impersonate,
                 verify=self.s.verify_ssl,
                 timeout=self.s.timeout_total,
                 allow_redirects=False,
                 **({"curl_options": options} if options else {}),
+                **extra,
             )
         except Exception:
             return None
@@ -1162,6 +1248,9 @@ async def main() -> None:
     parser.add_argument('-q', '--quiet', action='store_true', help='Тихий режим')
     parser.add_argument('-e', '--exclude', nargs='+', default=[], help='Исключить категории')
     parser.add_argument('--dns', nargs='+', default=None, help='Свои DNS серверы')
+    parser.add_argument('--interface', default=None,
+                        help='Интерфейс для запросов (модем): иначе запросы уйдут '
+                             'по маршруту по умолчанию, возможно в чужую сеть')
     parser.add_argument('--dns-cache', default=None,
                         help='Кэш адресов (tools/cache_dns.py): нужен, когда DNS '
                              'оператора не отвечает на домены вне белого списка')

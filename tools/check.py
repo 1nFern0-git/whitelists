@@ -328,6 +328,12 @@ def main():
     parser.add_argument("--interface", default=os.environ.get("INTERFACE", ""),
                         help="Интерфейс для проб (по умолчанию — интерфейс "
                              "маршрута по умолчанию)")
+    parser.add_argument("--chunk", type=int,
+                        default=int(os.environ.get("CHUNK", 100)),
+                        help="Доменов в блоке перед паузой (0 — без блоков)")
+    parser.add_argument("--chunk-pause", type=float,
+                        default=float(os.environ.get("CHUNK_PAUSE", 90)),
+                        help="Пауза между блоками, сек: возвращает модулю скорость")
     parser.add_argument("--pace", type=float,
                         default=float(os.environ.get("PACE", 0)),
                         help="Пауза между пробами пар, сек: снижает нагрузку на канал")
@@ -386,6 +392,8 @@ def main():
         pairs += ["--dns"] + args.dns
     if args.pace:
         pairs += ["--pace", str(args.pace)]
+    if args.chunk:
+        pairs += ["--chunk", str(args.chunk), "--chunk-pause", str(args.chunk_pause)]
     iface = pick_interface(args.interface)
     if iface:
         # Привязка к интерфейсу: иначе пробы уйдут по маршруту с меньшим metric
@@ -422,6 +430,8 @@ def main():
         # и получает DNS_ERR на всё, что вне списка: мерить становится нечего.
         if cache_args:
             http_cmd += cache_args
+        if iface:
+            http_cmd += ["--interface", iface]
         http_timeout = args.http_timeout or http_timeout_default()
         source = "флаг --http-timeout" if args.http_timeout else HTTP_CONFIG.name
         print(f"   HTTP-таймаут: {http_timeout:g} с ({source})", flush=True)

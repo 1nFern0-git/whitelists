@@ -685,7 +685,25 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
                 add(make_record("matrix", domain, ip, domain, family,
                                 ech, outcome, meta))
 
-    await asyncio.gather(*(one(d) for d in domains))
+
+    chunk = getattr(args, "chunk", 0) or 0
+    pause = getattr(args, "chunk_pause", 0.0) or 0.0
+    if chunk <= 0:
+        await asyncio.gather(*(one(d) for d in domains))
+        return records
+
+    # Модем держит скорость только на первых ~200 новых соединений: дальше
+    # проба растягивается с 0,35 до 3–5 с и часть соединений теряется.
+    # Пауза возвращает скорость, поэтому длинный прогон режется на блоки.
+    total_chunks = (len(domains) + chunk - 1) // chunk
+    for index in range(0, len(domains), chunk):
+        part = domains[index:index + chunk]
+        await asyncio.gather(*(one(d) for d in part))
+        done = index + len(part)
+        if done < len(domains):
+            print(f"   блок {done // chunk}/{total_chunks}: {done}/{len(domains)} доменов, "
+                  f"пауза {pause:.0f} с", flush=True)
+            await asyncio.sleep(pause)
     return records
 
 
@@ -966,7 +984,25 @@ async def run_dns_probes(domains: List[str], args: argparse.Namespace,
             if emit is not None:
                 emit(record)
 
-    await asyncio.gather(*(one(d) for d in domains))
+    chunk = getattr(args, "chunk", 0) or 0
+    pause = getattr(args, "chunk_pause", 0.0) or 0.0
+    if chunk <= 0:
+        await asyncio.gather(*(one(d) for d in domains))
+        return records
+
+    # Модем держит нормальную скорость только первые ~200 новых соединений,
+    # дальше каждая проба растягивается с 0,35 до 3–5 с, и часть соединений
+    # теряется. Пауза возвращает скорость, поэтому длинный прогон режется
+    # на блоки с отдыхом между ними.
+    total_chunks = (len(domains) + chunk - 1) // chunk
+    for index in range(0, len(domains), chunk):
+        part = domains[index:index + chunk]
+        await asyncio.gather(*(one(d) for d in part))
+        done = index + len(part)
+        if done < len(domains):
+            print(f"   блок {done // chunk}/{total_chunks}: {done}/{len(domains)} доменов, "
+                  f"пауза {pause:.0f} с", flush=True)
+            await asyncio.sleep(pause)
     return records
 
 
@@ -1267,6 +1303,11 @@ async def main() -> None:
     parser.add_argument("--shuffle", action="store_true",
                         help="Случайный порядок доменов: если фильтр зависит от "
                              "времени прогона, это превращается в шум, а не в сдвиг")
+    parser.add_argument("--chunk", type=int, default=0,
+                        help="Домены обрабатывать блоками по N с паузой между ними: "
+                             "долгий прогон перегружает модем и замер врёт")
+    parser.add_argument("--chunk-pause", type=float, default=90.0,
+                        help="Пауза между блоками, сек")
     parser.add_argument("--pace", type=float, default=0.0,
                         help="Пауза между запусками проб, сек (снижает нагрузку)")
     parser.add_argument("--dns-probe-concurrency", type=int, default=None,
