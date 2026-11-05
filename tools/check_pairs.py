@@ -724,19 +724,34 @@ async def probe_dns(domain: str, nameservers: List[str], timeout: float) -> Dict
 
 async def run_dns_probes(domains: List[str], args: argparse.Namespace,
                          meta: Dict[str, Any], emit=None) -> List[Dict[str, Any]]:
-    """По одной DNS-пробе на домен: видно, фильтрует ли оператор по именам."""
-    semaphore = asyncio.Semaphore(max(args.concurrency, 20))
+    """По одной DNS-пробе на домен: видно, фильтрует ли оператор по именам.
+
+    Параллельность здесь намеренно ниже, чем у TLS-проб: DNS-ретранслятор
+    модема и systemd-resolved не держат полсотни одновременных запросов —
+    при перегрузке начинаются таймауты, которые легко принять за фильтрацию.
+    Сбойные пробы повторяются, иначе шум попадает в наблюдения.
+    """
+    limit = getattr(args, "dns_probe_concurrency", None) or min(args.concurrency, 8)
+    semaphore = asyncio.Semaphore(max(limit, 1))
+    retries = 2
     records: List[Dict[str, Any]] = []
+    soft_failures = (DNS_TIMEOUT, DNS_SERVFAIL, DNS_REFUSED, DNS_ERROR)
 
     async def one(domain: str) -> None:
         if SHUTDOWN_REQUESTED:
             return
         async with semaphore:
+            attempt = 1
             outcome = await probe_dns(domain, args.dns_probe_ns or [], args.timeout)
+            while outcome["status"] in soft_failures and attempt <= retries:
+                await asyncio.sleep(0.2 * attempt)
+                attempt += 1
+                outcome = await probe_dns(domain, args.dns_probe_ns or [], args.timeout)
             record = make_record("dns", domain, ",".join(outcome["ips"][:2]), domain, "",
                                  False, outcome, meta)
             record["ips"] = outcome["ips"]
             record["resolver"] = outcome["resolver"]
+            record["attempts"] = attempt
             records.append(record)
             if emit is not None:
                 emit(record)
@@ -934,6 +949,9 @@ async def main() -> None:
     parser.add_argument("--dns-probe-ns", nargs="+", default=None,
                         help="DNS-серверы для DNS-проб (по умолчанию системные, "
                              "то есть DNS оператора)")
+    parser.add_argument("--dns-probe-concurrency", type=int, default=None,
+                        help="Одновременных DNS-проб (по умолчанию min(concurrency, 8): "
+                             "больше ретранслятор модема не держит)")
     parser.add_argument("--repeat", type=int, default=1,
                         help="Повторять каждую пару N раз: покажет, стабильна ли фильтрация")
     parser.add_argument("--no-ipv6", action="store_true",
