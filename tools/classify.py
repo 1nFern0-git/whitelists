@@ -192,9 +192,13 @@ def build(runs: List[Path], http_files: List[Path],
             verdict = VERDICT_UNSTABLE
 
         shared = sorted({item["ip"] for item in allowed if hosts[item["ip"]] > 1})
+        # Самая слабая доля среди разрешённых адресов: показывает, насколько
+        # вердикт близок к границе.
+        weakest = min((item["ratio"] for item in allowed), default=0.0)
         domains[domain] = {
             "verdict": verdict,
             "http": round(http_count.get(domain, 0) / runs_total, 2),
+            "weakest_ratio": weakest,
             "addresses": sorted(addresses, key=lambda item: (-item["passes"], item["ip"])),
             "shared_ips": shared,
         }
@@ -256,6 +260,18 @@ def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
         for domain in shared[:40]:
             lines.append(f"- `{domain}` — {', '.join(domains[domain]['shared_ips'])}")
 
+    fragile = sorted((domain for domain, info in domains.items()
+                      if info["verdict"] in (VERDICT_ALLOWED, VERDICT_PARTIAL)
+                      and info["weakest_ratio"] < 0.95),
+                     key=lambda name: domains[name]["weakest_ratio"])
+    if fragile:
+        lines += ["", f"## На границе ({len(fragile)})", "",
+                  "Адрес проходит, но не в каждой попытке: держать в поле зрения.", "",
+                  "| Домен | Слабая доля | HTTP |", "|---|---|---|"]
+        for domain in fragile[:60]:
+            info = domains[domain]
+            lines.append(f"| `{domain}` | {info['weakest_ratio']:.2f} | {info['http']:.2f} |")
+
     unstable = sorted(groups.get(VERDICT_UNSTABLE, []))
     if unstable:
         lines += ["", f"## Нестабильные ({len(unstable)})", "",
@@ -304,7 +320,11 @@ def main() -> None:
     for verdict in (VERDICT_ALLOWED, VERDICT_PARTIAL, VERDICT_BLOCKED,
                     VERDICT_UNSTABLE, VERDICT_UNKNOWN):
         print(f"   {verdict:14} {counts.get(verdict, 0)}")
-    print(f"\n💾 {out_dir.relative_to(ROOT)}: classify.json, report.md, *.txt")
+    try:
+        shown = out_dir.resolve().relative_to(ROOT)
+    except ValueError:
+        shown = out_dir
+    print(f"\n💾 {shown}: classify.json, report.md, *.txt")
 
     if args.write_release:
         write_release(operator, data, out_dir)
