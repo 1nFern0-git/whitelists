@@ -30,3 +30,5 @@ venv/
 # только собранный release/
 build/
 runs/
+
+AGENTS.md

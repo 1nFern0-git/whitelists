@@ -37,6 +37,7 @@ import asyncio
 import hashlib
 import json
 import re
+import random
 import signal
 import socket
 import ssl
@@ -621,6 +622,8 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
         if emit is not None:
             emit(record)
 
+    pace = getattr(args, "pace", 0.0) or 0.0
+
     async def one(domain: str) -> None:
         if SHUTDOWN_REQUESTED:
             return
@@ -639,6 +642,10 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
             async with semaphore:
                 if SHUTDOWN_REQUESTED:
                     return
+                if pace:
+                    # Нагрузка на канал важна не меньше фильтра: при плотном
+                    # потоке модем и телефон перестают держать соединения.
+                    await asyncio.sleep(pace)
                 family = "AAAA" if ":" in ip else "A"
                 outcome = await probe_repeated(ip, domain, args.port, args.timeout,
                                                args.http, getattr(args, "repeat", 1),
@@ -738,6 +745,65 @@ def flush_resolver_cache() -> None:
         if done.returncode == 0:
             print("   кэш системного резолвера сброшен перед DNS-пробами")
             return
+
+
+async def link_probe(gateway: Optional[str], timeout: float = 2.0) -> Dict[str, Any]:
+    """Жив ли канал сам по себе: шлюз, DNS-сервер и внешний адрес.
+
+    Зачем: при массовом опросе пробы могут падать не из-за фильтра, а из-за
+    того, что модем или телефон перестал держать соединения. Без такой
+    контрольной точки отличить одно от другого по данным невозможно.
+    """
+    started = time.perf_counter()
+    result: Dict[str, Any] = {"gateway": None, "dns_tcp": None, "external": None}
+
+    async def tcp_ok(host: str, port: int) -> Optional[bool]:
+        try:
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(host, port), timeout=timeout)
+            writer.close()
+            try:
+                await asyncio.wait_for(writer.wait_closed(), timeout=0.5)
+            except Exception:
+                pass
+            return True
+        except Exception:
+            return False
+
+    if gateway:
+        result["gateway"] = await tcp_ok(gateway, 53)
+    result["dns_tcp"] = await tcp_ok("127.0.0.53", 53)
+    result["external"] = await tcp_ok("1.1.1.1", 443)
+    result["duration_ms"] = round((time.perf_counter() - started) * 1000, 1)
+    return result
+
+
+def default_gateway() -> Optional[str]:
+    """Адрес шлюза по умолчанию: он есть в канале всегда, даже при фильтре."""
+    try:
+        done = subprocess.run(["ip", "route", "show", "default"], capture_output=True,
+                              text=True, timeout=5)
+        for line in done.stdout.splitlines():
+            parts = line.split()
+            if "via" in parts:
+                return parts[parts.index("via") + 1]
+    except Exception:
+        pass
+    return None
+
+
+async def run_link_watch(args: argparse.Namespace, meta: Dict[str, Any],
+                         stop: asyncio.Event, emit=None, interval: float = 3.0) -> None:
+    gateway = default_gateway()
+    while not stop.is_set():
+        outcome = await link_probe(gateway)
+        record = make_record("link", "", gateway or "", "", "", False, outcome, meta)
+        if emit is not None:
+            emit(record)
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=interval)
+        except asyncio.TimeoutError:
+            continue
 
 
 async def run_dns_probes(domains: List[str], args: argparse.Namespace,
@@ -900,29 +966,47 @@ def write_outputs(records: List[Dict[str, Any]], summary: Dict[str, Any],
 
 
 async def detect_egress() -> Dict[str, Any]:
-    """Определяет исходящий IP и провайдера — проверка, что мы в мобильной сети."""
+    """Определяет исходящий IP и провайдера — проверка, что мы в мобильной сети.
+
+    В режиме белого списка часть таких сервисов недоступна, поэтому адрес
+    берётся с первого ответившего из нескольких, а не с одного фиксированного.
+    """
     import urllib.request
 
     def fetch(url: str) -> str:
-        with urllib.request.urlopen(url, timeout=8) as response:
+        request = urllib.request.Request(url, headers={"User-Agent": "curl/8"})
+        with urllib.request.urlopen(request, timeout=6) as response:
             return response.read().decode("utf-8", "replace")
 
     info: Dict[str, Any] = {}
     loop = asyncio.get_running_loop()
-    try:
-        info["egress_ip"] = (await loop.run_in_executor(
-            None, fetch, "https://api.ipify.org")).strip()
-    except Exception as e:
-        info["egress_ip"] = None
-        info["egress_error"] = str(e)
-    try:
-        raw = await loop.run_in_executor(None, fetch, "https://ipinfo.io/json")
-        data = json.loads(raw)
-        info["egress_org"] = data.get("org")
-        info["egress_country"] = data.get("country")
-        info["egress_city"] = data.get("city")
-    except Exception:
-        pass
+    ip_endpoints = ("https://api.ipify.org", "https://ifconfig.me/ip",
+                    "https://icanhazip.com", "https://api.myip.com")
+    for url in ip_endpoints:
+        try:
+            raw = await loop.run_in_executor(None, fetch, url)
+            text = raw.strip()
+            if url.endswith("api.myip.com"):
+                text = (json.loads(text) or {}).get("ip") or ""
+            if text and len(text) <= 45:
+                info["egress_ip"] = text
+                info["egress_source"] = url
+                break
+        except Exception as exc:
+            info.setdefault("egress_error", f"{type(exc).__name__}: {exc}"[:120])
+    for url in ("https://ipinfo.io/json", "https://api.myip.com"):
+        try:
+            data = json.loads(await loop.run_in_executor(None, fetch, url))
+        except Exception:
+            continue
+        org = data.get("org") or data.get("country_name")
+        if org:
+            info["egress_org"] = org if "org" in data else None
+            info["egress_country"] = data.get("country") or data.get("country_code")
+            info["egress_city"] = data.get("city")
+            if not info.get("egress_ip"):
+                info["egress_ip"] = data.get("ip")
+            break
     return info
 
 
@@ -968,6 +1052,14 @@ async def main() -> None:
     parser.add_argument("--dns-probe-ns", nargs="+", default=None,
                         help="DNS-серверы для DNS-проб (по умолчанию системные, "
                              "то есть DNS оператора)")
+    parser.add_argument("--link-watch", action="store_true",
+                        help="Следить за живучестью канала во время прогона: "
+                             "падают шлюз/DNS/внешний адрес или только цели")
+    parser.add_argument("--shuffle", action="store_true",
+                        help="Случайный порядок доменов: если фильтр зависит от "
+                             "времени прогона, это превращается в шум, а не в сдвиг")
+    parser.add_argument("--pace", type=float, default=0.0,
+                        help="Пауза между запусками проб, сек (снижает нагрузку)")
     parser.add_argument("--dns-probe-concurrency", type=int, default=None,
                         help="Одновременных DNS-проб (по умолчанию min(concurrency, 8): "
                              "больше ретранслятор модема не держит)")
@@ -1086,6 +1178,12 @@ async def main() -> None:
         print("❌ Домены не найдены")
         return
 
+    if args.shuffle:
+        seed = int(datetime.now().strftime("%H%M%S"))
+        random.Random(seed).shuffle(domains)
+        meta["shuffle_seed"] = seed
+        print(f"   порядок доменов перемешан (seed {seed})")
+
     started = time.perf_counter()
     out_dir, jsonl_path, _, _ = output_paths(args, ts)
 
@@ -1125,6 +1223,10 @@ async def main() -> None:
     bar = Progress(total_records, len(domains), interactive=args.progress_bar)
 
     heartbeat_task = asyncio.create_task(bar.heartbeat(1.0))
+    watch_stop = asyncio.Event()
+    watch_task = None
+    if args.link_watch:
+        watch_task = asyncio.create_task(run_link_watch(args, meta, watch_stop, emit))
     try:
         records = await run_matrix(domains, args, meta, emit, resolved)
         bar.close()
@@ -1135,6 +1237,12 @@ async def main() -> None:
     finally:
         bar.close()
         heartbeat_task.cancel()
+        watch_stop.set()
+        if watch_task is not None:
+            try:
+                await asyncio.wait_for(watch_task, timeout=5)
+            except (asyncio.TimeoutError, asyncio.CancelledError):
+                watch_task.cancel()
         jsonl_file.close()
     print(f"    матрица: {len(records)} проб за {time.perf_counter() - started:.1f} с")
 

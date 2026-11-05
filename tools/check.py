@@ -280,6 +280,9 @@ def main():
                         help="Одновременных HTTP-проверок на шаге check-domains")
     parser.add_argument("--no-release", action="store_true",
                         help="Только проверить, release не пересобирать")
+    parser.add_argument("--pace", type=float,
+                        default=float(os.environ.get("PACE", 0)),
+                        help="Пауза между пробами пар, сек: снижает нагрузку на канал")
     parser.add_argument("--phase", choices=PHASES,
                         default=os.environ.get("PHASE", "unknown"),
                         help="Фаза сети: off — режим белого списка выключен, "
@@ -324,12 +327,17 @@ def main():
              "--out-dir", str(out / "pairs"), "--format", "both",
              "--timeout", str(args.timeout), "-c", str(args.concurrency),
              "--repeat", str(args.repeat), "--ipv6-check", "--detect-egress",
-             "--dns-probe",
+             "--dns-probe", "--link-watch",
+             # Порядок доменов перемешивается: если фильтр или канал ведут себя
+             # по-разному в начале и в конце прогона, сдвиг станет шумом.
+             "--shuffle",
              "-o", operator, "--channel", channel, "--phase", args.phase, *cache_args]
     if mcc_mnc:
         pairs += ["--mcc-mnc", mcc_mnc]
     if args.dns:
         pairs += ["--dns"] + args.dns
+    if args.pace:
+        pairs += ["--pace", str(args.pace)]
     if args.limit:
         pairs += ["--limit", str(args.limit)]
     pairs_code = run(pairs, "1/3 Проверка пар SNI × IP")
