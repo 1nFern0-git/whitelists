@@ -33,6 +33,11 @@ DOMAINS_DIR = ROOT / "src" / "domains"
 # Кэш адресов, который собирает workflow: в сети оператора DNS не отвечает,
 # и без готовых адресов домен нечем проверять.
 DNS_CACHE = ROOT / "configs" / "dns-cache.json"
+HTTP_CONFIG = ROOT / "configs" / "check-domains.json"
+
+# Скрипт запускают как `python3 tools/check.py`, поэтому каталог скрипта уже
+# в sys.path — общие помощники лежат рядом с ним.
+from operators import slug  # noqa: E402
 
 MOBILE_PREFIXES = ("ww", "ppp", "rmnet", "usb", "enx")
 
@@ -45,12 +50,6 @@ NETWORKS = {
     "rostelecom": "250-20",
     "yota": "250-11",
 }
-
-
-def slug(name):
-    """«Sber Mobile» → sber-mobile: одно имя на папку runs/ и ключ манифеста."""
-    cleaned = "".join(ch if ch.isalnum() or ch in " -_" else "" for ch in name.lower())
-    return "-".join(cleaned.replace("_", " ").split()) or "unknown"
 
 
 def run(cmd, title):
@@ -157,6 +156,20 @@ def newest(pattern):
     return files[-1] if files else None
 
 
+def http_timeout_default() -> float:
+    """Таймаут шага check-domains из его конфига.
+
+    Это не тот же таймаут, что у пробы пары: там — одна TLS-попытка (3 с),
+    здесь — весь HTTP-запрос с коннектом и TLS (15 с). Наследовать 3 с во
+    второй шаг нельзя: живые сайты попали бы в TIMEOUT.
+    """
+    try:
+        cfg = json.loads(HTTP_CONFIG.read_text(encoding="utf-8"))
+        return float(cfg.get("network", {}).get("timeout_total", 15))
+    except Exception:
+        return 15.0
+
+
 class Tee:
     """Дублирует вывод в журнал: полевой прогон может остаться без терминала."""
 
@@ -190,7 +203,11 @@ def main():
                         help="Повторов на каждую пару: покажет стабильность фильтрации")
     parser.add_argument("--timeout", type=float,
                         default=float(os.environ.get("PROBE_TIMEOUT", 3)),
-                        help="Таймаут одной пробы, сек")
+                        help="Таймаут одной пробы пары (SNI × IP), сек")
+    parser.add_argument("--http-timeout", type=float,
+                        default=float(os.environ.get("HTTP_TIMEOUT", 0)) or None,
+                        help="Таймаут HTTP-запроса на шаге check-domains, сек "
+                             "(по умолчанию — из configs/check-domains.json)")
     parser.add_argument("--concurrency", "-c", type=int,
                         default=int(os.environ.get("CONCURRENCY", 50)),
                         help="Одновременных проб")
@@ -260,8 +277,13 @@ def main():
         http_limit = args.http_limit or args.limit
         if http_limit:
             http_cmd += ["--limit", str(http_limit)]
+        if args.http_timeout:
+            http_cmd += ["--timeout", str(args.http_timeout)]
         if args.dns:
             http_cmd += ["--dns"] + args.dns
+        http_timeout = args.http_timeout or http_timeout_default()
+        source = "флаг --http-timeout" if args.http_timeout else HTTP_CONFIG.name
+        print(f"   HTTP-таймаут: {http_timeout:g} с ({source})", flush=True)
         run(http_cmd, "3/3 Проверка доменов по HTTP")
         after = newest(ROOT / "build" / "domains_checked" / "*.txt")
         if after and after != before:

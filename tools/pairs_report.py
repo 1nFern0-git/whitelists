@@ -18,7 +18,12 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Dict, List
 
+from operators import canonical_key, display, load_manifest
+
 PASS = "PASS"
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+RELEASE_MANIFEST = PROJECT_ROOT / "configs" / "release.json"
 
 
 def load(paths: List[Path]) -> List[Dict[str, Any]]:
@@ -48,6 +53,24 @@ def category_map(domains_dir: Path) -> Dict[str, str]:
                 if line and not line.startswith("#"):
                     mapping.setdefault(line, category)
     return mapping
+
+
+def operators_line(matrix: List[Dict[str, Any]], manifest: Dict[str, Any]) -> str:
+    """Все операторы из данных с числом проб, а не первый попавшийся.
+
+    Поле `operator` пишется руками («Megafon», «ROSTELECOM», «Ростелеком»),
+    поэтому имя приводится к ключу манифеста, а выводится его название.
+    """
+    counts: Counter = Counter()
+    for record in matrix:
+        key = canonical_key(record.get("operator"), manifest) or "unknown"
+        counts[(key, (record.get("mcc_mnc") or "").strip())] += 1
+    parts = []
+    for (key, mcc), count in counts.most_common():
+        label = display(key, manifest) if key != "unknown" else "не указан"
+        suffix = f", {mcc}" if mcc else ""
+        parts.append(f"{label}{suffix} ({count} проб)")
+    return "- оператор: " + "; ".join(parts)
 
 
 def main() -> None:
@@ -103,7 +126,7 @@ def main() -> None:
     lines = ["# Отчёт по белому списку", ""]
     meta = matrix[0]
     lines += [
-        f"- оператор: {meta.get('operator')} {meta.get('mcc_mnc')}",
+        operators_line(matrix, load_manifest(RELEASE_MANIFEST)),
         f"- канал: {meta.get('channel')}",
         f"- проб: {len(matrix)}",
         f"- домены с PASS: {len(passed_domains)}",
