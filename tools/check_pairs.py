@@ -36,6 +36,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import re
 import signal
 import socket
 import ssl
@@ -102,12 +103,37 @@ def cfg(*keys, default=None):
     return current
 
 
+# Кириллица и дефисы допустимы внутри меток: в списках есть яндекс.рф, мвд.рф
+# и punycode вида xn--80afnfom.xn--80ahmohdapg.xn--80asehdb.
+_D_LABEL = r'[a-z0-9\u0400-\u04ff]'
+_D_INNER = r'[a-z0-9\u0400-\u04ff-]'
+DOMAIN_RE = re.compile(
+    r'^(?!-)'
+    + r'(?:' + _D_LABEL + r'(?:' + _D_INNER + r'{0,61}' + _D_LABEL + r')?\.)+'
+    + _D_LABEL + r'(?:' + _D_INNER + r'{0,61}' + _D_LABEL + r')?$'
+)
+
+
 def extract_domain(line: str) -> str:
+    """Домен из строки списка; мусор отбрасывается.
+
+    Строка отсюда уходит прямо в SNI, поэтому разбор такой же строгий, как
+    в check-domains.py: иначе «example.com:8443» или комментарий станут именем
+    в TLS ClientHello.
+    """
     line = line.strip()
     if not line or line.startswith("#"):
         return ""
-    domain = line.replace("https://", "").replace("http://", "")
-    return domain.split("/")[0].split("?")[0].split("#")[0].strip()
+    value = line.replace("https://", "").replace("http://", "")
+    value = value.split("/")[0].split("?")[0].split("#")[0].strip()
+    value = value.split(":")[0] if value.count(":") == 1 else value
+    value = value.lower()
+    if not value or " " in value or "*" in value:
+        return ""
+    if not DOMAIN_RE.match(value):
+        return ""
+    # Зона короче двух символов не существует — как в check-domains.py.
+    return value if len(value.rsplit(".", 1)[1]) >= 2 else ""
 
 
 def load_domains(directory: str) -> List[str]:
@@ -122,13 +148,20 @@ def load_domains(directory: str) -> List[str]:
 
     domains: List[str] = []
     seen: Set[str] = set()
+    skipped = 0
     for filepath in sorted(p for p in dir_path.iterdir() if p.is_file()):
         with open(filepath, "r", encoding="utf-8") as f:
             for line in f:
                 domain = extract_domain(line)
-                if domain and domain not in seen:
+                if not domain:
+                    if line.strip() and not line.strip().startswith("#"):
+                        skipped += 1
+                    continue
+                if domain not in seen:
                     seen.add(domain)
                     domains.append(domain)
+    if skipped:
+        print(f"⚠️  пропущено некорректных строк: {skipped}")
     return domains
 
 
@@ -624,7 +657,11 @@ async def run_controls(records: List[Dict[str, Any]], args: argparse.Namespace,
         "verdict": "no_data",
     }
     extra: List[Dict[str, Any]] = []
-    if not args.control or not passed:
+    if not passed:
+        return extra, summary
+    if not args.control:
+        # Контроль выключен: тип фильтрации не определить, но данные есть.
+        summary["verdict"] = "no_control"
         return extra, summary
 
     sample_ips = sorted(passed_ips)[: args.control_sample]
@@ -870,10 +907,15 @@ async def main() -> None:
         if available:
             print("   IPv6: доступен, AAAA-пробы включены")
         else:
-            print("   ⚠️  IPv6 не работает: AAAA-пробы дадут DROP без блокировки.")
-            print("       Это не блокировка, а отсутствие маршрута. "
-                  "Чтобы не засорять отчёт: --no-ipv6")
+            # Без маршрута AAAA-проба даёт DROP, который в отчёте неотличим
+            # от блокировки, поэтому такие пробы просто не делаем.
+            print("   ⚠️  IPv6 не работает: AAAA-пробы отключены.")
+            print("       Без маршрута они дают DROP, а это не блокировка.")
+            args.families = [f for f in args.families if f != "AAAA"]
             meta["ipv6_warning"] = "AAAA-пробы без IPv6-маршрута"
+            if not args.families:
+                print("❌ других записей не запрошено — проверять нечего")
+                return
 
     if args.detect_egress:
         egress = await detect_egress()

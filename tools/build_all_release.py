@@ -100,7 +100,7 @@ def main():
         ips = collect_ips(pairs, domains) if pairs else []
         nets = aggregate(ips) if ips else []
 
-        print(f"   → доменов: {len(domains)}, адресов: {len(ips)}, сетей: {len(nets)}")
+        print(f"   → доменов: {len(domains)}, адресов: {len(ips)}, записей: {len(nets)}")
 
         outputs = {
             RELEASE_DIR / f"whitelist-{operator}.txt": domains,

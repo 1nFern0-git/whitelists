@@ -56,19 +56,18 @@ def slug(name):
 def run(cmd, title):
     """Запускает шаг и возвращает его код возврата.
 
-    В терминале вывод идёт напрямую — так виден прогресс длинных шагов.
-    Если вывод перенаправлен, перехватываем его, чтобы он попал в журнал.
+    Вывод шага всегда перехватывается и дублируется через наш stdout: только
+    так он попадает в журнал прогона. Прямая запись дочернего процесса в
+    терминал шла бы мимо Tee, и в run.log оставался бы неполный журнал.
     """
     print(f"\n── {title} " + "─" * max(0, 60 - len(title)), flush=True)
     print("   " + " ".join(str(part) for part in cmd[1:]), flush=True)
-    if sys.stdout.isatty():
-        code = subprocess.call(cmd, cwd=str(TOOLS))
-    else:
-        process = subprocess.Popen(cmd, cwd=str(TOOLS), stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, text=True, bufsize=1)
-        for line in process.stdout:
-            sys.stdout.write(line)
-        code = process.wait()
+    process = subprocess.Popen(cmd, cwd=str(TOOLS), stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT, text=True, bufsize=1)
+    for line in process.stdout:
+        sys.stdout.write(line)
+    process.stdout.close()
+    code = process.wait()
     if code != 0:
         print(f"   ⚠️  шаг завершился с кодом {code}")
     return code
@@ -109,7 +108,7 @@ def check_channel():
 def ask_operator(preset):
     """Оператор: из флага, иначе меню. Без терминала — без вопросов."""
     if preset:
-        return preset, ""
+        return preset, NETWORKS.get(slug(preset), "")
 
     known = {}
     try:
@@ -129,9 +128,8 @@ def ask_operator(preset):
     choice = input("   номер или название: ").strip()
     if not choice:
         return "unknown", ""
-    if choice in known:
-        return known[choice], ""
-    return choice, NETWORKS.get(slug(choice), "")
+    name = known[choice] if choice in known else choice
+    return name, NETWORKS.get(slug(name), "")
 
 
 def ensure_operator_in_manifest(operator):
@@ -187,7 +185,7 @@ def main():
     parser.add_argument("-o", "--operator", default=os.environ.get("OPERATOR", ""),
                         help="Оператор (иначе спросим)")
     parser.add_argument("--limit", type=int, default=int(os.environ.get("LIMIT", 0)),
-                        help="Проверить только первые N доменов")
+                        help="Проверить только первые N доменов (на обоих шагах)")
     parser.add_argument("--repeat", type=int, default=int(os.environ.get("REPEAT", 1)),
                         help="Повторов на каждую пару: покажет стабильность фильтрации")
     parser.add_argument("--timeout", type=float,
@@ -204,12 +202,15 @@ def main():
                         help="Не делать HTTP-проверку (быстрее, но одно мнение)")
     parser.add_argument("--http-limit", type=int, default=0,
                         help="Сколько доменов проверять по HTTP (0 — все)")
+    parser.add_argument("--http-concurrency", type=int,
+                        default=int(os.environ.get("HTTP_CONCURRENCY", 10)),
+                        help="Одновременных HTTP-проверок на шаге check-domains")
     parser.add_argument("--no-release", action="store_true",
                         help="Только проверить, release не пересобирать")
     args = parser.parse_args()
 
     started = time.time()
-    stamp = datetime.now().strftime("%Y-%m-%d-%H%M")
+    stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
     out = ROOT / "build" / f"run-{stamp}"
     out.mkdir(parents=True, exist_ok=True)
     sys.stdout = Tee(sys.stdout, out / "run.log")
@@ -253,9 +254,14 @@ def main():
     if not args.no_http:
         before = newest(ROOT / "build" / "domains_checked" / "*.txt")
         http_cmd = [sys.executable, "check-domains.py", str(DOMAINS_DIR),
-                    "-q", "-c", "10", "--operator", operator]
-        if args.http_limit:
-            http_cmd += ["--limit", str(args.http_limit)]
+                    "-q", "-c", str(args.http_concurrency), "--operator", operator]
+        # Тот же набор доменов, что и на шаге пар: иначе HTTP-мнение
+        # получат домены, которых нет в наблюдениях.
+        http_limit = args.http_limit or args.limit
+        if http_limit:
+            http_cmd += ["--limit", str(http_limit)]
+        if args.dns:
+            http_cmd += ["--dns"] + args.dns
         run(http_cmd, "3/3 Проверка доменов по HTTP")
         after = newest(ROOT / "build" / "domains_checked" / "*.txt")
         if after and after != before:
@@ -284,7 +290,7 @@ def main():
                             f"({len(domain_list.read_text(encoding='utf-8').split())} доменов)")
             if ip_list.exists():
                 release_line += (f", {ip_list.relative_to(ROOT)} "
-                                 f"({len(ip_list.read_text(encoding='utf-8').split())} сетей)")
+                                 f"({len(ip_list.read_text(encoding='utf-8').split())} адресов)")
 
     elapsed = int(time.time() - started)
     print("\n" + "=" * 66, flush=True)

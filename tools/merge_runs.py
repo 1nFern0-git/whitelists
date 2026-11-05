@@ -22,9 +22,31 @@ from typing import Dict, List, Set
 PASS = "PASS"
 
 
+def run_labels(paths: List[Path]) -> Dict[Path, str]:
+    """Метки прогонов: одинаковые имена файлов из разных каталогов различимы.
+
+    Раньше метка бралась только из имени файла, и прогон с тем же именем
+    молча затирал предыдущий.
+    """
+    bases = [path.stem.replace("pairs-", "") for path in paths]
+    duplicated = {base for base in bases if bases.count(base) > 1}
+    labels: Dict[Path, str] = {}
+    used: Set[str] = set()
+    for path, base in zip(paths, bases):
+        label = f"{path.parent.name}-{base}" if base in duplicated else base
+        unique, counter = label, 2
+        while unique in used:
+            unique = f"{label}({counter})"
+            counter += 1
+        used.add(unique)
+        labels[path] = unique
+    return labels
+
+
 def load_runs(paths: List[Path]) -> Dict[str, Dict[str, str]]:
     """Возвращает {метка прогона: {домен: статус}}."""
     runs: Dict[str, Dict[str, str]] = {}
+    labels = run_labels(paths)
     for path in paths:
         records: Dict[str, Counter] = {}
         with open(path, "r", encoding="utf-8") as f:
@@ -40,12 +62,11 @@ def load_runs(paths: List[Path]) -> Dict[str, Dict[str, str]]:
                     continue
                 records.setdefault(record["domain"], Counter())[record.get("status")] += 1
 
-        label = path.stem.replace("pairs-", "")
         run: Dict[str, str] = {}
         for domain, counter in records.items():
             # Домен считается прошедшим, если хотя бы одна его пара PASS.
             run[domain] = PASS if counter.get(PASS) else counter.most_common(1)[0][0]
-        runs[f"{label}"] = run
+        runs[labels[path]] = run
     return runs
 
 

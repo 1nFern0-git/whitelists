@@ -24,9 +24,10 @@ import ipaddress
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Set
+from typing import Dict, List, Set, Union
 
 DOMAIN_MIN_LEN = 3
+IPNetwork = Union[ipaddress.IPv4Network, ipaddress.IPv6Network]
 
 
 def read_domains(path: Path) -> Set[str]:
@@ -101,14 +102,19 @@ def collect_ips(pairs_paths: List[str], domains: List[str]) -> List[str]:
     return sorted(found)
 
 
-def aggregate(ips: List[str]) -> List[ipaddress._BaseNetwork]:
-    """Схлопывает адреса в сети, раздельно по IPv4 и IPv6."""
-    import ipaddress as _ip
-    nets: List[Any] = []
+def aggregate(ips: List[str]) -> List[IPNetwork]:
+    """Оставляет по одной записи на адрес: /32 для IPv4 и /128 для IPv6.
+
+    Схлопывать в более широкие префиксы нельзя: доступность проверена по паре
+    (SNI, IP), и сеть шире проверенного адреса разрешила бы соседние адреса,
+    которых в наблюдениях не было.
+    """
+    nets: List[IPNetwork] = []
     for version in (4, 6):
-        addrs = [_ip.ip_address(i) for i in ips if _ip.ip_address(i).version == version]
+        addrs = [ipaddress.ip_address(i) for i in ips
+                 if ipaddress.ip_address(i).version == version]
         if addrs:
-            nets.extend(sorted(_ip.collapse_addresses(addrs)))
+            nets.extend(sorted(ipaddress.collapse_addresses(addrs)))
     return nets
 
 
@@ -177,7 +183,7 @@ def main() -> None:
         ip_path = Path(args.ip_output)
         ip_path.parent.mkdir(parents=True, exist_ok=True)
         ip_path.write_text("\n".join(str(n) for n in nets) + "\n", encoding="utf-8")
-        print(f"🌐 IP-список: {len(ips)} адресов → {len(nets)} сетей → {ip_path}")
+        print(f"🌐 IP-список: {len(ips)} адресов → {len(nets)} записей → {ip_path}")
 
     if args.report:
         report = Path(args.report)

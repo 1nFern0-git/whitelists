@@ -4,8 +4,10 @@
 Все настройки берутся из configs/check-domains.json
 
 Что проверяется: для каждого адреса домена (все A/AAAA) выполняется
-многоэтапная HTTP-проба. Домен считается доступным, если хотя бы один
-адрес ответил. Отдельно детектируется подмена ответа фильтром.
+многоэтапная HTTP-проба. Проба привязана к адресу: соединение идёт на него,
+а SNI и заголовок Host остаются доменом — иначе проверялся бы адрес,
+который выберет системный резолвер. Домен считается доступным, если хотя бы
+один адрес ответил. Отдельно детектируется подмена ответа фильтром.
 
 Зависимости: pip install curl_cffi httpx aiodns tqdm cryptography
 """
@@ -29,12 +31,27 @@ try:
     from curl_cffi.requests import AsyncSession as CurlCffiSession
     from curl_cffi import __version__ as curl_cffi_version
     USE_CURL_CFFI = True
+    try:
+        from curl_cffi import CurlOpt
+        CURL_RESOLVE = hasattr(CurlOpt, "RESOLVE")
+    except ImportError:
+        CurlOpt = None
+        CURL_RESOLVE = False
 except ImportError:
     USE_CURL_CFFI = False
     curl_cffi_version = "not installed"
+    CurlOpt = None
+    CURL_RESOLVE = False
 
 import httpx
 import aiodns
+
+try:
+    import httpcore  # зависимость httpx; нужен, чтобы привязать пробу к адресу
+    HTTPCORE_AVAILABLE = True
+except ImportError:
+    httpcore = None
+    HTTPCORE_AVAILABLE = False
 
 try:
     from cryptography import x509
@@ -375,48 +392,173 @@ class Resolver:
         return v4, v6
 
 
+if HTTPCORE_AVAILABLE:
+    class _PinnedBackend(httpcore.AnyIOBackend):  # type: ignore[misc]
+        """TCP-подключение к проверяемому адресу вместо адреса из DNS.
+
+        SNI и заголовок Host остаются доменом: httpcore передаёт имя отдельно
+        от адреса подключения. Без этого проба «домен + адрес» измеряет адрес,
+        который выберет системный резолвер, а не тот, что указан в наблюдении.
+        """
+
+        def __init__(self, ip: str):
+            self.ip = ip
+
+        async def connect_tcp(self, host: str, port: int, timeout: Optional[float] = None,
+                              local_address: Optional[str] = None,
+                              socket_options: Optional[Any] = None) -> Any:
+            return await super().connect_tcp(self.ip, port, timeout, local_address,
+                                             socket_options)
+
+
+def _pin_transport(transport: httpx.AsyncHTTPTransport, ip: str) -> bool:
+    """Привязывает транспорт httpx к адресу. Возвращает признак успеха."""
+    if not HTTPCORE_AVAILABLE:
+        return False
+    pool = getattr(transport, "_pool", None)
+    if pool is None or getattr(pool, "_network_backend", None) is None:
+        return False
+    pool._network_backend = _PinnedBackend(ip)
+    return True
+
+
+AddressPin = Tuple[str, str]  # (домен, адрес): ключ привязанной пробы
+
+
 class HTTPClientPool:
+    """Клиенты для проб: общие и привязанные к конкретной паре (домен, адрес).
+
+    Привязанные живут только на время пробы адреса и переиспользуют соединение
+    внутри одной пробы, но не между адресами: иначе проба уедет не туда.
+    """
+
     def __init__(self, settings: Settings):
         self.s = settings
         self.httpx_clients: Dict[str, httpx.AsyncClient] = {}
+        self.pinned_httpx: Dict[str, Dict[str, httpx.AsyncClient]] = {}
         self.curl_client: Optional[Any] = None
+        self.pinned_curl: Dict[str, Any] = {}
+        self.warned_http_pin = False
+        self.warned_curl_pin = False
         self._lock = asyncio.Lock()
 
-    async def get_httpx(self, http2: bool, is_http: bool) -> httpx.AsyncClient:
+    @staticmethod
+    def pinning_notes() -> List[str]:
+        notes = []
+        if USE_CURL_CFFI and CURL_RESOLVE:
+            notes.append("curl_cffi (CURLOPT_RESOLVE)")
+        if HTTPCORE_AVAILABLE:
+            notes.append("httpx (network backend)")
+        return notes
+
+    async def get_httpx(self, http2: bool, is_http: bool,
+                        pin: Optional[AddressPin] = None) -> httpx.AsyncClient:
         key = f"h2_{http2}_http_{is_http}"
+        pinned = bool(pin) and HTTPCORE_AVAILABLE
+        scope = f"{pin[0]}|{pin[1]}" if pinned and pin else ""
         async with self._lock:
+            if pinned:
+                group = self.pinned_httpx.setdefault(scope, {})
+                if key not in group:
+                    group[key] = self._new_httpx(http2 and not is_http, pin[1])
+                return group[key]
             if key not in self.httpx_clients:
-                self.httpx_clients[key] = httpx.AsyncClient(
-                    http2=http2 and not is_http,
-                    verify=self.s.verify_ssl,
-                    timeout=httpx.Timeout(self.s.timeout_total),
-                    follow_redirects=False,
-                    headers=self.s.headers,
-                    limits=httpx.Limits(max_keepalive_connections=20),
-                )
+                self.httpx_clients[key] = self._new_httpx(http2 and not is_http, None)
             return self.httpx_clients[key]
 
-    async def get_curl(self) -> Optional[Any]:
+    def _new_httpx(self, http2: bool, ip: Optional[str]) -> httpx.AsyncClient:
+        if not ip:
+            return httpx.AsyncClient(
+                http2=http2,
+                verify=self.s.verify_ssl,
+                timeout=httpx.Timeout(self.s.timeout_total),
+                follow_redirects=False,
+                headers=self.s.headers,
+                limits=httpx.Limits(max_keepalive_connections=20),
+            )
+        transport = httpx.AsyncHTTPTransport(verify=self.s.verify_ssl, http2=http2)
+        if not _pin_transport(transport, ip) and not self.warned_http_pin:
+            self.warned_http_pin = True
+            print(f"⚠️  нет привязки httpx к адресу {ip}: проба пойдёт по имени")
+        return httpx.AsyncClient(
+            transport=transport,
+            timeout=httpx.Timeout(self.s.timeout_total),
+            follow_redirects=False,
+            headers=self.s.headers,
+            limits=httpx.Limits(max_keepalive_connections=0),
+        )
+
+    async def get_curl(self, pin: Optional[AddressPin] = None) -> Optional[Any]:
         if not USE_CURL_CFFI or not get_config_value("curl_cffi", "enabled", default=True):
             return None
+        if pin and CURL_RESOLVE:
+            scope = f"{pin[0]}|{pin[1]}"
+            async with self._lock:
+                if scope not in self.pinned_curl:
+                    session = self._new_curl(pin)
+                    if session is not None:
+                        self.pinned_curl[scope] = session
+                    elif not self.warned_curl_pin:
+                        self.warned_curl_pin = True
+                        print("⚠️  нет привязки curl_cffi к адресу: "
+                              "CURLOPT_RESOLVE не принят, проба пойдёт по имени")
+                if scope in self.pinned_curl:
+                    return self.pinned_curl[scope]
         async with self._lock:
             if self.curl_client is None:
-                self.curl_client = CurlCffiSession(
-                    impersonate=self.s.impersonate,
-                    verify=self.s.verify_ssl,
-                    timeout=self.s.timeout_total,
-                    allow_redirects=False,
-                )
+                self.curl_client = self._new_curl(None)
             return self.curl_client
+
+    def _new_curl(self, pin: Optional[AddressPin]) -> Optional[Any]:
+        options: Dict[Any, Any] = {}
+        if pin:
+            domain, ip = pin
+            # CURLOPT_RESOLVE: имя из SNI/Host, соединение — на проверяемый адрес.
+            options[CurlOpt.RESOLVE] = [f"{domain}:443:{ip}", f"{domain}:80:{ip}"]
+        try:
+            return CurlCffiSession(
+                impersonate=self.s.impersonate,
+                verify=self.s.verify_ssl,
+                timeout=self.s.timeout_total,
+                allow_redirects=False,
+                **({"curl_options": options} if options else {}),
+            )
+        except Exception:
+            return None
+
+    async def release_address(self, pin: AddressPin) -> None:
+        """Закрывает всё, что создавалось под одну пару (домен, адрес)."""
+        scope = f"{pin[0]}|{pin[1]}"
+        async with self._lock:
+            session = self.pinned_curl.pop(scope, None)
+            clients = list(self.pinned_httpx.pop(scope, {}).values())
+        if session is not None:
+            try:
+                await session.close()
+            except Exception:
+                pass
+        for client in clients:
+            try:
+                await client.aclose()
+            except Exception:
+                pass
 
     async def close(self):
         async with self._lock:
             for client in self.httpx_clients.values():
                 await client.aclose()
             self.httpx_clients.clear()
+            pinned = [c for group in self.pinned_httpx.values() for c in group.values()]
+            self.pinned_httpx.clear()
+            sessions = list(self.pinned_curl.values())
+            self.pinned_curl.clear()
             if self.curl_client:
                 await self.curl_client.close()
                 self.curl_client = None
+        for client in pinned:
+            await client.aclose()
+        for session in sessions:
+            await session.close()
 
 
 def _new_result(domain: str, client: str, method: str) -> Dict[str, Any]:
@@ -499,6 +641,23 @@ def _apply_redirect_check(res: Dict[str, Any], domain: str, code: int,
         res["details"] = f"{res.get('details', '')} → {host[:40]}".strip()
 
 
+def _apply_body_checks(res: Dict[str, Any], domain: str, code: int, snippet: str,
+                       final_url: str, detect_stub: bool) -> None:
+    """Признаки подмены в теле ответа: пустая страница, заглушка, чужой хост."""
+    if code == 200 and not snippet.strip():
+        res["status"] = "SUSPECT_EMPTY"
+        res["details"] = "200 без тела"
+        return
+    marker = _find_stub(snippet) if detect_stub else None
+    if marker and code < 400:
+        res["status"] = "SUSPECT_STUB"
+        res["stub"] = True
+        res["details"] = f"страница-заглушка: «{marker}»"
+    elif final_url and _redirect_elsewhere(domain, final_url):
+        res["status"] = "SUSPECT_REDIRECT"
+        res["details"] = f"редирект на чужой хост: {final_url[:60]}"
+
+
 async def _read_head(client, url: str, max_bytes: int = 4096) -> Tuple[int, str, str, str]:
     """Читает только начало тела: не тянет мегабайты в мобильной сети."""
     body = b""
@@ -513,12 +672,67 @@ async def _read_head(client, url: str, max_bytes: int = 4096) -> Tuple[int, str,
     return resp.status_code, body[:max_bytes].decode("utf-8", "ignore"), final_url, location
 
 
-async def _do_curl_cffi(pool: HTTPClientPool, url: str, enable_http3: bool) -> Dict[str, Any]:
+def _cancelled_by_us() -> bool:
+    """Настоящая ли это отмена задачи, а не внутренний CancelledError библиотеки."""
+    if SHUTDOWN_REQUESTED:
+        return True
+    task = asyncio.current_task()
+    return bool(task and getattr(task, "cancelling", lambda: 0)())
+
+
+async def _close_stream(resp) -> None:
+    """Закрывает поток, не принимая CancelledError libcurl за отмену задачи.
+
+    curl_cffi 0.15 бросает CancelledError при досрочном закрытии потока;
+    раньше это либо роняло прогон, либо глотало настоящее прерывание.
+    """
+    try:
+        await resp.aclose()
+    except asyncio.CancelledError:
+        if _cancelled_by_us():
+            raise
+    except Exception:
+        pass
+
+
+async def _curl_snippet(client, url: str, enable_http3: bool,
+                        max_bytes: int = 4096) -> Optional[str]:
+    """Начало тела ответа для проверки на заглушку.
+
+    Запрашивается только для ответивших доменов и только первые килобайты:
+    в мобильной сети тело целиком — это мегабайты. None — тело получить
+    не удалось (тогда вывод о заглушке делать не из чего).
+    """
+    kwargs: Dict[str, Any] = {"url": url, "stream": True,
+                              "headers": {"Range": f"bytes=0-{max_bytes - 1}"}}
+    if enable_http3:
+        kwargs["http_version"] = "v3"
+    body = b""
+    try:
+        resp = await client.get(**kwargs)
+    except Exception:
+        return None
+    try:
+        async for chunk in resp.aiter_content():
+            body += chunk
+            if len(body) >= max_bytes:
+                break
+    except asyncio.CancelledError:
+        if _cancelled_by_us():
+            raise
+    except Exception:
+        pass
+    await _close_stream(resp)
+    return body[:max_bytes].decode("utf-8", "ignore")
+
+
+async def _do_curl_cffi(pool: HTTPClientPool, url: str, enable_http3: bool,
+                        pin: Optional[AddressPin] = None) -> Dict[str, Any]:
     domain = url.split("://")[1].split('/')[0]
     start = time.time()
     res = _new_result(domain, "curl_cffi", "?")
     try:
-        client = await pool.get_curl()
+        client = await pool.get_curl(pin)
         if client is None:
             raise RuntimeError("curl_cffi not available")
         kwargs: Dict[str, Any] = {"url": url}
@@ -532,24 +746,22 @@ async def _do_curl_cffi(pool: HTTPClientPool, url: str, enable_http3: bool) -> D
             try:
                 async for _ in resp.aiter_content():
                     break
-            except BaseException:
-                pass
-            try:
-                await resp.aclose()
             except asyncio.CancelledError:
-                if SHUTDOWN_REQUESTED:
+                if _cancelled_by_us():
                     raise
             except Exception:
                 pass
+            await _close_stream(resp)
         version = getattr(resp, "http_version", 0)
         method = "H3" if version == 3 else ("H2" if version == 2 else "H1")
+        final_url = str(getattr(resp, "url", ""))
         res.update({
             "rtt_ms": round((time.time() - start) * 1000, 1),
             "code": resp.status_code,
             "status": _http_status(resp.status_code),
             "details": f"{resp.status_code} {getattr(resp, 'reason', 'OK')}",
             "method": method,
-            "final_url": str(getattr(resp, "url", "")),
+            "final_url": final_url,
         })
         location = ""
         try:
@@ -557,21 +769,29 @@ async def _do_curl_cffi(pool: HTTPClientPool, url: str, enable_http3: bool) -> D
         except Exception:
             location = ""
         _apply_redirect_check(res, domain, resp.status_code, location, url)
+        # HEAD возвращает ответ без тела, поэтому заглушку видно только
+        # отдельным запросом — иначе детект работал бы лишь на httpx-шагах.
+        if pool.s.detect_stub or resp.status_code == 200:
+            snippet = await _curl_snippet(client, url, enable_http3)
+            if snippet is not None:
+                _apply_body_checks(res, domain, resp.status_code, snippet,
+                                   final_url, pool.s.detect_stub)
     except Exception as e:
         res["status"], res["details"] = classify_error(e)
         if enable_http3 and "http3" in str(e).lower():
-            return await _do_curl_cffi(pool, url, enable_http3=False)
+            return await _do_curl_cffi(pool, url, enable_http3=False, pin=pin)
     return res
 
 
-async def _do_httpx(pool: HTTPClientPool, url: str, http2: bool) -> Dict[str, Any]:
+async def _do_httpx(pool: HTTPClientPool, url: str, http2: bool,
+                    pin: Optional[AddressPin] = None) -> Dict[str, Any]:
     domain = url.split("://")[1].split('/')[0]
     is_http = url.startswith("http://")
     start = time.time()
     res = _new_result(domain, f"httpx/{'h2' if http2 else 'h1.1'}",
                       "H1.1" if is_http else ("H2" if http2 else "H1.1"))
     try:
-        client = await pool.get_httpx(http2, is_http)
+        client = await pool.get_httpx(http2, is_http, pin)
         code, snippet, final_url, location = await _read_head(client, url)
         res.update({
             "rtt_ms": round((time.time() - start) * 1000, 1),
@@ -581,18 +801,7 @@ async def _do_httpx(pool: HTTPClientPool, url: str, http2: bool) -> Dict[str, An
             "final_url": final_url,
         })
         _apply_redirect_check(res, domain, code, location, url)
-        if code == 200 and not snippet.strip():
-            res["status"] = "SUSPECT_EMPTY"
-            res["details"] = "200 без тела"
-        else:
-            marker = _find_stub(snippet) if pool.s.detect_stub else None
-            if marker and code < 400:
-                res["status"] = "SUSPECT_STUB"
-                res["stub"] = True
-                res["details"] = f"страница-заглушка: «{marker}»"
-            elif final_url and _redirect_elsewhere(domain, final_url):
-                res["status"] = "SUSPECT_REDIRECT"
-                res["details"] = f"редирект на чужой хост: {final_url[:60]}"
+        _apply_body_checks(res, domain, code, snippet, final_url, pool.s.detect_stub)
     except Exception as e:
         res["status"], res["details"] = classify_error(e)
     return res
@@ -655,45 +864,60 @@ def _better(a: Optional[Dict[str, Any]], b: Dict[str, Any]) -> Dict[str, Any]:
 
 
 async def check_domain_pipeline(domain: str, pool: HTTPClientPool, address: str) -> Dict[str, Any]:
+    """HTTP-проба домена через конкретный адрес: SNI и Host — домен.
+
+    Адрес привязан к пробе, иначе проверялся бы тот адрес, который выберет
+    системный резолвер, и наблюдение «домен доступен» не относилось бы к паре
+    (SNI, IP) из отчёта.
+    """
     settings = pool.s
+    pin: Optional[AddressPin] = (domain, address) if address else None
+    pinned = bool(pin) and (HTTPCORE_AVAILABLE or (USE_CURL_CFFI and CURL_RESOLVE))
     steps = []
     if settings.use_impersonate:
         steps.append(("curl_cffi/HTTPS",
-                      lambda: _do_curl_cffi(pool, f"https://{domain}", settings.enable_http3)))
-    steps.append(("httpx/H2", lambda: _do_httpx(pool, f"https://{domain}", True)))
-    steps.append(("httpx/H1.1", lambda: _do_httpx(pool, f"https://{domain}", False)))
+                      lambda: _do_curl_cffi(pool, f"https://{domain}",
+                                            settings.enable_http3, pin)))
+    steps.append(("httpx/H2", lambda: _do_httpx(pool, f"https://{domain}", True, pin)))
+    steps.append(("httpx/H1.1", lambda: _do_httpx(pool, f"https://{domain}", False, pin)))
     if settings.http_fallback:
-        steps.append(("httpx/HTTP:80", lambda: _do_httpx(pool, f"http://{domain}", False)))
+        steps.append(("httpx/HTTP:80", lambda: _do_httpx(pool, f"http://{domain}", False, pin)))
 
     # Если TCP не поднялся, остальные протоколы по тому же адресу дадут то же самое.
     DEAD_TRANSPORT = {"PORT_BLOCK", "RST", "UNREACH", "DPI_BLOCK", "DNS_ERR"}
 
+    def empty(status: str, details: str) -> Dict[str, Any]:
+        return {"domain": domain, "status": status, "method": "-", "details": details,
+                "code": 0, "rtt_ms": 0, "client": "-", "final_url": "", "stub": False,
+                "cert_cn": None, "pinned": pinned}
+
     best: Optional[Dict[str, Any]] = None
-    for step_index, (step_name, step_fn) in enumerate(steps):
-        if SHUTDOWN_REQUESTED:
-            return {"domain": domain, "status": "INTERRUPTED", "method": "-",
-                    "details": "Shutdown requested", "code": 0, "rtt_ms": 0,
-                    "client": "-", "final_url": "", "stub": False, "cert_cn": None}
-        # Повторы имеет смысл делать только на первом шаге: остальные всё равно
-        # идут по тому же адресу и протоколу.
-        attempts = settings.retries + 1 if step_index == 0 else 1
-        for attempt in range(attempts):
-            result = await step_fn()
-            result["pipeline_step"] = step_name
-            result["address"] = address
-            best = _better(best, result)
-            if result["status"] in ALIVE_STATUSES:
+    try:
+        for step_index, (step_name, step_fn) in enumerate(steps):
+            if SHUTDOWN_REQUESTED:
+                return empty("INTERRUPTED", "Shutdown requested")
+            # Повторы имеет смысл делать только на первом шаге: остальные всё равно
+            # идут по тому же адресу и протоколу.
+            attempts = settings.retries + 1 if step_index == 0 else 1
+            for attempt in range(attempts):
+                result = await step_fn()
+                result["pipeline_step"] = step_name
+                result["address"] = address
+                result["pinned"] = pinned
+                best = _better(best, result)
+                if result["status"] in ALIVE_STATUSES:
+                    break
+                if result["status"] in settings.retriable and attempt < attempts - 1:
+                    await asyncio.sleep(0.5 * (attempt + 1))
+                    continue
                 break
-            if result["status"] in settings.retriable and attempt < attempts - 1:
-                await asyncio.sleep(0.5 * (attempt + 1))
-                continue
-            break
-        if best and (best["status"] in ALIVE_STATUSES
-                     or best.get("status") in DEAD_TRANSPORT):
-            break
-    return best or {"domain": domain, "status": "UNKNOWN", "method": "-",
-                    "details": "No steps executed", "code": 0, "rtt_ms": 0,
-                    "client": "-", "final_url": "", "stub": False, "cert_cn": None}
+            if best and (best["status"] in ALIVE_STATUSES
+                         or best.get("status") in DEAD_TRANSPORT):
+                break
+    finally:
+        if pin:
+            await pool.release_address(pin)
+    return best or empty("UNKNOWN", "No steps executed")
 
 
 async def run_checker(domains: List[str], args: argparse.Namespace) -> Dict[str, Dict[str, Any]]:
@@ -902,6 +1126,9 @@ async def main() -> None:
     print(f"   Проверка SSL: {'✅ Да' if settings.verify_ssl else '❌ Нет'}")
     print(f"   Сверка сертификата: {'✅ Да' if settings.verify_cert else '❌ Нет'}")
     print(f"   Детект заглушек: {'✅ Да' if settings.detect_stub else '❌ Нет'}")
+    pin_notes = HTTPClientPool.pinning_notes()
+    print(f"   Привязка пробы к адресу: "
+          f"{'✅ ' + ', '.join(pin_notes) if pin_notes else '❌ нет (адрес выберет резолвер)'}")
     print(f"   Повторы: {settings.retries} | пауза: {settings.jitter} с")
     print("-" * 45)
 
