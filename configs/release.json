@@ -3,10 +3,10 @@
     "title": "МегаФон",
     "mode": "intersection",
     "sources": [
-      "runs/megafon/*.txt"
+      "runs/megafon/on/*.txt"
     ],
     "pairs": [
-      "runs/megafon/*.tsv"
+      "runs/megafon/on/*.tsv"
     ]
   },
   "rostelecom": {
@@ -14,10 +14,10 @@
     "mode": "min",
     "min_sources": 3,
     "sources": [
-      "runs/rostelecom/*.txt"
+      "runs/rostelecom/on/*.txt"
     ],
     "pairs": [
-      "runs/rostelecom/*.tsv"
+      "runs/rostelecom/on/*.tsv"
     ]
   },
   "mts": {
@@ -25,10 +25,10 @@
     "mode": "min",
     "min_sources": 2,
     "sources": [
-      "runs/mts/*.txt"
+      "runs/mts/on/*.txt"
     ],
     "pairs": [
-      "runs/mts/*.tsv"
+      "runs/mts/on/*.tsv"
     ]
   },
   "beeline": {
@@ -36,10 +36,10 @@
     "mode": "min",
     "min_sources": 2,
     "sources": [
-      "runs/beeline/*.txt"
+      "runs/beeline/on/*.txt"
     ],
     "pairs": [
-      "runs/beeline/*.tsv"
+      "runs/beeline/on/*.tsv"
     ]
   },
   "tele2": {
@@ -47,10 +47,10 @@
     "mode": "min",
     "min_sources": 2,
     "sources": [
-      "runs/tele2/*.txt"
+      "runs/tele2/on/*.txt"
     ],
     "pairs": [
-      "runs/tele2/*.tsv"
+      "runs/tele2/on/*.tsv"
     ]
   },
   "yota": {
@@ -58,10 +58,10 @@
     "mode": "min",
     "min_sources": 2,
     "sources": [
-      "runs/yota/*.txt"
+      "runs/yota/on/*.txt"
     ],
     "pairs": [
-      "runs/yota/*.tsv"
+      "runs/yota/on/*.tsv"
     ]
   }
 }

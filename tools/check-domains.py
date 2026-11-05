@@ -301,6 +301,29 @@ def extract_domain(line: str) -> str:
     return value if len(value.rsplit('.', 1)[1]) >= 2 else ""
 
 
+def load_dns_cache(path: Optional[str]) -> Dict[str, Any]:
+    """Адреса, собранные заранее (`tools/cache_dns.py`)."""
+    if not path:
+        return {}
+    cache_path = Path(path)
+    if not cache_path.is_absolute():
+        cache_path = PROJECT_ROOT / cache_path
+    if not cache_path.exists():
+        print(f"⚠️  кэш DNS не найден: {cache_path}")
+        return {}
+    try:
+        data = json.loads(cache_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        print(f"⚠️  кэш DNS не прочитан: {exc}")
+        return {}
+    domains = data.get("domains", data)
+    if isinstance(domains, dict):
+        print(f"📦 кэш DNS: {len(domains)} доменов из {cache_path.name} "
+              f"(собран {data.get('generated_at', 'неизвестно')})")
+        return domains
+    return {}
+
+
 def get_files_to_process(directory: str, excludes: Set[str]) -> List[Path]:
     dir_path = Path(directory)
     if not dir_path.is_dir():
@@ -330,14 +353,30 @@ def load_domains_from_files(files: List[Path]) -> Tuple[List[str], int]:
 
 
 class Resolver:
-    """Один резолвер на прогон; отдаёт ВСЕ A и AAAA (раньше — только первый адрес и только A)."""
+    """Один резолвер на прогон; отдаёт ВСЕ A и AAAA (раньше — только первый адрес и только A).
 
-    def __init__(self, dns_servers: List[str], timeout: float):
+    Кэш адресов (`tools/cache_dns.py`) здесь так же важен, как в проверке пар:
+    в режиме белого списка DNS оператора не отвечает на домены вне списка,
+    и адрес просто неизвестен. Без кэша HTTP-шаг видит DNS_ERR и меряет не
+    фильтрацию, а наличие DNS.
+    """
+
+    def __init__(self, dns_servers: List[str], timeout: float,
+                 cache: Optional[Dict[str, Any]] = None, cache_only: bool = False):
         self.dns_servers = dns_servers
         self.timeout = timeout
+        self.cache = cache or {}
+        self.cache_only = cache_only
         self._aiodns = None  # создаётся внутри работающего цикла
 
     async def addresses(self, domain: str) -> Tuple[List[str], List[str]]:
+        entry = self.cache.get(domain)
+        if isinstance(entry, dict):
+            cached = (list(entry.get("A") or []), list(entry.get("AAAA") or []))
+            if self.cache_only or cached[0] or cached[1]:
+                return cached
+        if self.cache_only:
+            return [], []
         if self.dns_servers:
             if self._aiodns is None:
                 # aiodns привязывает резолвер к текущему циклу событий
@@ -922,9 +961,12 @@ async def check_domain_pipeline(domain: str, pool: HTTPClientPool, address: str)
 
 async def run_checker(domains: List[str], args: argparse.Namespace) -> Dict[str, Dict[str, Any]]:
     settings = Settings(args)
-    resolver = Resolver(args.dns or [], settings.timeout_dns)
+    resolver = Resolver(args.dns or [], settings.timeout_dns,
+                        getattr(args, "dns_cache_data", None),
+                        getattr(args, "cache_only", False))
 
-    print(f"🔍 DNS-резолв ({len(domains)} доменов, все A и AAAA)...")
+    source = "кэш" if getattr(args, "dns_cache_data", None) else "живой DNS"
+    print(f"🔍 DNS-резолв ({len(domains)} доменов, все A и AAAA, источник: {source})...")
     dns_sem = asyncio.Semaphore(settings.concurrency * 2)
     resolved: Dict[str, Tuple[List[str], List[str]]] = {}
 
@@ -1070,6 +1112,11 @@ async def main() -> None:
     parser.add_argument('-q', '--quiet', action='store_true', help='Тихий режим')
     parser.add_argument('-e', '--exclude', nargs='+', default=[], help='Исключить категории')
     parser.add_argument('--dns', nargs='+', default=None, help='Свои DNS серверы')
+    parser.add_argument('--dns-cache', default=None,
+                        help='Кэш адресов (tools/cache_dns.py): нужен, когда DNS '
+                             'оператора не отвечает на домены вне белого списка')
+    parser.add_argument('--cache-only', action='store_true',
+                        help='Не обращаться к DNS вовсе: только адреса из кэша')
     parser.add_argument('--verify-ssl', action='store_true', help='Проверять SSL')
     parser.add_argument('--jitter', type=float, help='Случайная задержка (0 — без паузы)')
     parser.add_argument('--retries', type=int, help='Повторы при ошибках (0 — без повторов)')
@@ -1114,6 +1161,11 @@ async def main() -> None:
         return
 
     settings = Settings(args)
+    args.dns_cache_data = load_dns_cache(args.dns_cache)
+    args.cache_only = bool(args.cache_only or get_config_value("probe", "cache_only", default=False))
+    if args.cache_only and not args.dns_cache_data:
+        print("❌ --cache-only требует кэш с данными (--dns-cache)")
+        return
     paths = get_config_value("paths", default={})
     domains_dir = args.directory or paths.get("domains_directory", "../src/domains")
     excludes = set(paths.get("exclude_categories", [])) | set(args.exclude)

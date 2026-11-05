@@ -104,14 +104,15 @@ def main() -> None:
             networks.extend(sorted(ipaddress.collapse_addresses(addresses)))
     (out_dir / "ips.txt").write_text("\n".join(str(n) for n in networks) + "\n", encoding="utf-8")
 
-    with open(out_dir / "pairs.tsv", "w", encoding="utf-8") as f:
+    tsv = out_dir / "pairs.tsv"
+    with open(tsv, "w", encoding="utf-8") as f:
         f.write("domain\tip\tfamily\thttp\ttls\tpass_count\tattempts\tcert_cn"
-                "\toperator\tmcc_mnc\tchannel\tts\n")
+                "\toperator\tmcc_mnc\tchannel\tphase\tts\n")
         for r in sorted(passed, key=lambda r: (r["domain"], r["ip"])):
             f.write("\t".join(str(r.get(k) or "") for k in
                               ("domain", "ip", "family", "http", "tls", "pass_count",
                                "attempts", "cert_cn", "operator", "mcc_mnc",
-                               "channel", "ts")) + "\n")
+                               "channel", "phase", "ts")) + "\n")
 
     status_counts = Counter(r.get("status") for r in matrix)
     by_domain_status: Dict[str, Counter] = defaultdict(Counter)
@@ -128,6 +129,7 @@ def main() -> None:
     lines += [
         operators_line(matrix, load_manifest(RELEASE_MANIFEST)),
         f"- канал: {meta.get('channel')}",
+        f"- фаза сети: {meta.get('phase')}",
         f"- проб: {len(matrix)}",
         f"- домены с PASS: {len(passed_domains)}",
         f"- адреса с PASS: {len(passed_ips)} (после агрегации: {len(networks)})",

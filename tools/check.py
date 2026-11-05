@@ -23,6 +23,7 @@ import shutil
 import subprocess
 import sys
 import time
+import urllib.request
 from datetime import datetime
 from pathlib import Path
 
@@ -50,6 +51,22 @@ NETWORKS = {
     "rostelecom": "250-20",
     "yota": "250-11",
 }
+
+# Признаки оператора в поле org у ipinfo: так оператор определяется по сети,
+# а не по тому, что выбрали в меню.
+EGRESS_OPERATORS = (
+    ("megafon", "megafon"),
+    ("mts", "mts"),
+    ("beeline", "beeline"),
+    ("vimpelcom", "beeline"),
+    ("rostelecom", "rostelecom"),
+    ("tele2", "tele2"),
+    ("t2", "tele2"),
+    ("yota", "yota"),
+    ("scartel", "yota"),
+)
+
+PHASES = ("off", "on", "unknown")
 
 
 def run(cmd, title):
@@ -86,22 +103,58 @@ def default_route():
     return ""
 
 
+def is_usb_network(iface: str) -> bool:
+    """Интерфейс висит на USB: так выглядят и телефон-модем, и HiLink-свисток.
+
+    Имена у них разные (usb0, wwan0, enp3s0f3u1u2), а признак один — в sysfs
+    путь устройства проходит через USB-шину.
+    """
+    try:
+        return "/usb" in str(Path(f"/sys/class/net/{iface}/device").resolve())
+    except OSError:
+        return False
+
+
 def check_channel():
     """Предупреждает, если меряем не сеть оператора."""
     iface = default_route()
     if not iface:
         print("⚠️  маршрут по умолчанию не определён — проверьте подключение")
         return "unknown"
-    if iface.startswith(("wl", "eth")):
+    if iface.startswith("wl"):
         print(f"⚠️  Трафик идёт через «{iface}» — это НЕ сеть оператора.")
         print("   Результаты покажут доступность из домашней сети, а не белый список.")
         print("   Выключите Wi-Fi, чтобы маршрут ушёл на модем.")
         return "wifi"
-    if iface.startswith(MOBILE_PREFIXES):
-        print(f"✅ мобильный интерфейс: {iface}")
+    usb = is_usb_network(iface)
+    if iface.startswith(MOBILE_PREFIXES) or usb:
+        print(f"✅ мобильный интерфейс: {iface}" + (" (USB-модем)" if usb else ""))
         return "mobile"
-    print(f"ℹ️  интерфейс «{iface}» — проверьте, что это модем телефона")
+    if iface.startswith("eth"):
+        print(f"⚠️  Трафик идёт через «{iface}» — похоже на домашнюю сеть.")
+        print("   Результаты покажут доступность не из сети оператора.")
+        return "wifi"
+    print(f"ℹ️  интерфейс «{iface}» — проверьте, что это модем, а не домашняя сеть")
     return "unknown"
+
+
+def detect_operator(timeout: float = 8.0):
+    """Оператор по внешнему IP: возвращает (ключ, org).
+
+    ASN оператора не зависит от того, что выбрано в меню: если прогон пойдёт
+    не в той сети, это видно сразу, а не по странным результатам.
+    """
+    try:
+        with urllib.request.urlopen("https://ipinfo.io/json", timeout=timeout) as resp:
+            data = json.loads(resp.read().decode("utf-8", "replace"))
+    except Exception:
+        return "", ""
+    org = str(data.get("org") or "")
+    lowered = org.lower()
+    for marker, key in EGRESS_OPERATORS:
+        if marker in lowered:
+            return key, org
+    return "", org
 
 
 def ask_operator(preset):
@@ -143,8 +196,11 @@ def ensure_operator_in_manifest(operator):
         "title": operator,
         "mode": "min",
         "min_sources": 2,
-        "sources": [f"runs/{operator}/*.txt"],
-        "pairs": [f"runs/{operator}/*.tsv"],
+        # В release идут только прогоны режима белого списка: наблюдения
+        # с выключенным режимом лежат в соседнем каталоге и для списка
+        # «что разрешает оператор» смысла не имеют.
+        "sources": [f"runs/{operator}/on/*.txt"],
+        "pairs": [f"runs/{operator}/on/*.tsv"],
     }
     RELEASE_CONFIG.write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
@@ -224,19 +280,37 @@ def main():
                         help="Одновременных HTTP-проверок на шаге check-domains")
     parser.add_argument("--no-release", action="store_true",
                         help="Только проверить, release не пересобирать")
+    parser.add_argument("--phase", choices=PHASES,
+                        default=os.environ.get("PHASE", "unknown"),
+                        help="Фаза сети: off — режим белого списка выключен, "
+                             "on — включён. Отделяет базовый прогон от целевого")
     args = parser.parse_args()
 
     started = time.time()
     stamp = datetime.now().strftime("%Y-%m-%d-%H%M%S")
-    out = ROOT / "build" / f"run-{stamp}"
+    out = ROOT / "build" / f"run-{stamp}-{args.phase}"
     out.mkdir(parents=True, exist_ok=True)
     sys.stdout = Tee(sys.stdout, out / "run.log")
     sys.stderr = Tee(sys.stderr, out / "run.log")
 
     operator, mcc_mnc = ask_operator(args.operator)
     operator = slug(operator)
-    print(f"\n=== Проверка доменов · оператор: {operator} ===")
+    print(f"\n=== Проверка доменов · оператор: {operator} · фаза: {args.phase} ===")
     channel = check_channel()
+
+    detected, org = detect_operator()
+    if org:
+        print(f"🌐 сеть по внешнему IP: {org}" + (f" → {detected}" if detected else ""))
+    if not args.operator and detected:
+        if operator in ("unknown", ""):
+            operator = detected
+            mcc_mnc = NETWORKS.get(operator, "")
+            print(f"   оператор определён по сети: {operator} (переопределить: -o)")
+    elif detected and detected != operator:
+        print(f"   ⚠️  выбран оператор «{operator}», а трафик идёт в сети «{detected}»")
+    if args.phase == "unknown":
+        print("   ℹ️  фаза не указана (--phase off|on): базовый прогон и прогон "
+              "белого списка будут в одной папке")
 
     cache_args = []
     if DNS_CACHE.exists() and not args.no_cache:
@@ -249,8 +323,8 @@ def main():
     pairs = [sys.executable, "check_pairs.py", str(DOMAINS_DIR),
              "--out-dir", str(out / "pairs"), "--format", "both",
              "--timeout", str(args.timeout), "-c", str(args.concurrency),
-             "--repeat", str(args.repeat), "--ipv6-check",
-             "-o", operator, "--channel", channel, *cache_args]
+             "--repeat", str(args.repeat), "--ipv6-check", "--detect-egress",
+             "-o", operator, "--channel", channel, "--phase", args.phase, *cache_args]
     if mcc_mnc:
         pairs += ["--mcc-mnc", mcc_mnc]
     if args.dns:
@@ -281,6 +355,10 @@ def main():
             http_cmd += ["--timeout", str(args.http_timeout)]
         if args.dns:
             http_cmd += ["--dns"] + args.dns
+        # Без кэша HTTP-шаг в режиме белого списка резолвит через DNS оператора
+        # и получает DNS_ERR на всё, что вне списка: мерить становится нечего.
+        if cache_args:
+            http_cmd += cache_args
         http_timeout = args.http_timeout or http_timeout_default()
         source = "флаг --http-timeout" if args.http_timeout else HTTP_CONFIG.name
         print(f"   HTTP-таймаут: {http_timeout:g} с ({source})", flush=True)
@@ -289,7 +367,7 @@ def main():
         if after and after != before:
             http_file = after
 
-    runs_dir = ROOT / "runs" / operator
+    runs_dir = ROOT / "runs" / operator / args.phase
     runs_dir.mkdir(parents=True, exist_ok=True)
     saved = []
     for source, suffix in ((out / "report" / "domains.txt", "tls.txt"),
@@ -302,23 +380,29 @@ def main():
 
     release_line = ""
     if saved and not args.no_release:
-        ensure_operator_in_manifest(operator)
-        run([sys.executable, "build_all_release.py", "--only", operator],
-            "Сборка release")
-        domain_list = ROOT / "release" / f"whitelist-{operator}.txt"
-        ip_list = ROOT / "release" / f"IP-whitelist-{operator}.txt"
-        if domain_list.exists():
-            release_line = (f"   release: {domain_list.relative_to(ROOT)} "
-                            f"({len(domain_list.read_text(encoding='utf-8').split())} доменов)")
-            if ip_list.exists():
-                release_line += (f", {ip_list.relative_to(ROOT)} "
-                                 f"({len(ip_list.read_text(encoding='utf-8').split())} адресов)")
+        if args.phase != "on":
+            print("\nℹ️  release не собирается: он строится только из прогонов "
+                  "с включённым режимом белого списка (--phase on)")
+        else:
+            ensure_operator_in_manifest(operator)
+            run([sys.executable, "build_all_release.py", "--only", operator],
+                "Сборка release")
+            domain_list = ROOT / "release" / f"whitelist-{operator}.txt"
+            ip_list = ROOT / "release" / f"IP-whitelist-{operator}.txt"
+            if domain_list.exists():
+                release_line = (f"   release: {domain_list.relative_to(ROOT)} "
+                                f"({len(domain_list.read_text(encoding='utf-8').split())} доменов)")
+                if ip_list.exists():
+                    release_line += (f", {ip_list.relative_to(ROOT)} "
+                                     f"({len(ip_list.read_text(encoding='utf-8').split())} адресов)")
 
     elapsed = int(time.time() - started)
     print("\n" + "=" * 66, flush=True)
-    print(f"Готово за {elapsed // 60} мин {elapsed % 60} с · оператор: {operator}")
+    print(f"Готово за {elapsed // 60} мин {elapsed % 60} с · "
+          f"оператор: {operator} · фаза: {args.phase}")
     if saved:
-        print(f"   наблюдения: {', '.join(t.name for t in saved)} → runs/{operator}/")
+        print(f"   наблюдения: {', '.join(t.name for t in saved)} → "
+              f"runs/{operator}/{args.phase}/")
     if release_line:
         print(release_line)
     print(f"   подробности: {out.relative_to(ROOT)}")

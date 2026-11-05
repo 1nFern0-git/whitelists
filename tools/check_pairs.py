@@ -731,7 +731,7 @@ def write_outputs(records: List[Dict[str, Any]], summary: Dict[str, Any],
 
     columns = ["ts", "probe", "domain", "ip", "family", "sni", "status", "http",
                "tls", "cipher", "cert_cn", "cert_sha256", "ech", "duration_ms",
-               "error", "operator", "mcc_mnc", "channel", "local_ip",
+               "error", "operator", "mcc_mnc", "channel", "phase", "local_ip",
                "pass_count", "attempts"]
 
     if args.format == "jsonl" and jsonl_path != default_jsonl:
@@ -804,6 +804,9 @@ async def main() -> None:
     parser.add_argument("--mcc-mnc", default="", help="Код сети, например 250-01")
     parser.add_argument("--channel", choices=["mobile", "wifi", "unknown"], default="unknown",
                         help="Канал измерения: mobile (через мобильную сеть), wifi, unknown")
+    parser.add_argument("--phase", choices=["off", "on", "unknown"], default="unknown",
+                        help="Фаза сети: off — режим белого списка выключен, "
+                             "on — включён")
     parser.add_argument("--family", nargs="+", choices=["A", "AAAA"],
                         help="Какие записи проверять (по умолчанию A и AAAA)")
     parser.add_argument("--http-port", type=int, default=None,
@@ -875,7 +878,7 @@ async def main() -> None:
 
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     meta: Dict[str, Any] = {"operator": args.operator, "mcc_mnc": args.mcc_mnc,
-                            "channel": args.channel}
+                            "channel": args.channel, "phase": args.phase}
     detected_local_ip = local_ip()
     if detected_local_ip:
         meta["local_ip"] = detected_local_ip
@@ -975,6 +978,8 @@ async def main() -> None:
         "repeat": getattr(args, "repeat", 1),
         "operator": args.operator,
         "mcc_mnc": args.mcc_mnc,
+        "channel": args.channel,
+        "phase": args.phase,
         "egress": {k: v for k, v in meta.items() if k.startswith("egress")},
     })
 
