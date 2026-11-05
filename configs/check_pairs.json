@@ -9,7 +9,7 @@
 
   "network": {
     "timeout": 3.0,
-    "concurrency": 50
+    "concurrency": 6
   },
 
   "probe": {

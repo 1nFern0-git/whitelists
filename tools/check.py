@@ -264,9 +264,13 @@ def main():
                         default=float(os.environ.get("HTTP_TIMEOUT", 0)) or None,
                         help="Таймаут HTTP-запроса на шаге check-domains, сек "
                              "(по умолчанию — из configs/check-domains.json)")
+    # Плотный поток ломает замер: модем перестаёт держать новые соединения
+    # после ~110 подключений при параллельности 10 и выше, и разрешённые
+    # домены выглядят заблокированными. 6 — проверенный безопасный темп.
     parser.add_argument("--concurrency", "-c", type=int,
-                        default=int(os.environ.get("CONCURRENCY", 50)),
-                        help="Одновременных проб")
+                        default=int(os.environ.get("CONCURRENCY", 6)),
+                        help="Одновременных проб (выше 8 модем начинает терять "
+                             "соединения и замер врёт)")
     parser.add_argument("--dns", nargs="+", default=None,
                         help="DNS-серверы для резолва (по умолчанию системные)")
     parser.add_argument("--no-cache", action="store_true",
@@ -280,6 +284,9 @@ def main():
                         help="Одновременных HTTP-проверок на шаге check-domains")
     parser.add_argument("--no-release", action="store_true",
                         help="Только проверить, release не пересобирать")
+    parser.add_argument("--interface", default=os.environ.get("INTERFACE", ""),
+                        help="Интерфейс для проб (по умолчанию — интерфейс "
+                             "маршрута по умолчанию)")
     parser.add_argument("--pace", type=float,
                         default=float(os.environ.get("PACE", 0)),
                         help="Пауза между пробами пар, сек: снижает нагрузку на канал")
@@ -338,6 +345,12 @@ def main():
         pairs += ["--dns"] + args.dns
     if args.pace:
         pairs += ["--pace", str(args.pace)]
+    iface = args.interface or default_route()
+    if iface:
+        # Привязка к интерфейсу: иначе пробы уйдут по маршруту с меньшим metric
+        # (например, в домашний Wi-Fi), и измерена будет чужая сеть.
+        pairs += ["--interface", iface]
+        print(f"   пробы привязаны к интерфейсу: {iface}", flush=True)
     if args.limit:
         pairs += ["--limit", str(args.limit)]
     pairs_code = run(pairs, "1/3 Проверка пар SNI × IP")

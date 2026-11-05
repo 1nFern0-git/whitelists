@@ -42,6 +42,7 @@ import signal
 import socket
 import ssl
 import subprocess
+import urllib.parse
 import sys
 import time
 from datetime import datetime, timezone
@@ -68,6 +69,22 @@ CONFIG_FILE = PROJECT_ROOT / "configs" / "check_pairs.json"
 
 CONFIG: Dict[str, Any] = {}
 SHUTDOWN_REQUESTED = False
+
+# Интерфейс, через который идут пробы. Пусто — как решит маршрут по умолчанию.
+# Нужен, когда в системе несколько выходов (Wi-Fi и модем): без привязки
+# измеряется тот, у которого меньше metric, а не тот, что нужен.
+BIND_INTERFACE: str = ""
+
+
+def bind_device(sock: socket.socket) -> None:
+    """Привязывает сокет к интерфейсу, если он задан."""
+    if not BIND_INTERFACE:
+        return
+    try:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE,
+                        BIND_INTERFACE.encode() + b"\0")
+    except OSError as exc:
+        print(f"⚠️  не удалось привязать сокет к {BIND_INTERFACE}: {exc}")
 
 STATUS_PASS = "PASS"
 STATUS_DROP = "DROP"
@@ -332,9 +349,21 @@ def classify_exception(exc: BaseException) -> Tuple[str, str]:
 async def probe_http(ip: str, sni: str, port: int, timeout: float) -> Tuple[Optional[int], Optional[str]]:
     """Плоский HTTP-запрос без TLS. Возвращает (код ответа, ошибку)."""
     writer = None
+    sock = None
     try:
-        reader, writer = await asyncio.wait_for(
-            asyncio.open_connection(host=ip, port=port), timeout=timeout)
+        if BIND_INTERFACE:
+            loop = asyncio.get_running_loop()
+            sock = socket.socket(socket.AF_INET6 if ":" in ip else socket.AF_INET,
+                                 socket.SOCK_STREAM)
+            sock.setblocking(False)
+            bind_device(sock)
+            await asyncio.wait_for(loop.sock_connect(sock, (ip, port)), timeout=timeout)
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(sock=sock), timeout=timeout)
+            sock = None
+        else:
+            reader, writer = await asyncio.wait_for(
+                asyncio.open_connection(host=ip, port=port), timeout=timeout)
         writer.write(f"GET / HTTP/1.0\r\nHost: {sni}\r\n"
                      "User-Agent: Mozilla/5.0\r\n\r\n".encode())
         await writer.drain()
@@ -347,6 +376,8 @@ async def probe_http(ip: str, sni: str, port: int, timeout: float) -> Tuple[Opti
             raise
         return None, f"{type(exc).__name__}: {exc}"
     finally:
+        if sock is not None:
+            sock.close()
         if writer is not None:
             try:
                 writer.close()
@@ -419,6 +450,7 @@ async def probe(ip: str, sni: str, port: int, timeout: float,
     sock = socket.socket(socket.AF_INET6 if ":" in ip else socket.AF_INET,
                          socket.SOCK_STREAM)
     sock.setblocking(False)
+    bind_device(sock)
     reader = writer = None
     phase = "tcp"
     try:
@@ -665,6 +697,8 @@ async def probe_dns(domain: str, nameservers: List[str], timeout: float) -> Dict
     """
     started = time.perf_counter()
     result: Dict[str, Any] = {"status": "", "ips": [], "resolver": "", "error": None}
+    if BIND_INTERFACE and DNS_LIB:
+        return await _probe_dns_bound(domain, nameservers, timeout, started, result)
     if not DNS_LIB:
         loop = asyncio.get_running_loop()
         result["resolver"] = "system"
@@ -730,6 +764,61 @@ async def probe_dns(domain: str, nameservers: List[str], timeout: float) -> Dict
     return result
 
 
+async def _probe_dns_bound(domain: str, nameservers: List[str], timeout: float,
+                           started: float, result: Dict[str, Any]) -> Dict[str, Any]:
+    """DNS-запрос через заданный интерфейс своим сокетом.
+
+    Нужен, когда системный резолвер слушает другой интерфейс: иначе проба
+    описывает не ту сеть, в которой идёт прогон.
+    """
+    import dns.message
+    import dns.query
+
+    servers = list(nameservers)
+    if not servers:
+        servers = [default_gateway() or "1.1.1.1"]
+    result["resolver"] = ",".join(servers)
+
+    def ask(name: str, rtype: str) -> str:
+        query = dns.message.make_query(name, rtype)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        bind_device(sock)
+        sock.settimeout(timeout)
+        try:
+            sock.sendto(query.to_wire(), (servers[0], 53))
+            wire, _ = sock.recvfrom(4096)
+        finally:
+            sock.close()
+        answer = dns.message.from_wire(wire)
+        if answer.rcode() == 3:
+            return "NXDOMAIN"
+        ips = []
+        for rrset in answer.answer:
+            if rrset.rdtype in (1, 28):
+                ips.extend(str(item) for item in rrset)
+        result["ips"].extend(ips)
+        return "ANSWER" if ips else "NODATA"
+
+    try:
+        statuses = [ask(domain, "A"), ask(domain, "AAAA")]
+        if "NXDOMAIN" in statuses:
+            result["status"] = DNS_NXDOMAIN
+            result["error"] = "имени нет в DNS"
+        elif "ANSWER" in statuses:
+            result["status"] = DNS_ANSWER
+        else:
+            result["status"] = DNS_NODATA
+    except socket.timeout:
+        result["status"], result["error"] = DNS_TIMEOUT, "нет ответа DNS"
+    except ConnectionRefusedError:
+        result["status"], result["error"] = DNS_REFUSED, "DNS отказал"
+    except Exception as exc:
+        result["status"], result["error"] = DNS_ERROR, f"{type(exc).__name__}: {exc}"
+    result["ips"] = sorted(set(result["ips"]))
+    result["duration_ms"] = round((time.perf_counter() - started) * 1000, 1)
+    return result
+
+
 def flush_resolver_cache() -> None:
     """Сбрасывает кэш системного резолвера перед DNS-пробами.
 
@@ -758,6 +847,19 @@ async def link_probe(gateway: Optional[str], timeout: float = 2.0) -> Dict[str, 
     result: Dict[str, Any] = {"gateway": None, "dns_tcp": None, "external": None}
 
     async def tcp_ok(host: str, port: int) -> Optional[bool]:
+        if BIND_INTERFACE and not host.startswith("127."):
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setblocking(False)
+            bind_device(sock)
+            try:
+                await asyncio.wait_for(
+                    asyncio.get_running_loop().sock_connect(sock, (host, port)),
+                    timeout=timeout)
+                return True
+            except Exception:
+                return False
+            finally:
+                sock.close()
         try:
             reader, writer = await asyncio.wait_for(
                 asyncio.open_connection(host, port), timeout=timeout)
@@ -779,14 +881,37 @@ async def link_probe(gateway: Optional[str], timeout: float = 2.0) -> Dict[str, 
 
 
 def default_gateway() -> Optional[str]:
-    """Адрес шлюза по умолчанию: он есть в канале всегда, даже при фильтре."""
+    """Шлюз того пути, которым пойдут пробы.
+
+    Если задан интерфейс, спрашивать общий default-маршрут нельзя: в системе
+    может быть Wi-Fi с меньшим metric, и тогда шлюзом окажется чужая сеть.
+    """
+    command = ["ip", "route", "get", "1.1.1.1"]
+    if BIND_INTERFACE:
+        command += ["oif", BIND_INTERFACE]
+    else:
+        command = ["ip", "route", "show", "default"]
     try:
-        done = subprocess.run(["ip", "route", "show", "default"], capture_output=True,
-                              text=True, timeout=5)
+        done = subprocess.run(command, capture_output=True, text=True, timeout=5)
         for line in done.stdout.splitlines():
             parts = line.split()
             if "via" in parts:
                 return parts[parts.index("via") + 1]
+    except Exception:
+        pass
+    return None
+
+
+def interface_address() -> Optional[str]:
+    """Адрес на интерфейсе проб: по нему видно, какая сеть реально используется."""
+    if not BIND_INTERFACE:
+        return local_ip()
+    try:
+        done = subprocess.run(["ip", "-4", "-o", "addr", "show", "dev", BIND_INTERFACE],
+                              capture_output=True, text=True, timeout=5)
+        for token in done.stdout.split():
+            if token.count(".") == 3 and "/" in token:
+                return token.split("/")[0]
     except Exception:
         pass
     return None
@@ -965,6 +1090,85 @@ def write_outputs(records: List[Dict[str, Any]], summary: Dict[str, Any],
     return out_dir
 
 
+def bound_https_get(url: str, timeout: float = 6.0, max_bytes: int = 65536) -> str:
+    """GET по https через привязанный интерфейс.
+
+    urllib не умеет SO_BINDTODEVICE, поэтому без этого запрос «чей внешний IP»
+    уходил бы через основной маршрут — то есть в другую сеть.
+    """
+    parts = urllib.parse.urlsplit(url)
+    host = parts.hostname or ""
+    port = parts.port or 443
+    path = parts.path or "/"
+    addresses, _ = _resolve_bound_blocking(host, timeout)
+    if not addresses:
+        raise OSError(f"{host} не резолвится")
+    ip = addresses[0]
+    sock = socket.socket(socket.AF_INET6 if ":" in ip else socket.AF_INET,
+                         socket.SOCK_STREAM)
+    bind_device(sock)
+    sock.settimeout(timeout)
+    try:
+        sock.connect((ip, port))
+        context = ssl.create_default_context()
+        with context.wrap_socket(sock, server_hostname=host) as tls:
+            request = (f"GET {path} HTTP/1.1\r\nHost: {host}\r\n"
+                       "User-Agent: curl/8\r\nConnection: close\r\n\r\n")
+            tls.sendall(request.encode())
+            data = b""
+            while len(data) < max_bytes:
+                chunk = tls.recv(8192)
+                if not chunk:
+                    break
+                data += chunk
+    finally:
+        sock.close()
+    text = data.decode("utf-8", "replace")
+    _, _, body = text.partition("\r\n\r\n")
+    return body
+
+
+def _resolve_bound_blocking(host: str, timeout: float) -> Tuple[List[str], bool]:
+    """A/AAAA-запрос через интерфейс проб; возвращает адреса и признак ECH."""
+    import dns.message
+
+    servers = interface_dns() or ["1.1.1.1"]
+    addresses: List[str] = []
+    for rtype in ("A", "AAAA"):
+        query = dns.message.make_query(host, rtype)
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        bind_device(sock)
+        sock.settimeout(timeout)
+        try:
+            sock.sendto(query.to_wire(), (servers[0], 53))
+            wire, _ = sock.recvfrom(4096)
+        finally:
+            sock.close()
+        answer = dns.message.from_wire(wire)
+        for rrset in answer.answer:
+            if rrset.rdtype in (1, 28):
+                addresses.extend(str(item) for item in rrset)
+    # IPv4 первыми: на мобильных сетях IPv6 часто без маршрута
+    addresses.sort(key=lambda a: ":" in a)
+    return addresses, False
+
+
+def interface_dns() -> List[str]:
+    """DNS-сервер интерфейса проб: у HiLink и телефона это его шлюз."""
+    if not BIND_INTERFACE:
+        return []
+    try:
+        done = subprocess.run(["resolvectl", "dns", BIND_INTERFACE],
+                              capture_output=True, text=True, timeout=5)
+        for token in done.stdout.replace(":", " ").split():
+            if token.count(".") == 3 or ":" in token:
+                return [token]
+    except Exception:
+        pass
+    gateway = default_gateway()
+    return [gateway] if gateway else []
+
+
 async def detect_egress() -> Dict[str, Any]:
     """Определяет исходящий IP и провайдера — проверка, что мы в мобильной сети.
 
@@ -974,6 +1178,8 @@ async def detect_egress() -> Dict[str, Any]:
     import urllib.request
 
     def fetch(url: str) -> str:
+        if BIND_INTERFACE:
+            return bound_https_get(url, timeout=6)
         request = urllib.request.Request(url, headers={"User-Agent": "curl/8"})
         with urllib.request.urlopen(request, timeout=6) as response:
             return response.read().decode("utf-8", "replace")
@@ -1052,6 +1258,9 @@ async def main() -> None:
     parser.add_argument("--dns-probe-ns", nargs="+", default=None,
                         help="DNS-серверы для DNS-проб (по умолчанию системные, "
                              "то есть DNS оператора)")
+    parser.add_argument("--interface", default=None,
+                        help="Интерфейс для проб (модем, usb0, wwan0): нужен, когда "
+                             "в системе есть другие выходы, например Wi-Fi")
     parser.add_argument("--link-watch", action="store_true",
                         help="Следить за живучестью канала во время прогона: "
                              "падают шлюз/DNS/внешний адрес или только цели")
@@ -1119,13 +1328,18 @@ async def main() -> None:
     args.cache_only = args.cache_only or bool(cfg("probe", "cache_only", default=False))
     directory = args.directory or cfg("paths", "domains_directory", default="../src/domains")
 
+    global BIND_INTERFACE
+    BIND_INTERFACE = (args.interface or "").strip()
+    if BIND_INTERFACE:
+        print(f"   пробы через интерфейс: {BIND_INTERFACE}")
+
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     meta: Dict[str, Any] = {"operator": args.operator, "mcc_mnc": args.mcc_mnc,
                             "channel": args.channel, "phase": args.phase}
-    detected_local_ip = local_ip()
+    detected_local_ip = interface_address()
     if detected_local_ip:
         meta["local_ip"] = detected_local_ip
         print(f"   локальный адрес: {detected_local_ip}")
