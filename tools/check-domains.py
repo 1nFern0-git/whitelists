@@ -846,13 +846,23 @@ async def _do_httpx(pool: HTTPClientPool, url: str, http2: bool,
     return res
 
 
+def _idna(value: Optional[str]) -> str:
+    """Имя в одном алфавите: в сертификатах оно бывает в punycode, в списках — юникодом."""
+    value = (value or "").strip().rstrip(".").lower()
+    try:
+        return value.encode("idna").decode("ascii")
+    except UnicodeError:
+        return value
+
+
 def _cert_matches(domain: str, common_name: Optional[str], sans: List[str]) -> bool:
-    names = [n.lower() for n in ([common_name] if common_name else []) + list(sans)]
-    domain = domain.lower()
+    domain = _idna(domain)
+    names = [_idna(n) for n in ([common_name] if common_name else []) + list(sans) if n]
     for name in names:
         if name == domain:
             return True
-        if name.startswith("*.") and domain.count(".") >= 1:
+        # *.example.com покрывает только поддомены, но не сам apex — как в RFC 6125.
+        if name.startswith("*.") and "." in domain:
             if domain.split(".", 1)[1] == name[2:]:
                 return True
     return False
