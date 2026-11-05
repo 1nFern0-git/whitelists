@@ -40,6 +40,7 @@ import re
 import signal
 import socket
 import ssl
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
@@ -722,6 +723,23 @@ async def probe_dns(domain: str, nameservers: List[str], timeout: float) -> Dict
     return result
 
 
+def flush_resolver_cache() -> None:
+    """Сбрасывает кэш системного резолвера перед DNS-пробами.
+
+    Без этого ответ, полученный до включения белого списка, ещё живёт в кэше
+    systemd-resolved, и проба покажет «отвечает» на домен, который сеть уже
+    не отдаёт. Best-effort: без прав просто пропускаем.
+    """
+    for cmd in (["resolvectl", "flush-caches"], ["systemd-resolve", "--flush-caches"]):
+        try:
+            done = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            continue
+        if done.returncode == 0:
+            print("   кэш системного резолвера сброшен перед DNS-пробами")
+            return
+
+
 async def run_dns_probes(domains: List[str], args: argparse.Namespace,
                          meta: Dict[str, Any], emit=None) -> List[Dict[str, Any]]:
     """По одной DNS-пробе на домен: видно, фильтрует ли оператор по именам.
@@ -731,6 +749,7 @@ async def run_dns_probes(domains: List[str], args: argparse.Namespace,
     при перегрузке начинаются таймауты, которые легко принять за фильтрацию.
     Сбойные пробы повторяются, иначе шум попадает в наблюдения.
     """
+    flush_resolver_cache()
     limit = getattr(args, "dns_probe_concurrency", None) or min(args.concurrency, 8)
     semaphore = asyncio.Semaphore(max(limit, 1))
     retries = 2
