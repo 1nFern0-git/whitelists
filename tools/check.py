@@ -26,6 +26,7 @@ import time
 import urllib.request
 from datetime import datetime
 from pathlib import Path
+from typing import List
 
 TOOLS = Path(__file__).resolve().parent
 ROOT = TOOLS.parent
@@ -101,6 +102,46 @@ def default_route():
     except Exception:
         pass
     return ""
+
+
+def mobile_interfaces() -> List[str]:
+    """Поднятые USB/мобильные интерфейсы: среди них ищем сеть оператора."""
+    found = []
+    try:
+        out = subprocess.run(["ip", "-brief", "addr"], capture_output=True,
+                             text=True, timeout=5).stdout
+    except Exception:
+        return found
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) < 2 or parts[1].lower() == "down":
+            continue
+        name = parts[0]
+        if name.startswith(MOBILE_PREFIXES) or is_usb_network(name):
+            found.append(name)
+    return found
+
+
+def pick_interface(requested: str) -> str:
+    """Интерфейс для проб: явный, иначе мобильный, иначе маршрут по умолчанию.
+
+    Домашний Wi-Fi часто остаётся маршрутом по умолчанию (меньший metric),
+    и без этого выбора пробы уходят в чужую сеть мимо подключённого модема.
+    """
+    if requested:
+        return requested
+    route_iface = default_route()
+    if route_iface and (route_iface.startswith(MOBILE_PREFIXES) or is_usb_network(route_iface)):
+        return route_iface
+    mobiles = mobile_interfaces()
+    if len(mobiles) == 1:
+        print(f"   ⚠️  маршрут по умолчанию — «{route_iface}», пробы идут через "
+              f"модем «{mobiles[0]}»")
+        return mobiles[0]
+    if len(mobiles) > 1:
+        print(f"   ⚠️  несколько мобильных интерфейсов ({', '.join(mobiles)}): "
+              f"укажите нужный через --interface")
+    return route_iface or ""
 
 
 def is_usb_network(iface: str) -> bool:
@@ -345,7 +386,7 @@ def main():
         pairs += ["--dns"] + args.dns
     if args.pace:
         pairs += ["--pace", str(args.pace)]
-    iface = args.interface or default_route()
+    iface = pick_interface(args.interface)
     if iface:
         # Привязка к интерфейсу: иначе пробы уйдут по маршруту с меньшим metric
         # (например, в домашний Wi-Fi), и измерена будет чужая сеть.
