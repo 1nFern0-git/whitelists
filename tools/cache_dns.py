@@ -130,15 +130,23 @@ async def main() -> None:
             print(f"   ⚠️  старый кэш не прочитан: {exc}")
 
     resolved = partial = failed = 0
+    kept = 0
     for domain, entry in zip(domains, results):
-        if entry["A"] or entry["AAAA"]:
-            cache["domains"][domain] = entry
+        fresh = entry["A"] or entry["AAAA"]
+        if not fresh and args.merge:
+            # Пустой ответ — чаще всего таймаут или сбой сети, а не «домена нет».
+            # Прежние адреса в этом случае единственные, по которым можно
+            # проверять пары, поэтому сохраняем их.
+            previous = cache["domains"].get(domain) or {}
+            if previous.get("A") or previous.get("AAAA"):
+                kept += 1
+                continue
+        cache["domains"][domain] = entry
+        if fresh:
             resolved += 1
         elif entry["error"] and "NXDOMAIN" in entry["error"]:
-            cache["domains"][domain] = entry
             failed += 1
         else:
-            cache["domains"][domain] = entry
             partial += 1
 
     if output.exists() and not args.merge:
@@ -155,7 +163,8 @@ async def main() -> None:
 
     total_addrs = sum(len(e.get("A", [])) + len(e.get("AAAA", [])) for e in cache["domains"].values())
     print(f"\n✅ Записано {len(cache['domains'])} доменов")
-    print(f"   с адресами: {resolved} | без адресов: {partial + failed}")
+    print(f"   с адресами: {resolved} | без адресов: {partial + failed}"
+          + (f" | сохранены прежние адреса: {kept}" if kept else ""))
     print(f"   всего адресов: {total_addrs}")
     print(f"   файл: {output}")
 
