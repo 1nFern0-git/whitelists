@@ -164,9 +164,14 @@ def is_usb_network(iface: str) -> bool:
     return plat.is_usb_network(iface)
 
 
-def check_channel():
-    """Предупреждает, если меряем не сеть оператора."""
-    iface = default_route()
+def check_channel(probe_iface: str = ""):
+    """Предупреждает, если меряем не сеть оператора.
+
+    Судим по тому интерфейсу, через который реально пойдут пробы: маршрут по
+    умолчанию может быть домашним Wi-Fi, а пробы при этом привязаны к модему —
+    тогда совет «выключите Wi-Fi» был бы вредным.
+    """
+    iface = probe_iface or default_route()
     if not iface:
         print("⚠️  маршрут по умолчанию не определён — проверьте подключение")
         return "unknown"
@@ -174,6 +179,10 @@ def check_channel():
     usb = is_usb_network(iface)
     if kind == "mobile" or usb:
         print(f"✅ мобильный интерфейс: {iface}" + (" (USB-модем)" if usb else ""))
+        route = default_route()
+        if probe_iface and route and route != iface:
+            print(f"   маршрут по умолчанию — «{route}», но пробы привязаны к модему: "
+                  f"Wi-Fi не мешает")
         return "mobile"
     if kind == "wifi":
         print(f"⚠️  Трафик идёт через «{iface}» — это НЕ сеть оператора.")
@@ -371,8 +380,8 @@ def main():
     operator, mcc_mnc = ask_operator(args.operator)
     operator = slug(operator)
     print(f"\n=== Проверка доменов · оператор: {operator} · фаза: {args.phase} ===")
-    channel = check_channel()
     iface = pick_interface(args.interface)
+    channel = check_channel(iface)
 
     detected, org = detect_operator(iface=iface)
     if org:
