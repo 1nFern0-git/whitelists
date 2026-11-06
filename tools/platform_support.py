@@ -150,6 +150,8 @@ $ErrorActionPreference = 'SilentlyContinue'
                 Select-Object InterfaceIndex, IPAddress, AddressFamily)
   routes = @(Get-NetRoute -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' |
              Select-Object InterfaceIndex, NextHop, RouteMetric)
+  interfaces = @(Get-NetIPInterface -AddressFamily IPv4 |
+                 Select-Object InterfaceIndex, InterfaceMetric)
 } | ConvertTo-Json -Depth 4 -Compress
 """
 
@@ -185,13 +187,25 @@ def windows_network(refresh: bool = False) -> List[Dict[str, Any]]:
                 addresses6.setdefault(index, address)
         elif not address.startswith("169.254."):
             addresses.setdefault(index, address)
+    interface_metrics: Dict[int, int] = {}
+    for item in payload.get("interfaces") or []:
+        index = item.get("InterfaceIndex")
+        if index is not None:
+            interface_metrics[int(index)] = int(item.get("InterfaceMetric") or 0)
     routes: Dict[int, str] = {}
+    metrics: Dict[int, int] = {}
     for item in sorted(payload.get("routes") or [],
                        key=lambda row: (row.get("RouteMetric") or 0)):
         index = item.get("InterfaceIndex")
         next_hop = (item.get("NextHop") or "").strip()
         if index is not None and next_hop:
-            routes.setdefault(int(index), next_hop)
+            index = int(index)
+            if index not in routes:
+                routes[index] = next_hop
+                # Windows выбирает маршрут по сумме метрик маршрута и интерфейса:
+                # у двух маршрутов 0.0.0.0/0 с RouteMetric 0 решает InterfaceMetric.
+                metrics[index] = (int(item.get("RouteMetric") or 0)
+                                  + interface_metrics.get(index, 0))
     for item in payload.get("adapters") or []:
         index = item.get("InterfaceIndex", item.get("ifIndex"))
         if index is None:
@@ -205,6 +219,7 @@ def windows_network(refresh: bool = False) -> List[Dict[str, Any]]:
             "address": addresses.get(index),
             "address6": addresses6.get(index),
             "gateway": routes.get(index),
+            "metric": metrics.get(index),
         })
     _NET_CACHE = links
     return links
@@ -231,13 +246,24 @@ def _windows_link(iface: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def _windows_default_link() -> Optional[Dict[str, Any]]:
+    """Подключение, которое Windows выберет для 0.0.0.0/0.
+
+    Порядок адаптеров в Get-NetAdapter ничего не говорит о маршруте: при
+    подключённом телефоне первым может оказаться модем, хотя трафик идёт
+    в Ethernet. Решает наименьшая сумма метрик маршрута и интерфейса.
+    """
+    candidates = [link for link in windows_network() if link["gateway"] and link["up"]]
+    if not candidates:
+        return None
+    return min(candidates, key=lambda link: link.get("metric") or 0)
+
+
 def default_route() -> str:
     """Интерфейс маршрута по умолчанию."""
     if IS_WINDOWS:
-        for link in windows_network():
-            if link["gateway"] and link["up"]:
-                return link["name"]
-        return ""
+        link = _windows_default_link()
+        return link["name"] if link else ""
     if not IS_LINUX:
         return ""
     for line in _run(["ip", "route", "show", "default"]).splitlines():
@@ -356,10 +382,8 @@ def interface_gateway(iface: str = "") -> Optional[str]:
         if iface:
             link = _windows_link(iface)
             return link["gateway"] if link else None
-        for link in windows_network():
-            if link["gateway"] and link["up"]:
-                return link["gateway"]
-        return None
+        link = _windows_default_link()
+        return link["gateway"] if link else None
     if not IS_LINUX:
         return None
     command = ["ip", "route", "get", "1.1.1.1"]

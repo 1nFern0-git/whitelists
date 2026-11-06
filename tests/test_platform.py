@@ -75,6 +75,30 @@ def test_default_route_is_the_one_with_gateway(windows):
     assert windows.default_route() == "Ethernet"
 
 
+@pytest.mark.parametrize("modem_metric, expected", [
+    (9000, "Ethernet"),     # модем отодвинут: трафик в Ethernet
+    (25, "Ethernet 3"),     # автометрика модема ниже — Windows уводит трафик в него
+])
+def test_default_route_follows_metrics_not_adapter_order(monkeypatch, modem_metric, expected):
+    """Порядок Get-NetAdapter не решает: решает сумма RouteMetric + InterfaceMetric."""
+    payload = json.loads(json.dumps(WINDOWS_PAYLOAD))
+    payload["adapters"].reverse()  # модем первым, как бывает при подключённом телефоне
+    payload["routes"] = [
+        {"InterfaceIndex": 34, "NextHop": "192.168.42.129", "RouteMetric": 0},
+        {"InterfaceIndex": 10, "NextHop": "192.168.1.1", "RouteMetric": 0},
+    ]
+    payload["interfaces"] = [
+        {"InterfaceIndex": 10, "InterfaceMetric": 35},
+        {"InterfaceIndex": 34, "InterfaceMetric": modem_metric},
+    ]
+    monkeypatch.setattr(plat, "IS_WINDOWS", True)
+    monkeypatch.setattr(plat, "_NET_CACHE", None)
+    monkeypatch.setattr(plat, "_run", lambda command, timeout=5.0: json.dumps(payload))
+    assert plat.default_route() == expected
+    assert plat.interface_gateway() == ("192.168.1.1" if expected == "Ethernet"
+                                        else "192.168.42.129")
+
+
 def test_bind_target_is_address_because_curl_cannot_resolve_names(windows):
     assert windows.bind_target("Ethernet 3") == "192.168.42.129"
     assert windows.interface_index("Ethernet 3") == 34
