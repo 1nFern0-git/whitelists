@@ -44,6 +44,7 @@ RELEASE_DIR = ROOT / "release"
 
 VERDICT_ALLOWED = "разрешён"
 VERDICT_PARTIAL = "частично"
+VERDICT_CONTENT = "содержимое не подтверждено"
 VERDICT_BLOCKED = "не разрешён"
 VERDICT_UNSTABLE = "нестабильно"
 VERDICT_UNKNOWN = "не измеряется"
@@ -184,8 +185,10 @@ def build(runs: List[Path], http_files: List[Path],
             verdict = VERDICT_UNKNOWN
         elif not any(item["passes"] for item in addresses):
             verdict = VERDICT_BLOCKED
-        elif len(allowed) == len(addresses) and http_ok:
-            verdict = VERDICT_ALLOWED
+        elif len(allowed) == len(addresses):
+            # Все адреса проходят, но содержимое не подтвердилось: это парковка,
+            # чужой сертификат или пустой ответ — не фильтрация оператора.
+            verdict = VERDICT_ALLOWED if http_ok else VERDICT_CONTENT
         elif allowed:
             verdict = VERDICT_PARTIAL
         else:
@@ -215,6 +218,7 @@ def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
     names = {
         VERDICT_ALLOWED: "allowed.txt",
         VERDICT_PARTIAL: "partial.txt",
+        VERDICT_CONTENT: "content-unconfirmed.txt",
         VERDICT_BLOCKED: "blocked.txt",
         VERDICT_UNSTABLE: "unstable.txt",
         VERDICT_UNKNOWN: "not-measured.txt",
@@ -236,8 +240,8 @@ def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
     lines = ["# Вердикт по доменам", "",
              f"- прогонов: {len(data['runs'])}",
              f"- доменов: {len(domains)}", ""]
-    for verdict in (VERDICT_ALLOWED, VERDICT_PARTIAL, VERDICT_BLOCKED,
-                    VERDICT_UNSTABLE, VERDICT_UNKNOWN):
+    for verdict in (VERDICT_ALLOWED, VERDICT_PARTIAL, VERDICT_CONTENT,
+                    VERDICT_BLOCKED, VERDICT_UNSTABLE, VERDICT_UNKNOWN):
         lines.append(f"- {verdict}: **{len(groups.get(verdict, []))}**")
     lines += ["", "## Прогоны", ""] + [f"- `{name}`" for name in data["runs"]]
 
@@ -250,6 +254,13 @@ def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
             ok = [item["ip"] for item in info["addresses"] if item["state"] == ADR_ALLOWED]
             bad = [item["ip"] for item in info["addresses"] if item["state"] != ADR_ALLOWED]
             lines.append(f"| `{domain}` | {', '.join(ok) or '—'} | {', '.join(bad) or '—'} |")
+
+    content = sorted(groups.get(VERDICT_CONTENT, []))
+    if content:
+        lines += ["", f"## Содержимое не подтверждено ({len(content)})", "",
+                  "Адрес проходит, но сервис отвечает не тем: парковка, чужой "
+                  "сертификат, пустая страница. К фильтрации оператора отношения нет.", "",
+                  ", ".join(f"`{domain}`" for domain in content[:60])]
 
     shared = sorted(domain for domain, info in domains.items()
                     if info["verdict"] == VERDICT_ALLOWED and info["shared_ips"])
@@ -317,9 +328,9 @@ def main() -> None:
     for info in data["domains"].values():
         counts[info["verdict"]] += 1
     print(f"\nдоменов: {len(data['domains'])}")
-    for verdict in (VERDICT_ALLOWED, VERDICT_PARTIAL, VERDICT_BLOCKED,
-                    VERDICT_UNSTABLE, VERDICT_UNKNOWN):
-        print(f"   {verdict:14} {counts.get(verdict, 0)}")
+    for verdict in (VERDICT_ALLOWED, VERDICT_PARTIAL, VERDICT_CONTENT,
+                    VERDICT_BLOCKED, VERDICT_UNSTABLE, VERDICT_UNKNOWN):
+        print(f"   {verdict:26} {counts.get(verdict, 0)}")
     try:
         shown = out_dir.resolve().relative_to(ROOT)
     except ValueError:
