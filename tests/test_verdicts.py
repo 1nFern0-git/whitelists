@@ -144,13 +144,16 @@ def test_control_off_is_reported_as_no_control():
     assert result["verdict"] == "no_data"      # пар нет вовсе
 
 
-@pytest.mark.parametrize("open_hosts, external, target", [
-    ({"77.88.55.88"}, True, "ya.ru"),                 # белый список: 1.1.1.1 закрыт
-    ({"77.88.55.88", "1.1.1.1"}, True, "ya.ru"),      # обычная сеть
-    ({"1.1.1.1"}, True, "1.1.1.1"),
-    (set(), False, None),                             # канал действительно мёртв
+@pytest.mark.parametrize("open_hosts, external, targets", [
+    # белый список: канал жив, и видно, что 1.1.1.1 закрыт
+    ({"77.88.55.88"}, True, {"ya.ru": True, "1.1.1.1": False}),
+    # обычная сеть: открыто всё — признак, что режим выключен, не теряется
+    ({"77.88.55.88", "1.1.1.1"}, True, {"ya.ru": True, "1.1.1.1": True}),
+    ({"1.1.1.1"}, True, {"ya.ru": False, "1.1.1.1": True}),
+    # канал действительно мёртв
+    (set(), False, {"ya.ru": False, "1.1.1.1": False}),
 ])
-def test_link_external_survives_whitelist(monkeypatch, open_hosts, external, target):
+def test_link_external_survives_whitelist(monkeypatch, open_hosts, external, targets):
     """Раньше внешний адрес был только 1.1.1.1, и в режиме белого списка
     link-watch записывал «канал мёртв» в каждую пробу."""
     import asyncio
@@ -171,4 +174,4 @@ def test_link_external_survives_whitelist(monkeypatch, open_hosts, external, tar
     monkeypatch.setattr(check_pairs.asyncio, "open_connection", fake_open_connection)
     result = asyncio.run(check_pairs.link_probe(None, timeout=0.1))
     assert result["external"] is external
-    assert result["external_target"] == target
+    assert result["external_targets"] == targets
