@@ -8,7 +8,6 @@
 2gis.com
 2gis.ge
 2gis.kg
-2gis.ru
 2gis.tj
 2gis.uz
 5-tv.ru
@@ -101,7 +100,6 @@ gov.ru
 government.ru
 gpb.ru
 gpmdi.ru
-gu-st.ru
 hh.ru
 hr-link.ru
 iitrust.ru
@@ -110,8 +108,6 @@ infourok.ru
 ivi.ru
 iz.ru
 izbirkom.ru
-jivo.ru
-jivochat.com
 jx5.ru
 kaspersky.ru
 kchr.ru
@@ -153,7 +149,6 @@ mk.ru
 moex.com
 more.tv
 mos.ru
-mosenergosbyt.ru
 moskva-putinu.ru
 mosmetro.ru
 mosreg.ru
@@ -292,6 +287,7 @@ webvisor.com
 whoosh.bike
 wibes.ru
 wildberries.ru
+wink.ru
 x5.ru
 x5.tech
 x5club.ru

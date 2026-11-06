@@ -1,11 +1,11 @@
 {
-  "built_at": "2026-11-06T16:07:38",
+  "built_at": "2026-11-07T00:10:06",
   "phase": "on",
   "operators": {
     "megafon": "МегаФон",
     "rostelecom": "Ростелеком"
   },
-  "domains": 341,
-  "addresses": 372,
-  "shared_address_domains": 96
+  "domains": 337,
+  "addresses": 359,
+  "shared_address_domains": 93
 }

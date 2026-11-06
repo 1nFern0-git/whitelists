@@ -208,6 +208,7 @@ python tools/build_common.py --write-release
 ```bash
 LIMIT=50 python3 tools/check.py          # bash
 ```
+
 ```powershell
 $env:LIMIT = 50; python tools/check.py   # PowerShell
 ```
