@@ -107,6 +107,9 @@ DNS_SERVFAIL = "SERVFAIL"
 DNS_REFUSED = "REFUSED"
 DNS_TIMEOUT = "DNS_TIMEOUT"
 DNS_ERROR = "DNS_ERROR"
+NO_DNS_SERVER = ("DNS-сервер интерфейса не определён (нет resolvectl и шлюза) — "
+                 "задайте --dns-probe-ns")
+_NO_DNS_WARNED = False
 
 
 def signal_handler(signum, frame):
@@ -825,9 +828,20 @@ async def _probe_dns_bound(domain: str, nameservers: List[str], timeout: float,
     import dns.message
     import dns.query
 
-    servers = list(nameservers)
+    # Сервер — DNS интерфейса проб (resolvectl, иначе шлюз), как и при
+    # резолве через интерфейс. Подставлять 1.1.1.1 нельзя: в режиме белого
+    # списка он закрыт, и каждая проба давала бы DNS_TIMEOUT — ложный
+    # сигнал «оператор фильтрует по именам».
+    servers = list(nameservers) or interface_dns()
     if not servers:
-        servers = [default_gateway() or "1.1.1.1"]
+        global _NO_DNS_WARNED
+        if not _NO_DNS_WARNED:
+            _NO_DNS_WARNED = True
+            print(f"   ⚠️  {NO_DNS_SERVER}", flush=True)
+        result["status"] = DNS_ERROR
+        result["error"] = NO_DNS_SERVER
+        result["duration_ms"] = round((time.perf_counter() - started) * 1000, 1)
+        return result
     result["resolver"] = ",".join(servers)
 
     def ask(name: str, rtype: str) -> str:
@@ -1179,7 +1193,11 @@ def _resolve_bound_blocking(host: str, timeout: float) -> Tuple[List[str], bool]
     """A/AAAA-запрос через интерфейс проб; возвращает адреса и признак ECH."""
     import dns.message
 
-    servers = interface_dns() or ["1.1.1.1"]
+    servers = interface_dns()
+    if not servers:
+        # Не 1.1.1.1: в режиме белого списка он закрыт, и ошибка выглядела бы
+        # как недоступность хоста, а не как неизвестный DNS.
+        raise OSError(NO_DNS_SERVER)
     addresses: List[str] = []
     for rtype in ("A", "AAAA"):
         query = dns.message.make_query(host, rtype)
