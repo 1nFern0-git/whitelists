@@ -166,3 +166,18 @@ def test_write_lines_uses_lf(tmp_path):
     target = tmp_path / "list.txt"
     plat.write_lines(target, ["a.ru", "b.ru"])
     assert target.read_bytes() == b"a.ru\nb.ru\n"
+
+
+@pytest.mark.parametrize("probe_iface, channel", [
+    ("Ethernet 3", "mobile"),   # пробы через модем — домашний маршрут ни при чём
+    ("", "wifi"),               # интерфейс не выбран — судим по маршруту (Ethernet)
+])
+def test_channel_follows_probe_interface(monkeypatch, probe_iface, channel):
+    """Раньше канал проверялся по маршруту по умолчанию, и при пробах через
+    модем check.py ложно писал «похоже на домашнюю сеть»."""
+    check = load("check_channel_mod", "check.py")
+    monkeypatch.setattr(check.plat, "IS_WINDOWS", True)
+    monkeypatch.setattr(check.plat, "_NET_CACHE", None)
+    monkeypatch.setattr(check.plat, "_run",
+                        lambda command, timeout=5.0: json.dumps(WINDOWS_PAYLOAD))
+    assert check.check_channel(probe_iface) == channel
