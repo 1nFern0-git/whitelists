@@ -851,7 +851,13 @@ async def _probe_dns_bound(domain: str, nameservers: List[str], timeout: float,
         return "ANSWER" if ips else "NODATA"
 
     try:
-        statuses = [ask(domain, "A"), ask(domain, "AAAA")]
+        # ask() блокирующий (settimeout + recvfrom). Прямо в корутине он
+        # останавливал весь цикл событий: DNS-пробы шли строго по одной при
+        # любой параллельности, а link-watch и Ctrl+C ждали, пока каждая
+        # не дождётся своего таймаута. В пуле потоков они идут параллельно.
+        loop = asyncio.get_running_loop()
+        statuses = await loop.run_in_executor(
+            None, lambda: [ask(domain, "A"), ask(domain, "AAAA")])
         if "NXDOMAIN" in statuses:
             result["status"] = DNS_NXDOMAIN
             result["error"] = "имени нет в DNS"
