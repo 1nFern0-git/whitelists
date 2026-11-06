@@ -881,6 +881,11 @@ def flush_resolver_cache() -> None:
         print("   кэш системного резолвера сброшен перед DNS-пробами")
 
 
+# Внешние цели проверки канала: первой — из эталона configs/control-domains.txt
+# (открыта и в режиме белого списка), запасной — 1.1.1.1 для обычной сети.
+LINK_EXTERNAL = (("77.88.55.88", 443, "ya.ru"), ("1.1.1.1", 443, "1.1.1.1"))
+
+
 async def link_probe(gateway: Optional[str], timeout: float = 2.0) -> Dict[str, Any]:
     """Жив ли канал сам по себе: шлюз, DNS-сервер и внешний адрес.
 
@@ -922,7 +927,13 @@ async def link_probe(gateway: Optional[str], timeout: float = 2.0) -> Dict[str, 
     # 127.0.0.53 — заглушка systemd-resolved, есть только в Linux;
     # на других системах проба всегда падала бы по таймауту.
     result["dns_tcp"] = await tcp_ok("127.0.0.53", 53) if plat.IS_LINUX else None
-    result["external"] = await tcp_ok("1.1.1.1", 443)
+    # Внешний адрес — первый ответивший из LINK_EXTERNAL: в режиме белого
+    # списка 1.1.1.1 закрыт, и с ним одним канал всегда выглядел мёртвым.
+    # Цели опрашиваются параллельно, чтобы проба не удлинялась вдвое.
+    answers = await asyncio.gather(*(tcp_ok(host, port) for host, port, _ in LINK_EXTERNAL))
+    reached = [label for (_, _, label), ok in zip(LINK_EXTERNAL, answers) if ok]
+    result["external"] = bool(reached)
+    result["external_target"] = reached[0] if reached else None
     result["duration_ms"] = round((time.perf_counter() - started) * 1000, 1)
     return result
 
