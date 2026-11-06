@@ -409,6 +409,29 @@ def interface_dns(iface: str = "") -> List[str]:
     return []
 
 
+RESOLV_CONF = "/etc/resolv.conf"
+RESOLVED_STUB = "127.0.0.53"
+
+
+def uses_resolved_stub(path: str = RESOLV_CONF) -> bool:
+    """Резолвер системы — заглушка systemd-resolved (127.0.0.53)?
+
+    Есть не на каждом Linux: в Docker, Alpine, OpenWrt и на многих
+    одноплатниках resolv.conf указывает прямо на DNS-сервер.
+    """
+    if not IS_LINUX:
+        return False
+    try:
+        with open(path, "r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                parts = line.split()
+                if len(parts) >= 2 and parts[0] == "nameserver" and parts[1] == RESOLVED_STUB:
+                    return True
+    except OSError:
+        return False
+    return False
+
+
 def flush_dns() -> bool:
     """Сброс кэша резолвера: без него ответ до включения режима живёт в кэше."""
     commands = [["resolvectl", "flush-caches"], ["systemd-resolve", "--flush-caches"]]

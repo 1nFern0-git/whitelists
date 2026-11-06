@@ -924,9 +924,11 @@ async def link_probe(gateway: Optional[str], timeout: float = 2.0) -> Dict[str, 
 
     if gateway:
         result["gateway"] = await tcp_ok(gateway, 53)
-    # 127.0.0.53 — заглушка systemd-resolved, есть только в Linux;
-    # на других системах проба всегда падала бы по таймауту.
-    result["dns_tcp"] = await tcp_ok("127.0.0.53", 53) if plat.IS_LINUX else None
+    # 127.0.0.53 — заглушка systemd-resolved. Её нет не только в Windows,
+    # но и в Linux без systemd-resolved (Docker, Alpine, OpenWrt, многие
+    # одноплатники): там проба всегда давала бы false. Проверяем, только
+    # если заглушка и правда указана резолвером системы.
+    result["dns_tcp"] = await tcp_ok("127.0.0.53", 53) if plat.uses_resolved_stub() else None
     # Канал жив, если ответила любая цель из LINK_EXTERNAL: в режиме белого
     # списка 1.1.1.1 закрыт, и с ним одним канал всегда выглядел мёртвым.
     # Результат каждой цели пишется отдельно — «ya.ru есть, 1.1.1.1 нет» и
