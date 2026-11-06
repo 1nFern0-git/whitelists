@@ -732,12 +732,26 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
     for index in range(0, len(domains), chunk):
         part = domains[index:index + chunk]
         await asyncio.gather(*(one(d) for d in part))
+        if SHUTDOWN_REQUESTED:
+            # Иначе пустые блоки продолжали бы выдерживать паузы: при остановке
+            # в начале прогона выход растягивался на десятки минут.
+            break
         done = index + len(part)
         if done < len(domains):
             print(f"   блок {done // chunk}/{total_chunks}: {done}/{len(domains)} доменов, "
                   f"пауза {pause:.0f} с", flush=True)
-            await asyncio.sleep(pause)
+            await interruptible_sleep(pause)
     return records
+
+
+async def interruptible_sleep(seconds: float, step: float = 0.5) -> None:
+    """Пауза, которую прерывает остановка прогона (Ctrl+C или смена режима)."""
+    deadline = time.monotonic() + seconds
+    while not SHUTDOWN_REQUESTED:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            return
+        await asyncio.sleep(min(step, left))
 
 
 async def probe_dns(domain: str, nameservers: List[str], timeout: float) -> Dict[str, Any]:
@@ -1004,11 +1018,15 @@ async def run_dns_probes(domains: List[str], args: argparse.Namespace,
     for index in range(0, len(domains), chunk):
         part = domains[index:index + chunk]
         await asyncio.gather(*(one(d) for d in part))
+        if SHUTDOWN_REQUESTED:
+            # Иначе пустые блоки продолжали бы выдерживать паузы: при остановке
+            # в начале прогона выход растягивался на десятки минут.
+            break
         done = index + len(part)
         if done < len(domains):
             print(f"   блок {done // chunk}/{total_chunks}: {done}/{len(domains)} доменов, "
                   f"пауза {pause:.0f} с", flush=True)
-            await asyncio.sleep(pause)
+            await interruptible_sleep(pause)
     return records
 
 
