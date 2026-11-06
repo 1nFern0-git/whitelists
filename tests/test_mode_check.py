@@ -1,6 +1,7 @@
 """Проверка режима белого списка: без сети, ответы целей подставляются."""
 import argparse
 import asyncio
+import time
 
 import pytest
 
@@ -91,3 +92,12 @@ def test_check_confirms_mismatch(monkeypatch, states, phase, expect_reason):
     monkeypatch.setattr(check.mode_check, "probe_mode",
                         lambda iface="", timeout=3.0: _result(next(sequence, "on")))
     assert bool(check.confirm_mismatch("", phase, pause=0)) is expect_reason
+
+
+def test_pause_between_chunks_ends_on_shutdown(monkeypatch):
+    """После остановки пустые блоки выдерживали паузы по 60 с: выход
+    из прогона, остановленного в начале, растягивался на десятки минут."""
+    monkeypatch.setattr(check_pairs, "SHUTDOWN_REQUESTED", True)
+    started = time.monotonic()
+    asyncio.run(check_pairs.interruptible_sleep(60))
+    assert time.monotonic() - started < 1

@@ -142,15 +142,3 @@ def test_control_off_is_reported_as_no_control():
     import asyncio
     _, result = asyncio.run(check_pairs.run_controls([], args, {}, None))
     assert result["verdict"] == "no_data"      # пар нет вовсе
-
-
-def test_pause_between_chunks_ends_on_shutdown(monkeypatch):
-    """После остановки пустые блоки выдерживали паузы по 60 с: выход
-    из прогона, остановленного в начале, растягивался на десятки минут."""
-    import asyncio
-    import time
-
-    monkeypatch.setattr(check_pairs, "SHUTDOWN_REQUESTED", True)
-    started = time.monotonic()
-    asyncio.run(check_pairs.interruptible_sleep(60))
-    assert time.monotonic() - started < 1
