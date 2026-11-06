@@ -670,7 +670,8 @@ class HTTPClientPool:
         try:
             extra: Dict[str, Any] = {}
             if self.s.interface and plat.can_bind_interface():
-                extra["interface"] = self.s.interface
+                # Windows: libcurl не понимает имена адаптеров, только адрес.
+                extra["interface"] = plat.bind_target(self.s.interface)
             return CurlCffiSession(
                 impersonate=self.s.impersonate,
                 verify=self.s.verify_ssl,

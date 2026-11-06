@@ -42,7 +42,6 @@ HTTP_CONFIG = ROOT / "configs" / "check-domains.json"
 import platform_support as plat  # noqa: E402
 from operators import slug  # noqa: E402
 
-MOBILE_PREFIXES = ("ww", "ppp", "rmnet", "usb", "enx")
 
 # Сеть оператора по названию: нужно, чтобы прогон попал в правильную папку runs/.
 NETWORKS = {
@@ -102,7 +101,7 @@ def mobile_interfaces() -> List[str]:
     """Поднятые USB/мобильные интерфейсы: среди них ищем сеть оператора."""
     found = list(plat.usb_interfaces())
     route = plat.default_route()
-    if route and route.startswith(MOBILE_PREFIXES) and route not in found:
+    if route and plat.interface_kind(route) == "mobile" and route not in found:
         found.insert(0, route)
     return found
 
@@ -121,7 +120,7 @@ def pick_interface(requested: str) -> str:
     if requested:
         return requested
     route_iface = default_route()
-    if route_iface and (route_iface.startswith(MOBILE_PREFIXES) or is_usb_network(route_iface)):
+    if route_iface and plat.interface_kind(route_iface) == "mobile":
         return route_iface
     mobiles = mobile_interfaces()
     if len(mobiles) == 1:
@@ -145,26 +144,19 @@ def check_channel():
     """Предупреждает, если меряем не сеть оператора."""
     iface = default_route()
     if not iface:
-        # Windows: имя интерфейса не прочитать, но по адресу видно, CGNAT это или дом
-        mobile = plat.is_mobile_address(plat.local_ip())
-        if mobile:
-            print("✅ мобильный адрес (CGNAT) — похоже, трафик идёт через оператора")
-            return "mobile"
-        if mobile is False:
-            print("⚠️  адрес не похож на мобильный (CGNAT): проверьте, что Wi-Fi выключен")
-            return "wifi"
         print("⚠️  маршрут по умолчанию не определён — проверьте подключение")
         return "unknown"
-    if iface.startswith("wl"):
-        print(f"⚠️  Трафик идёт через «{iface}» — это НЕ сеть оператора.")
-        print("   Результаты покажут доступность из домашней сети, а не белый список.")
-        print("   Выключите Wi-Fi, чтобы маршрут ушёл на модем.")
-        return "wifi"
+    kind = plat.interface_kind(iface)
     usb = is_usb_network(iface)
-    if iface.startswith(MOBILE_PREFIXES) or usb:
+    if kind == "mobile" or usb:
         print(f"✅ мобильный интерфейс: {iface}" + (" (USB-модем)" if usb else ""))
         return "mobile"
-    if iface.startswith("eth"):
+    if kind == "wifi":
+        print(f"⚠️  Трафик идёт через «{iface}» — это НЕ сеть оператора.")
+        print("   Результаты покажут доступность из домашней сети, а не белый список.")
+        print("   Выключите Wi-Fi или укажите модем через --interface.")
+        return "wifi"
+    if kind == "ethernet":
         print(f"⚠️  Трафик идёт через «{iface}» — похоже на домашнюю сеть.")
         print("   Результаты покажут доступность не из сети оператора.")
         return "wifi"

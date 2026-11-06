@@ -889,7 +889,9 @@ async def link_probe(gateway: Optional[str], timeout: float = 2.0) -> Dict[str, 
 
     if gateway:
         result["gateway"] = await tcp_ok(gateway, 53)
-    result["dns_tcp"] = await tcp_ok("127.0.0.53", 53)
+    # 127.0.0.53 — заглушка systemd-resolved, есть только в Linux;
+    # на других системах проба всегда падала бы по таймауту.
+    result["dns_tcp"] = await tcp_ok("127.0.0.53", 53) if plat.IS_LINUX else None
     result["external"] = await tcp_ok("1.1.1.1", 443)
     result["duration_ms"] = round((time.perf_counter() - started) * 1000, 1)
     return result

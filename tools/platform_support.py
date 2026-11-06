@@ -2,24 +2,37 @@
 """Различия между Linux и Windows собраны в одном месте.
 
 Что различается:
-  - привязка сокета к интерфейсу (SO_BINDTODEVICE) есть только в Linux,
-    поэтому на Windows нельзя гарантировать, что проба пойдёт через модем
-    при включённом Wi-Fi: там нужен модем как маршрут по умолчанию;
+  - привязка сокета к интерфейсу: SO_BINDTODEVICE в Linux, адрес интерфейса
+    или IP_UNICAST_IF в Windows (модель strong host);
   - имя интерфейса маршрута по умолчанию и список USB-интерфейсов читаются
-    из `ip` (Linux) либо недоступны (Windows);
-  - шлюз и DNS интерфейса берутся из `ip route get` / `resolvectl`;
+    из `ip` (Linux) либо из `Get-Net*` в PowerShell (Windows);
+  - шлюз и DNS интерфейса берутся из `ip route get` / `resolvectl` (Linux)
+    или `Get-NetRoute` (Windows);
   - кэш резолвера сбрасывается `resolvectl` либо `ipconfig /flushdns`;
   - консоль Windows по умолчанию не в UTF-8, и печать эмодзи падает.
+
+Вывод сетевых команд Windows разбирается как JSON, а не как текст: `ipconfig`
+печатает в кодировке OEM (cp866), и «Основной шлюз» приходит нечитаемым.
 """
 import ipaddress
+import json
 import os
 import socket
 import subprocess
 import sys
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 IS_WINDOWS = os.name == "nt"
 IS_LINUX = sys.platform.startswith("linux")
+
+# Имена интерфейсов, которые в Linux выглядят мобильными.
+MOBILE_PREFIXES = ("ww", "ppp", "rmnet", "usb", "enx")
+# Описания адаптеров Windows: так выглядят телефон-модем и свисток.
+MOBILE_MARKERS = ("rndis", "remote ndis", "apple mobile", "iphone", "ipad",
+                  "android", "wwan", "mobile broadband", "usb", "cellular",
+                  "huawei", "zte", "quectel")
+WIFI_MARKERS = ("wi-fi", "wifi", "wireless", "802.11")
+_NET_CACHE: Optional[Dict[str, Any]] = None
 
 
 def setup_console() -> None:
@@ -39,14 +52,36 @@ def setup_console() -> None:
 
 
 def can_bind_interface() -> bool:
-    """Привязка сокета к интерфейсу: только Linux."""
+    """Привязка сокета к интерфейсу: Linux и Windows."""
+    if IS_WINDOWS:
+        return True
     return IS_LINUX and hasattr(socket, "SO_BINDTODEVICE")
+
+
+def interface_index(iface: str) -> Optional[int]:
+    """Номер интерфейса: нужен для IP_UNICAST_IF в Windows."""
+    if not iface:
+        return None
+    if IS_WINDOWS:
+        link = _windows_link(iface)
+        return int(link["index"]) if link else None
+    try:
+        return int(Path_read(f"/sys/class/net/{iface}/ifindex"))
+    except (OSError, ValueError):
+        return None
+
+
+def Path_read(path: str) -> str:  # noqa: N802 — читается как одна операция
+    with open(path, "r", encoding="utf-8") as handle:
+        return handle.read().strip()
 
 
 def bind_to_device(sock: socket.socket, iface: str) -> bool:
     """Привязывает сокет к интерфейсу. False — если система не умеет."""
     if not iface or not can_bind_interface():
         return False
+    if IS_WINDOWS:
+        return _bind_windows(sock, iface)
     try:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE,
                         iface.encode() + b"\0")
@@ -55,13 +90,46 @@ def bind_to_device(sock: socket.socket, iface: str) -> bool:
         return False
 
 
+def _bind_windows(sock: socket.socket, iface: str) -> bool:
+    """Windows: модель strong host — пакет с адресом источника уходит только
+    через свой интерфейс, поэтому достаточно bind на адрес этого интерфейса.
+    """
+    link = _windows_link(iface)
+    if not link:
+        return False
+    address = link["address6"] if sock.family == socket.AF_INET6 else link["address"]
+    if not address:
+        return False
+    try:
+        if sock.family == socket.AF_INET6:
+            sock.bind((address, 0, 0, 0))
+        else:
+            sock.bind((address, 0))
+        return True
+    except OSError:
+        return False
+
+
+def bind_target(iface: str) -> str:
+    """Что передать внешнему клиенту (curl_cffi) как привязку к интерфейсу.
+
+    libcurl принимает имя интерфейса, адрес или имя хоста. На Windows надёжен
+    только адрес: имена адаптеров («Ethernet 3») libcurl не разрешает.
+    """
+    if not iface:
+        return ""
+    if IS_WINDOWS:
+        return interface_address(iface) or ""
+    return iface
+
+
 def interface_notes() -> str:
     """Короткое объяснение возможностей платформы для печати в лог."""
+    if IS_WINDOWS:
+        return ("привязка к интерфейсу: адрес адаптера (Windows, strong host), "
+                "IP_UNICAST_IF для IPv6")
     if can_bind_interface():
         return "привязка к интерфейсу доступна"
-    if IS_WINDOWS:
-        return ("привязка к интерфейсу недоступна (Windows): пробы идут по "
-                "маршруту по умолчанию — модем должен быть им")
     return "привязка к интерфейсу недоступна"
 
 
@@ -74,8 +142,102 @@ def _run(command: List[str], timeout: float = 5.0) -> str:
         return ""
 
 
+_PS_NETWORK = """
+$ErrorActionPreference = 'SilentlyContinue'
+[pscustomobject]@{
+  adapters = @(Get-NetAdapter | Select-Object ifIndex, Name, InterfaceDescription, Status)
+  addresses = @(Get-NetIPAddress |
+                Select-Object InterfaceIndex, IPAddress, AddressFamily)
+  routes = @(Get-NetRoute -AddressFamily IPv4 -DestinationPrefix '0.0.0.0/0' |
+             Select-Object InterfaceIndex, NextHop, RouteMetric)
+} | ConvertTo-Json -Depth 4 -Compress
+"""
+
+
+def windows_network(refresh: bool = False) -> List[Dict[str, Any]]:
+    """Подключения Windows одним списком, независимо от локали системы.
+
+    ipconfig печатает в OEM-кодировке, и разбор его текста ломается на русской
+    (и не только) Windows, поэтому данные берутся структурировано.
+    """
+    global _NET_CACHE
+    if _NET_CACHE is not None and not refresh:
+        return _NET_CACHE
+    text = _run(["powershell", "-NoProfile", "-NonInteractive", "-Command",
+                 _PS_NETWORK], timeout=20.0)
+    links: List[Dict[str, Any]] = []
+    try:
+        payload = json.loads(text) if text.strip() else {}
+    except json.JSONDecodeError:
+        payload = {}
+    addresses: Dict[int, str] = {}
+    addresses6: Dict[int, str] = {}
+    for item in payload.get("addresses") or []:
+        index = item.get("InterfaceIndex")
+        address = (item.get("IPAddress") or "").strip()
+        family = (item.get("AddressFamily") or "IPv4").lower()
+        if index is None or not address:
+            continue
+        index = int(index)
+        if family.endswith("v6"):
+            # link-local не годится как адрес источника для внешних проб.
+            if address and not address.lower().startswith("fe80"):
+                addresses6.setdefault(index, address)
+        elif not address.startswith("169.254."):
+            addresses.setdefault(index, address)
+    routes: Dict[int, str] = {}
+    for item in sorted(payload.get("routes") or [],
+                       key=lambda row: (row.get("RouteMetric") or 0)):
+        index = item.get("InterfaceIndex")
+        next_hop = (item.get("NextHop") or "").strip()
+        if index is not None and next_hop:
+            routes.setdefault(int(index), next_hop)
+    for item in payload.get("adapters") or []:
+        index = item.get("InterfaceIndex", item.get("ifIndex"))
+        if index is None:
+            continue
+        index = int(index)
+        links.append({
+            "index": index,
+            "name": (item.get("Name") or "").strip(),
+            "description": (item.get("InterfaceDescription") or "").strip(),
+            "up": (item.get("Status") or "").lower() == "up",
+            "address": addresses.get(index),
+            "address6": addresses6.get(index),
+            "gateway": routes.get(index),
+        })
+    _NET_CACHE = links
+    return links
+
+
+def _windows_link(iface: str) -> Optional[Dict[str, Any]]:
+    """Подключение по имени адаптера, номеру интерфейса или описанию."""
+    if not iface or not IS_WINDOWS:
+        return None
+    value = iface.strip().lower()
+    links = windows_network()
+    for link in links:
+        if link["name"].lower() == value:
+            return link
+    if value.isdigit():
+        for link in links:
+            if link["index"] == int(value):
+                return link
+    # Подстрока — только по описанию: «Ethernet» иначе совпадёт
+    # с «vEthernet (Default Switch)».
+    for link in links:
+        if value in link["description"].lower():
+            return link
+    return None
+
+
 def default_route() -> str:
-    """Имя интерфейса маршрута по умолчанию (Linux); на Windows — пусто."""
+    """Интерфейс маршрута по умолчанию."""
+    if IS_WINDOWS:
+        for link in windows_network():
+            if link["gateway"] and link["up"]:
+                return link["name"]
+        return ""
     if not IS_LINUX:
         return ""
     for line in _run(["ip", "route", "show", "default"]).splitlines():
@@ -86,7 +248,10 @@ def default_route() -> str:
 
 
 def usb_interfaces() -> List[str]:
-    """USB-интерфейсы (модем, телефон-модем). На Windows список недоступен."""
+    """Мобильные интерфейсы: USB-модем, телефон-модем, WWAN."""
+    if IS_WINDOWS:
+        return [link["name"] for link in windows_network()
+                if link["up"] and _looks_mobile(link)]
     if not IS_LINUX:
         return []
     found = []
@@ -99,6 +264,11 @@ def usb_interfaces() -> List[str]:
     return found
 
 
+def _looks_mobile(link: Dict[str, Any]) -> bool:
+    description = (link.get("description") or "").lower()
+    return any(marker in description for marker in MOBILE_MARKERS)
+
+
 def _resolve_link(path: str) -> str:
     try:
         return str(os.path.realpath(path))
@@ -107,30 +277,60 @@ def _resolve_link(path: str) -> str:
 
 
 def is_usb_network(iface: str) -> bool:
-    if not IS_LINUX or not iface:
+    """Мобильный канал: в Windows — по описанию адаптера, в Linux — по USB."""
+    if not iface:
+        return False
+    if IS_WINDOWS:
+        link = _windows_link(iface)
+        return bool(link and _looks_mobile(link))
+    if not IS_LINUX:
         return False
     return "/usb" in _resolve_link(f"/sys/class/net/{iface}/device")
+
+
+def interface_kind(iface: str) -> str:
+    """Тип канала: mobile, wifi, ethernet или unknown.
+
+    Нужен, чтобы отличить сеть оператора от домашней: имя интерфейса в Linux
+    (wwan0, usb0) и описание адаптера в Windows несут разный признак.
+    """
+    if not iface:
+        return "unknown"
+    if IS_WINDOWS:
+        link = _windows_link(iface)
+        if link is None:
+            return "unknown"
+        description = (link.get("description") or "").lower()
+        name = (link.get("name") or "").lower()
+        if _looks_mobile(link):
+            return "mobile"
+        if any(marker in description or marker in name for marker in WIFI_MARKERS):
+            return "wifi"
+        if "virtual" in description or "vethernet" in name:
+            return "unknown"
+        return "ethernet" if link.get("address") else "unknown"
+    if iface.startswith(MOBILE_PREFIXES) or is_usb_network(iface):
+        return "mobile"
+    if iface.startswith(("wl", "wlan", "wifi")):
+        return "wifi"
+    if iface.startswith(("eth", "en", "em")):
+        return "ethernet"
+    return "unknown"
 
 
 def interface_address(iface: str) -> Optional[str]:
     """IPv4-адрес интерфейса."""
     if not iface:
         return local_ip()
-    if IS_LINUX:
-        for token in _run(["ip", "-4", "-o", "addr", "show", "dev", iface]).split():
-            if token.count(".") == 3 and "/" in token:
-                return token.split("/")[0]
-        return None
-    text = _run(["ipconfig"])
-    current = ""
-    for line in text.splitlines():
-        if line and not line.startswith(" ") and ":" in line:
-            current = line.strip()
-        if iface.lower() in current.lower() or (not iface and False):
-            for token in line.replace(":", " ").split():
-                if token.count(".") == 3:
-                    return token
-    return local_ip()
+    if IS_WINDOWS:
+        link = _windows_link(iface)
+        return link["address"] if link else None
+    if not IS_LINUX:
+        return local_ip()
+    for token in _run(["ip", "-4", "-o", "addr", "show", "dev", iface]).split():
+        if token.count(".") == 3 and "/" in token:
+            return token.split("/")[0]
+    return None
 
 
 def local_ip() -> Optional[str]:
@@ -152,20 +352,23 @@ def local_ip() -> Optional[str]:
 
 def interface_gateway(iface: str = "") -> Optional[str]:
     """Шлюз того пути, которым пойдут пробы."""
-    if IS_LINUX:
-        command = ["ip", "route", "get", "1.1.1.1"]
+    if IS_WINDOWS:
         if iface:
-            command += ["oif", iface]
-        for line in _run(command).splitlines():
-            parts = line.split()
-            if "via" in parts:
-                return parts[parts.index("via") + 1]
+            link = _windows_link(iface)
+            return link["gateway"] if link else None
+        for link in windows_network():
+            if link["gateway"] and link["up"]:
+                return link["gateway"]
         return None
-    for line in _run(["ipconfig"]).splitlines():
-        if "Default Gateway" in line or "Основной шлюз" in line:
-            for token in line.replace(":", " ").replace(".", ". ").split():
-                if token.count(".") == 3:
-                    return token
+    if not IS_LINUX:
+        return None
+    command = ["ip", "route", "get", "1.1.1.1"]
+    if iface:
+        command += ["oif", iface]
+    for line in _run(command).splitlines():
+        parts = line.split()
+        if "via" in parts:
+            return parts[parts.index("via") + 1]
     return None
 
 
