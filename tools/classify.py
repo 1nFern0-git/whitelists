@@ -358,8 +358,10 @@ def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
 
 def write_release(operator: str, data: Dict[str, Any], out_dir: Path) -> None:
     domains = data["domains"]
+    # Только «разрешён»: у «частично» закрыта часть адресов, а клиент адрес
+    # не выбирает — домен в списке работал бы через раз.
     allowed = sorted(domain for domain, info in domains.items()
-                     if info["verdict"] in (VERDICT_ALLOWED, VERDICT_PARTIAL))
+                     if info["verdict"] == VERDICT_ALLOWED)
     ips = sorted({item["ip"] for domain in allowed
                   for item in domains[domain]["addresses"] if item["state"] == ADR_ALLOWED})
     RELEASE_DIR.mkdir(parents=True, exist_ok=True)
