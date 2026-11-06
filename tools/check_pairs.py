@@ -1041,16 +1041,21 @@ async def run_controls(records: List[Dict[str, Any]], args: argparse.Namespace,
                 summary["sni_control_passed"] += 1
 
     ip_ratio = (summary["ip_control_passed"] / summary["ip_control_total"]
-                if summary["ip_control_total"] else 0.0)
+                if summary["ip_control_total"] else None)
     sni_ratio = (summary["sni_control_passed"] / summary["sni_control_total"]
-                 if summary["sni_control_total"] else 0.0)
-    summary["ip_control_ratio"] = round(ip_ratio, 2)
-    summary["sni_control_ratio"] = round(sni_ratio, 2)
-    if ip_ratio >= 0.5 and sni_ratio >= 0.5:
+                 if summary["sni_control_total"] else None)
+    summary["ip_control_ratio"] = round(ip_ratio, 2) if ip_ratio is not None else None
+    summary["sni_control_ratio"] = round(sni_ratio, 2) if sni_ratio is not None else None
+    # Контроль запускается только при наличии заблокированных доменов и адресов.
+    # Когда прошло всё (обычное дело для фазы off), сравнивать нечего: это не
+    # «работает только пара», а «контраста нет».
+    if ip_ratio is None and sni_ratio is None:
+        summary["verdict"] = "no_contrast"
+    elif ip_ratio is not None and ip_ratio >= 0.5 and (sni_ratio or 0) >= 0.5:
         summary["verdict"] = "both_shared"
-    elif ip_ratio >= 0.5:
+    elif ip_ratio is not None and ip_ratio >= 0.5:
         summary["verdict"] = "ip"
-    elif sni_ratio >= 0.5:
+    elif sni_ratio is not None and sni_ratio >= 0.5:
         summary["verdict"] = "sni"
     else:
         summary["verdict"] = "pair"
@@ -1525,6 +1530,7 @@ async def main() -> None:
     print("   ip   — разрешён адрес, имя не важно")
     print("   sni  — разрешено имя, адрес не важен")
     print("   pair — работает только конкретная пара SNI + IP")
+    print("   no_contrast — заблокированных нет, тип фильтрации не определить")
     print(f"\n💾 Результаты: {out_dir}")
 
 

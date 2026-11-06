@@ -68,9 +68,11 @@ def discover(classify_dir: Path, phase: str, manifest: Dict[str, Any],
     """Вердикты операторов, у которых есть результаты."""
     found: Dict[str, Dict[str, Any]] = {}
     suffix = f"-{phase}"
+    # Имена приводятся к каноническим: --only Megafon не должен отбрасывать megafon.
+    wanted = {canonical_key(value, manifest) or value for value in only} if only else set()
     for path in sorted(classify_dir.glob(f"*{suffix}/classify.json")):
         operator = canonical_key(path.parent.name[: -len(suffix)], manifest)
-        if only and operator not in only:
+        if wanted and operator not in wanted:
             continue
         try:
             found[operator] = json.loads(path.read_text(encoding="utf-8"))
@@ -152,7 +154,7 @@ def main() -> None:
     for domain in chosen:
         ips.update(addresses(data, domain))
 
-    out_dir = Path(args.out_dir) if args.out_dir else OUT_DIR
+    out_dir = Path(args.out_dir).resolve() if args.out_dir else OUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     print(f"\nдоменов с вердиктами у всех: {len(common)}")
     print(f"разрешены у всех:            {len(chosen)}")

@@ -29,7 +29,7 @@ import json
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 TOOLS_DIR = Path(__file__).resolve().parent
 ROOT = TOOLS_DIR.parent
@@ -99,6 +99,33 @@ def find_runs(directory: Path) -> Tuple[List[Path], List[Path]]:
         print("⚠️  найдены только pairs.tsv (без провалов): "
               "адреса «не разрешён» и «нестабилен» определить нельзя")
     return tsv, http
+
+
+def load_unresolved(paths: List[Path]) -> Set[str]:
+    """Домены, у которых в прогонах не оказалось ни одного адреса.
+
+    Записи есть (DNS_NX), но `load_run` их отбрасывает: без адреса пары нет.
+    Без этого списка такие домены молча выпадают из отчёта.
+    """
+    result: Set[str] = set()
+    for path in paths:
+        if path.suffix == ".tsv":
+            continue
+        with open(path, "r", encoding="utf-8") as handle:
+            for line in handle:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if record.get("probe") != "matrix":
+                    continue
+                domain = (record.get("domain") or "").strip().lower()
+                if domain and not (record.get("ip") or "").strip():
+                    result.add(domain)
+    return result
 
 
 def load_run(path: Path) -> Dict[Tuple[str, str], List[int]]:
@@ -200,6 +227,7 @@ def build(runs: List[Path], http_files: List[Path],
         for key, (passes, attempts) in load_run(path).items():
             totals[key][0] += passes
             totals[key][1] += attempts
+    unresolved = load_unresolved(runs)
 
     control = load_control(Path(args.control_file) if args.control_file else CONTROL_FILE)
     control_rate, control_attempts = control_ratio(totals, control)
@@ -216,7 +244,13 @@ def build(runs: List[Path], http_files: List[Path],
     for values in http_sets:
         for domain in values:
             http_count[domain] += 1
-    runs_total = len(runs) or 1
+    # Знаменатель — прогоны, где HTTP-шаг действительно был, а не все прогоны
+    # пар: иначе один прогон с --no-http делает 2/3 < 0.9 и весь список
+    # уезжает в «содержимое не подтверждено».
+    http_runs = len(http_files)
+    if not http_runs:
+        print("⚠️  HTTP-подтверждений нет: содержимое не проверялось, "
+              "вердикт только по парам")
 
     by_domain: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     for (domain, address), (passes, attempts) in totals.items():
@@ -237,11 +271,10 @@ def build(runs: List[Path], http_files: List[Path],
     domains: Dict[str, Any] = {}
     for domain, addresses in by_domain.items():
         allowed = [item for item in addresses if item["state"] == ADR_ALLOWED]
-        http_ok = http_count.get(domain, 0) / runs_total >= args.min_http
+        http_ratio = (http_count.get(domain, 0) / http_runs) if http_runs else None
+        http_ok = True if http_ratio is None else http_ratio >= args.min_http
 
-        if not addresses:
-            verdict = VERDICT_UNKNOWN
-        elif not any(item["passes"] for item in addresses):
+        if not any(item["passes"] for item in addresses):
             verdict = VERDICT_BLOCKED
         elif len(allowed) == len(addresses):
             # Все адреса проходят, но содержимое не подтвердилось: это парковка,
@@ -258,11 +291,16 @@ def build(runs: List[Path], http_files: List[Path],
         weakest = min((item["ratio"] for item in allowed), default=0.0)
         domains[domain] = {
             "verdict": verdict,
-            "http": round(http_count.get(domain, 0) / runs_total, 2),
+            "http": round(http_ratio, 2) if http_ratio is not None else None,
             "weakest_ratio": weakest,
             "addresses": sorted(addresses, key=lambda item: (-item["passes"], item["ip"])),
             "shared_ips": shared,
         }
+
+    # Домены без единого адреса: измерять было нечего, но и терять их нельзя.
+    for domain in sorted(unresolved - set(domains)):
+        domains[domain] = {"verdict": VERDICT_UNKNOWN, "http": None,
+                           "weakest_ratio": 0.0, "addresses": [], "shared_ips": []}
     return {"runs": [path.name for path in runs], "domains": domains,
             "control": {"rate": round(control_rate, 3), "attempts": control_attempts,
                         "domains": sorted(control), "threshold": round(threshold, 3)}}
@@ -348,7 +386,8 @@ def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
                   "| Домен | Слабая доля | HTTP |", "|---|---|---|"]
         for domain in fragile[:60]:
             info = domains[domain]
-            lines.append(f"| `{domain}` | {info['weakest_ratio']:.2f} | {info['http']:.2f} |")
+            http_text = "—" if info["http"] is None else f"{info['http']:.2f}"
+            lines.append(f"| `{domain}` | {info['weakest_ratio']:.2f} | {http_text} |")
 
     unstable = sorted(groups.get(VERDICT_UNSTABLE, []))
     if unstable:
