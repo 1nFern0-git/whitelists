@@ -142,3 +142,24 @@ def test_control_off_is_reported_as_no_control():
     import asyncio
     _, result = asyncio.run(check_pairs.run_controls([], args, {}, None))
     assert result["verdict"] == "no_data"      # пар нет вовсе
+
+
+# --- редирект на себя в punycode -------------------------------------------
+
+@pytest.mark.parametrize("domain, url, elsewhere", [
+    ("гибдд.рф", "https://xn--90adear.xn--p1ai/", False),   # сам на себя
+    ("гибдд.рф", "https://гибдд.рф/", False),
+    ("xn--90adear.xn--p1ai", "https://гибдд.рф/", False),
+    ("гибдд.рф", "https://ya.ru/", True),
+    ("yandex.ru", "https://www.yandex.ru/", False),
+    ("yandex.ru", "https://example.com/", True),
+    ("pochtabank.ru", "https://vtb.ru/", True),             # переезд сервиса
+    ("гибдд.рф", "", False),
+])
+def test_redirect_to_self_in_punycode_is_not_foreign(domain, url, elsewhere):
+    """Кириллический домен часто редиректит на себя же в punycode.
+
+    Без нормализации это выглядело как подмена, и рабочие домены выпадали
+    из release: в прогоне МТС так потерялись 7 доменов .рф.
+    """
+    assert check_domains._redirect_elsewhere(domain, url) is elsewhere

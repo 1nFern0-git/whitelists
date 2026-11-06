@@ -68,7 +68,6 @@ docdoc.ru
 dodopizza.com
 dodopizza.ru
 dom.ru
-domclick.ru
 dostaevsky.ru
 dostavista.ru
 dpd.ru
@@ -184,10 +183,8 @@ petrovich.ru
 playfamily.ru
 pobeda.aero
 pochta.ru
-pochtabank.ru
 pos.gosuslugi.ru
 prodoctorov.ru
-psbank.ru
 pskov.ru
 qms.ru
 radiomir.fm
@@ -330,8 +327,3 @@ youla.ru
 znanierussia.ru
 zvuk-b2b.com
 zvuk.com
-будьвдвижении.рф
-гибдд.рф
-липецкаяобласть.рф
-честныйзнак.рф
-яндекс.рф

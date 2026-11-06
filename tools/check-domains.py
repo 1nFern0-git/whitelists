@@ -800,7 +800,11 @@ def _redirect_elsewhere(original: str, final_url: str) -> bool:
         host = final_url.split("://", 1)[1].split("/")[0].split(":")[0].lower()
     except IndexError:
         return False
-    original = original.lower()
+    # Сайт может увести на себя же, но в punycode: гибдд.рф →
+    # xn--90adear.xn--p1ai. Без нормализации это «чужой хост», и рабочий
+    # домен выпадает из release как подмена.
+    original = _idna(original)
+    host = _idna(host)
     return not (host == original or host.endswith("." + original))
 
 

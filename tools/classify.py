@@ -302,6 +302,12 @@ def build(runs: List[Path], http_files: List[Path],
         domains[domain] = {"verdict": VERDICT_UNKNOWN, "http": None,
                            "weakest_ratio": 0.0, "addresses": [], "shared_ips": []}
     return {"runs": [path.name for path in runs], "domains": domains,
+            # На чём построены вердикты: по этим числам видно, можно ли им
+            # доверять (один прогон или одна попытка на адрес — мало).
+            "basis": {"runs": len(runs), "http_runs": http_runs,
+                      "min_attempts": args.min_attempts,
+                      "max_attempts": max((total for _, total in totals.values()),
+                                          default=0)},
             "control": {"rate": round(control_rate, 3), "attempts": control_attempts,
                         "domains": sorted(control), "threshold": round(threshold, 3)}}
 
@@ -338,6 +344,17 @@ def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
     lines = ["# Вердикт по доменам", "",
              f"- прогонов: {len(data['runs'])}",
              f"- доменов: {len(domains)}", ""]
+    basis = data.get("basis") or {}
+    if basis:
+        lines += [f"- попыток на адрес: до {basis.get('max_attempts')} "
+                  f"(минимум для суждения — {basis.get('min_attempts')})",
+                  f"- прогонов с HTTP-шагом: {basis.get('http_runs')}", ""]
+        if (basis.get("runs") or 0) < 3:
+            # Один-два прогона — это ещё не серия: фильтрация меняется в пределах
+            # минут, и вердикт держится на единичных прохождениях.
+            lines += [f"> ⚠️ Прогонов меньше трёх ({basis.get('runs')}): вердикт "
+                      "держится на единичных прохождениях. Для устойчивой картины "
+                      "нужна серия из трёх прогонов.", ""]
     if control.get("attempts"):
         lines += [f"- эталон (качество канала): доля успеха "
                   f"**{control['rate']:.2f}** на {control['attempts']} попытках",

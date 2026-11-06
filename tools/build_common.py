@@ -206,6 +206,11 @@ def main() -> None:
                 "built_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z"),
                 "phase": args.phase,
                 "operators": {op: display(op, manifest) for op in data},
+                # Сколько прогонов лежит в основе каждого списка: по одному
+                # прогону вердикт держится на единичных прохождениях, и это
+                # должно быть видно прямо в метаданных.
+                "runs": {op: (d.get("basis") or {}).get("runs", "?")
+                         for op, d in data.items()},
                 "domains": len(chosen),
                 "addresses": len(ips),
                 "shared_address_domains": len(flags),

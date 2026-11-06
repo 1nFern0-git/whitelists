@@ -1,11 +1,17 @@
 {
-  "built_at": "2026-11-07T00:10:06",
+  "built_at": "2026-11-07T00:19:07",
   "phase": "on",
   "operators": {
     "megafon": "МегаФон",
+    "mts": "МТС",
     "rostelecom": "Ростелеком"
   },
-  "domains": 337,
-  "addresses": 359,
-  "shared_address_domains": 93
+  "runs": {
+    "megafon": 3,
+    "mts": 1,
+    "rostelecom": 3
+  },
+  "domains": 329,
+  "addresses": 346,
+  "shared_address_domains": 92
 }
