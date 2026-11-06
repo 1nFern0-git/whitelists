@@ -74,8 +74,8 @@ def parse_args() -> argparse.Namespace:
                         help="Эталонные домены для калибровки порога (по умолчанию "
                              "configs/control-domains.txt)")
     parser.add_argument("--control-factor", type=float, default=0.75,
-                        help="Порог = доля успеха эталона × этот коэффициент, но не "
-                             "выше --min-ratio (по умолчанию 0.75)")
+                        help="Порог = доля успеха эталона × коэффициент (0.75), "
+                             "но не выше --min-ratio")
     parser.add_argument("--min-http", type=float, default=0.9,
                         help="Доля прогонов, где содержимое подтверждено HTTP")
     parser.add_argument("--min-attempts", type=int, default=2,
