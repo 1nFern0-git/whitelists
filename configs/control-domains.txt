@@ -1,0 +1,24 @@
+# Эталон для калибровки порога. Это крупные сервисы, которые оператор не может
+# не пустить: по ним видно, сколько соединений теряет сам канал в этих прогонах.
+# Список задан заранее, а не выбран по результатам — иначе калибровка была бы
+# круговой: эталон всегда показывал бы 100 %.
+yandex.ru
+ya.ru
+mail.ru
+vk.com
+ok.ru
+sberbank.ru
+sber.ru
+gosuslugi.ru
+nalog.ru
+mos.ru
+ozon.ru
+wildberries.ru
+avito.ru
+2gis.ru
+kinopoisk.ru
+rbc.ru
+ria.ru
+lenta.ru
+rzd.ru
+tinkoff.ru

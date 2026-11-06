@@ -29,7 +29,7 @@ import json
 import sys
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 TOOLS_DIR = Path(__file__).resolve().parent
 ROOT = TOOLS_DIR.parent
@@ -39,6 +39,7 @@ from build_release import read_domains  # noqa: E402
 from operators import canonical_key, display, load_manifest  # noqa: E402
 
 RELEASE_MANIFEST = ROOT / "configs" / "release.json"
+CONTROL_FILE = ROOT / "configs" / "control-domains.txt"
 RUNS_DIR = ROOT / "runs"
 RELEASE_DIR = ROOT / "release"
 
@@ -64,9 +65,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-d", "--runs-dir", default=None,
                         help="Каталог наблюдений (по умолчанию runs/<оператор>/<фаза>)")
     parser.add_argument("--min-ratio", type=float, default=0.8,
-                        help="Доля успешных попыток, при которой адрес считается "
-                             "разрешённым (по умолчанию 0.8: одна потеря из шести "
-                             "попыток — шум канала, половина провалов — уже нет)")
+                        help="Верхняя граница порога: доля успешных попыток, при "
+                             "которой адрес считается разрешённым, когда канал "
+                             "работает идеально")
+    parser.add_argument("--control-file", default=None,
+                        help="Эталонные домены для калибровки порога (по умолчанию "
+                             "configs/control-domains.txt)")
+    parser.add_argument("--control-factor", type=float, default=0.75,
+                        help="Порог = доля успеха эталона × этот коэффициент, но не "
+                             "выше --min-ratio (по умолчанию 0.75)")
     parser.add_argument("--min-http", type=float, default=0.9,
                         help="Доля прогонов, где содержимое подтверждено HTTP")
     parser.add_argument("--min-attempts", type=int, default=2,
@@ -134,13 +141,52 @@ def load_run(path: Path) -> Dict[Tuple[str, str], List[int]]:
     return result
 
 
-def address_verdict(passes: int, attempts: int, args: argparse.Namespace) -> str:
+def load_control(path: Optional[Path]) -> set:
+    if not path or not Path(path).exists():
+        return set()
+    values = set()
+    for line in Path(path).read_text(encoding="utf-8").splitlines():
+        line = line.strip().lower()
+        if line and not line.startswith("#"):
+            values.add(line)
+    return values
+
+
+def control_ratio(totals: Dict[Tuple[str, str], List[int]], control: set) -> Tuple[float, int]:
+    """Доля успеха эталонных доменов в этих же прогонах: качество канала здесь и сейчас.
+
+    Абсолютный порог на мобильном канале не работает: в замерах даже yandex.ru
+    проходил 6–7 попыток из 10, и «разрешённый» домен выглядел заблокированным.
+    Эталон задаёт масштаб: сколько сейчас теряет сам канал.
+    """
+    per_domain: Dict[str, List[int]] = defaultdict(lambda: [0, 0])
+    for (domain, _), (done, total) in totals.items():
+        if domain in control:
+            per_domain[domain][0] += done
+            per_domain[domain][1] += total
+    if not per_domain:
+        return 0.0, 0
+    # Медиана по доменам, а не общая доля: если оператор закрыл один-два
+    # эталонных сервиса, это не должно расшатывать порог для всех остальных.
+    ratios = sorted(done / total for done, total in per_domain.values() if total)
+    mid = ratios[len(ratios) // 2]
+    return mid, sum(total for _, total in per_domain.values())
+
+
+def effective_threshold(args: argparse.Namespace, control_rate: float) -> float:
+    if control_rate <= 0:
+        return args.min_ratio
+    return min(args.min_ratio, args.control_factor * control_rate)
+
+
+def address_verdict(passes: int, attempts: int, threshold: float,
+                    min_attempts: int) -> str:
     if passes == 0:
         return ADR_BLOCKED
-    if attempts < args.min_attempts:
+    if attempts < min_attempts:
         return ADR_UNSTABLE
     ratio = passes / attempts
-    if ratio >= args.min_ratio:
+    if ratio >= threshold:
         return ADR_ALLOWED
     return ADR_UNSTABLE
 
@@ -152,6 +198,16 @@ def build(runs: List[Path], http_files: List[Path],
         for key, (passes, attempts) in load_run(path).items():
             totals[key][0] += passes
             totals[key][1] += attempts
+
+    control = load_control(Path(args.control_file) if args.control_file else CONTROL_FILE)
+    control_rate, control_attempts = control_ratio(totals, control)
+    threshold = effective_threshold(args, control_rate)
+    if control_attempts:
+        print(f"эталон ({len(control & {d for d, _ in totals})} доменов, "
+              f"{control_attempts} попыток): доля успеха {control_rate:.2f} "
+              f"→ порог адреса {threshold:.2f}")
+    else:
+        print(f"⚠️  эталон не найден в наблюдениях — порог {threshold:.2f} (абсолютный)")
 
     http_sets = [read_domains(path) for path in http_files]
     http_count: Dict[str, int] = defaultdict(int)
@@ -167,7 +223,7 @@ def build(runs: List[Path], http_files: List[Path],
             "passes": passes,
             "attempts": attempts,
             "ratio": round(passes / attempts, 3) if attempts else 0.0,
-            "state": address_verdict(passes, attempts, args),
+            "state": address_verdict(passes, attempts, threshold, args.min_attempts),
         })
 
     # адрес, на котором живёт больше одного домена, — общий (хостинг, CDN)
@@ -205,7 +261,9 @@ def build(runs: List[Path], http_files: List[Path],
             "addresses": sorted(addresses, key=lambda item: (-item["passes"], item["ip"])),
             "shared_ips": shared,
         }
-    return {"runs": [path.name for path in runs], "domains": domains}
+    return {"runs": [path.name for path in runs], "domains": domains,
+            "control": {"rate": round(control_rate, 3), "attempts": control_attempts,
+                        "domains": sorted(control), "threshold": round(threshold, 3)}}
 
 
 def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
@@ -237,9 +295,16 @@ def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
     (out_dir / "ips-allowed.txt").write_text(
         "\n".join(allowed_ips) + ("\n" if allowed_ips else ""), encoding="utf-8")
 
+    control = data.get("control") or {}
     lines = ["# Вердикт по доменам", "",
              f"- прогонов: {len(data['runs'])}",
              f"- доменов: {len(domains)}", ""]
+    if control.get("attempts"):
+        lines += [f"- эталон (качество канала): доля успеха "
+                  f"**{control['rate']:.2f}** на {control['attempts']} попытках",
+                  f"- порог «разрешён»: **{control['threshold']:.2f}** "
+                  f"(эталон × коэффициент, не выше абсолютного)",
+                  ""]
     for verdict in (VERDICT_ALLOWED, VERDICT_PARTIAL, VERDICT_CONTENT,
                     VERDICT_BLOCKED, VERDICT_UNSTABLE, VERDICT_UNKNOWN):
         lines.append(f"- {verdict}: **{len(groups.get(verdict, []))}**")
