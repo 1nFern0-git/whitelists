@@ -18,6 +18,7 @@ import json
 from collections import Counter
 from pathlib import Path
 from typing import Dict, List, Set
+import platform_support as plat  # noqa: E402
 
 PASS = "PASS"
 
@@ -71,6 +72,7 @@ def load_runs(paths: List[Path]) -> Dict[str, Dict[str, str]]:
 
 
 def main() -> None:
+    plat.setup_console()
     parser = argparse.ArgumentParser(description="Агрегация полевых прогонов")
     parser.add_argument("inputs", nargs="+", help="JSONL-файлы прогонов")
     parser.add_argument("-o", "--out-dir", required=True, help="Каталог результата")

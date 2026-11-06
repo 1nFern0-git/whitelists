@@ -73,6 +73,8 @@ except ImportError:
 for name in ('httpx', 'httpcore', 'aiodns', 'asyncio', 'curl_cffi'):
     logging.getLogger(name).setLevel(logging.CRITICAL)
 
+import platform_support as plat  # noqa: E402
+
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 CONFIG_DIR = PROJECT_ROOT / "configs"
@@ -532,8 +534,8 @@ class _BoundBackend(httpcore.AnyIOBackend):  # type: ignore[misc]
                              socket.SOCK_STREAM)
         sock.setblocking(False)
         try:
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE,
-                            self.device.encode() + b"\0")
+            if not plat.bind_to_device(sock, self.device):
+                raise OSError(plat.interface_notes())
             await asyncio.wait_for(loop.sock_connect(sock, (target, port)), timeout)
             reader, writer = await asyncio.open_connection(sock=sock)
         except Exception as exc:
@@ -599,7 +601,7 @@ class HTTPClientPool:
 
     def _new_httpx(self, http2: bool, ip: Optional[str]) -> httpx.AsyncClient:
         if not ip:
-            if self.s.interface and HTTPCORE_AVAILABLE:
+            if self.s.interface and HTTPCORE_AVAILABLE and plat.can_bind_interface():
                 transport = httpx.AsyncHTTPTransport(verify=self.s.verify_ssl, http2=http2)
                 pool_obj = getattr(transport, "_pool", None)
                 if pool_obj is not None:
@@ -620,7 +622,7 @@ class HTTPClientPool:
                 limits=httpx.Limits(max_keepalive_connections=20),
             )
         transport = httpx.AsyncHTTPTransport(verify=self.s.verify_ssl, http2=http2)
-        bound = bool(self.s.interface) and HTTPCORE_AVAILABLE
+        bound = bool(self.s.interface) and HTTPCORE_AVAILABLE and plat.can_bind_interface()
         if bound:
             pool_obj = getattr(transport, "_pool", None)
             if pool_obj is not None:
@@ -667,7 +669,7 @@ class HTTPClientPool:
             options[CurlOpt.RESOLVE] = [f"{domain}:443:{ip}", f"{domain}:80:{ip}"]
         try:
             extra: Dict[str, Any] = {}
-            if self.s.interface:
+            if self.s.interface and plat.can_bind_interface():
                 extra["interface"] = self.s.interface
             return CurlCffiSession(
                 impersonate=self.s.impersonate,
@@ -1238,6 +1240,7 @@ def select_operator(operators: dict, name: Optional[str] = None) -> str:
 
 async def main() -> None:
     global CONFIG
+    plat.setup_console()
     CONFIG = load_config()
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
@@ -1320,6 +1323,8 @@ async def main() -> None:
     pin_notes = HTTPClientPool.pinning_notes()
     print(f"   Привязка пробы к адресу: "
           f"{'✅ ' + ', '.join(pin_notes) if pin_notes else '❌ нет (адрес выберет резолвер)'}")
+    if settings.interface:
+        print(f"   Интерфейс: {settings.interface} — {plat.interface_notes()}")
     print(f"   Повторы: {settings.retries} | пауза: {settings.jitter} с")
     print("-" * 45)
 

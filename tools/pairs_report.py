@@ -17,6 +17,7 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Dict, List
+import platform_support as plat  # noqa: E402
 
 from operators import canonical_key, display, load_manifest
 
@@ -74,6 +75,7 @@ def operators_line(matrix: List[Dict[str, Any]], manifest: Dict[str, Any]) -> st
 
 
 def main() -> None:
+    plat.setup_console()
     parser = argparse.ArgumentParser(description="Отчёт по наблюдениям check_pairs.py")
     parser.add_argument("inputs", nargs="+", help="JSONL-файлы наблюдений")
     parser.add_argument("-o", "--out-dir", required=True, help="Каталог для отчёта")

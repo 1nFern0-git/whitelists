@@ -27,6 +27,8 @@ except ImportError:
     print("❌ Нужен dnspython: pip install dnspython")
     sys.exit(1)
 
+import platform_support as plat  # noqa: E402
+
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 
@@ -76,6 +78,7 @@ async def resolve_one(resolver, domain: str, semaphore: asyncio.Semaphore) -> Di
 
 
 async def main() -> None:
+    plat.setup_console()
     parser = argparse.ArgumentParser(description="Сбор кэша DNS для полевой проверки")
     parser.add_argument("directory", nargs="?", default=None, help="Каталог с доменами")
     parser.add_argument("-o", "--output", default=None, help="Файл кэша (JSON)")

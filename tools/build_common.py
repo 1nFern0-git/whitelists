@@ -35,6 +35,8 @@ TOOLS_DIR = Path(__file__).resolve().parent
 ROOT = TOOLS_DIR.parent
 sys.path.insert(0, str(TOOLS_DIR))
 
+import platform_support as plat  # noqa: E402
+
 from operators import canonical_key, display, load_manifest  # noqa: E402
 
 MANIFEST = ROOT / "configs" / "release.json"
@@ -132,6 +134,7 @@ def only_some(data: Dict[str, Dict[str, Any]]) -> Dict[str, List[str]]:
 
 
 def main() -> None:
+    plat.setup_console()
     args = parse_args()
     manifest = load_manifest(MANIFEST)
     classify_dir = Path(args.classify_dir) if args.classify_dir else CLASSIFY_DIR

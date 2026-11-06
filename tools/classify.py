@@ -35,6 +35,8 @@ TOOLS_DIR = Path(__file__).resolve().parent
 ROOT = TOOLS_DIR.parent
 sys.path.insert(0, str(TOOLS_DIR))
 
+import platform_support as plat  # noqa: E402
+
 from build_release import read_domains  # noqa: E402
 from operators import canonical_key, display, load_manifest  # noqa: E402
 
@@ -374,6 +376,7 @@ def write_release(operator: str, data: Dict[str, Any], out_dir: Path) -> None:
 
 
 def main() -> None:
+    plat.setup_console()
     args = parse_args()
     manifest = load_manifest(RELEASE_MANIFEST)
     operator = canonical_key(args.operator, manifest) or args.operator

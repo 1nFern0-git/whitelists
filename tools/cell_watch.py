@@ -25,6 +25,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
+import platform_support as plat  # noqa: E402
 
 FIELD_RE = {
     "earfcn": re.compile(r"mChannelNumber=(\d+)"),
@@ -78,6 +79,7 @@ def signature(state: Dict[str, Optional[str]]) -> str:
 
 
 def main() -> None:
+    plat.setup_console()
     parser = argparse.ArgumentParser(description="Монитор соты через adb")
     parser.add_argument("--interval", type=float, default=3.0, help="Период опроса, сек")
     parser.add_argument("--duration", type=float, default=0, help="Длительность, сек (0 — до Ctrl+C)")

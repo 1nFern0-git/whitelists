@@ -39,6 +39,7 @@ HTTP_CONFIG = ROOT / "configs" / "check-domains.json"
 
 # Скрипт запускают как `python3 tools/check.py`, поэтому каталог скрипта уже
 # в sys.path — общие помощники лежат рядом с ним.
+import platform_support as plat  # noqa: E402
 from operators import slug  # noqa: E402
 
 MOBILE_PREFIXES = ("ww", "ppp", "rmnet", "usb", "enx")
@@ -79,8 +80,10 @@ def run(cmd, title):
     """
     print(f"\n── {title} " + "─" * max(0, 60 - len(title)), flush=True)
     print("   " + " ".join(str(part) for part in cmd[1:]), flush=True)
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
     process = subprocess.Popen(cmd, cwd=str(TOOLS), stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT, text=True, bufsize=1)
+                               stderr=subprocess.STDOUT, text=True, bufsize=1,
+                               encoding="utf-8", errors="replace", env=env)
     for line in process.stdout:
         sys.stdout.write(line)
     process.stdout.close()
@@ -92,33 +95,15 @@ def run(cmd, title):
 
 def default_route():
     """Интерфейс маршрута по умолчанию: по нему видно, через что пойдёт трафик."""
-    try:
-        out = subprocess.run(["ip", "route", "show", "default"],
-                             capture_output=True, text=True, timeout=5).stdout
-        for line in out.splitlines():
-            parts = line.split()
-            if "dev" in parts:
-                return parts[parts.index("dev") + 1]
-    except Exception:
-        pass
-    return ""
+    return plat.default_route()
 
 
 def mobile_interfaces() -> List[str]:
     """Поднятые USB/мобильные интерфейсы: среди них ищем сеть оператора."""
-    found = []
-    try:
-        out = subprocess.run(["ip", "-brief", "addr"], capture_output=True,
-                             text=True, timeout=5).stdout
-    except Exception:
-        return found
-    for line in out.splitlines():
-        parts = line.split()
-        if len(parts) < 2 or parts[1].lower() == "down":
-            continue
-        name = parts[0]
-        if name.startswith(MOBILE_PREFIXES) or is_usb_network(name):
-            found.append(name)
+    found = list(plat.usb_interfaces())
+    route = plat.default_route()
+    if route and route.startswith(MOBILE_PREFIXES) and route not in found:
+        found.insert(0, route)
     return found
 
 
@@ -128,6 +113,11 @@ def pick_interface(requested: str) -> str:
     Домашний Wi-Fi часто остаётся маршрутом по умолчанию (меньший metric),
     и без этого выбора пробы уходят в чужую сеть мимо подключённого модема.
     """
+    if not plat.can_bind_interface():
+        # Windows: привязать сокет к интерфейсу нельзя, поэтому «выбранный»
+        # интерфейс всё равно ничего не изменит — честнее сказать об этом.
+        print(f"   ℹ️  {plat.interface_notes()}")
+        return ""
     if requested:
         return requested
     route_iface = default_route()
@@ -141,25 +131,28 @@ def pick_interface(requested: str) -> str:
     if len(mobiles) > 1:
         print(f"   ⚠️  несколько мобильных интерфейсов ({', '.join(mobiles)}): "
               f"укажите нужный через --interface")
+    if not plat.can_bind_interface():
+        return ""
     return route_iface or ""
 
 
 def is_usb_network(iface: str) -> bool:
-    """Интерфейс висит на USB: так выглядят и телефон-модем, и HiLink-свисток.
-
-    Имена у них разные (usb0, wwan0, enp3s0f3u1u2), а признак один — в sysfs
-    путь устройства проходит через USB-шину.
-    """
-    try:
-        return "/usb" in str(Path(f"/sys/class/net/{iface}/device").resolve())
-    except OSError:
-        return False
+    """Интерфейс висит на USB: так выглядят и телефон-модем, и HiLink-свисток."""
+    return plat.is_usb_network(iface)
 
 
 def check_channel():
     """Предупреждает, если меряем не сеть оператора."""
     iface = default_route()
     if not iface:
+        # Windows: имя интерфейса не прочитать, но по адресу видно, CGNAT это или дом
+        mobile = plat.is_mobile_address(plat.local_ip())
+        if mobile:
+            print("✅ мобильный адрес (CGNAT) — похоже, трафик идёт через оператора")
+            return "mobile"
+        if mobile is False:
+            print("⚠️  адрес не похож на мобильный (CGNAT): проверьте, что Wi-Fi выключен")
+            return "wifi"
         print("⚠️  маршрут по умолчанию не определён — проверьте подключение")
         return "unknown"
     if iface.startswith("wl"):
@@ -298,6 +291,7 @@ class Tee:
 
 
 def main():
+    plat.setup_console()
     parser = argparse.ArgumentParser(
         description="Проверка доменов в сети оператора: один запуск — готовый release")
     parser.add_argument("-o", "--operator", default=os.environ.get("OPERATOR", ""),

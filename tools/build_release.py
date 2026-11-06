@@ -25,6 +25,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Set, Union
+import platform_support as plat  # noqa: E402
 
 DOMAIN_MIN_LEN = 3
 IPNetwork = Union[ipaddress.IPv4Network, ipaddress.IPv6Network]
@@ -119,6 +120,7 @@ def aggregate(ips: List[str]) -> List[IPNetwork]:
 
 
 def main() -> None:
+    plat.setup_console()
     parser = argparse.ArgumentParser(description="Сборка release-списка из проверок")
     parser.add_argument("sources", nargs="+", help="Файлы с доменами (txt или JSONL)")
     parser.add_argument("-o", "--output", required=True, help="Куда записать результат")

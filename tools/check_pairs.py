@@ -41,7 +41,6 @@ import random
 import signal
 import socket
 import ssl
-import subprocess
 import urllib.parse
 import sys
 import time
@@ -63,6 +62,8 @@ try:
 except ImportError:
     CRYPTO_LIB = False
 
+import platform_support as plat  # noqa: E402
+
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
 CONFIG_FILE = PROJECT_ROOT / "configs" / "check_pairs.json"
@@ -74,17 +75,19 @@ SHUTDOWN_REQUESTED = False
 # Нужен, когда в системе несколько выходов (Wi-Fi и модем): без привязки
 # измеряется тот, у которого меньше metric, а не тот, что нужен.
 BIND_INTERFACE: str = ""
+_BIND_WARNED = False
 
 
 def bind_device(sock: socket.socket) -> None:
-    """Привязывает сокет к интерфейсу, если он задан."""
+    """Привязывает сокет к интерфейсу, если он задан и система это умеет."""
     if not BIND_INTERFACE:
         return
-    try:
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BINDTODEVICE,
-                        BIND_INTERFACE.encode() + b"\0")
-    except OSError as exc:
-        print(f"⚠️  не удалось привязать сокет к {BIND_INTERFACE}: {exc}")
+    if not plat.bind_to_device(sock, BIND_INTERFACE):
+        global _BIND_WARNED
+        if not _BIND_WARNED:
+            _BIND_WARNED = True
+            print(f"⚠️  привязка к «{BIND_INTERFACE}» не удалась: "
+                  f"{plat.interface_notes()}")
 
 STATUS_PASS = "PASS"
 STATUS_DROP = "DROP"
@@ -844,14 +847,8 @@ def flush_resolver_cache() -> None:
     systemd-resolved, и проба покажет «отвечает» на домен, который сеть уже
     не отдаёт. Best-effort: без прав просто пропускаем.
     """
-    for cmd in (["resolvectl", "flush-caches"], ["systemd-resolve", "--flush-caches"]):
-        try:
-            done = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            continue
-        if done.returncode == 0:
-            print("   кэш системного резолвера сброшен перед DNS-пробами")
-            return
+    if plat.flush_dns():
+        print("   кэш системного резолвера сброшен перед DNS-пробами")
 
 
 async def link_probe(gateway: Optional[str], timeout: float = 2.0) -> Dict[str, Any]:
@@ -904,35 +901,12 @@ def default_gateway() -> Optional[str]:
     Если задан интерфейс, спрашивать общий default-маршрут нельзя: в системе
     может быть Wi-Fi с меньшим metric, и тогда шлюзом окажется чужая сеть.
     """
-    command = ["ip", "route", "get", "1.1.1.1"]
-    if BIND_INTERFACE:
-        command += ["oif", BIND_INTERFACE]
-    else:
-        command = ["ip", "route", "show", "default"]
-    try:
-        done = subprocess.run(command, capture_output=True, text=True, timeout=5)
-        for line in done.stdout.splitlines():
-            parts = line.split()
-            if "via" in parts:
-                return parts[parts.index("via") + 1]
-    except Exception:
-        pass
-    return None
+    return plat.interface_gateway(BIND_INTERFACE)
 
 
 def interface_address() -> Optional[str]:
     """Адрес на интерфейсе проб: по нему видно, какая сеть реально используется."""
-    if not BIND_INTERFACE:
-        return local_ip()
-    try:
-        done = subprocess.run(["ip", "-4", "-o", "addr", "show", "dev", BIND_INTERFACE],
-                              capture_output=True, text=True, timeout=5)
-        for token in done.stdout.split():
-            if token.count(".") == 3 and "/" in token:
-                return token.split("/")[0]
-    except Exception:
-        pass
-    return None
+    return plat.interface_address(BIND_INTERFACE)
 
 
 async def run_link_watch(args: argparse.Namespace, meta: Dict[str, Any],
@@ -1191,16 +1165,9 @@ def _resolve_bound_blocking(host: str, timeout: float) -> Tuple[List[str], bool]
 
 def interface_dns() -> List[str]:
     """DNS-сервер интерфейса проб: у HiLink и телефона это его шлюз."""
-    if not BIND_INTERFACE:
-        return []
-    try:
-        done = subprocess.run(["resolvectl", "dns", BIND_INTERFACE],
-                              capture_output=True, text=True, timeout=5)
-        for token in done.stdout.replace(":", " ").split():
-            if token.count(".") == 3 or ":" in token:
-                return [token]
-    except Exception:
-        pass
+    servers = plat.interface_dns(BIND_INTERFACE)
+    if servers:
+        return servers
     gateway = default_gateway()
     return [gateway] if gateway else []
 
@@ -1254,6 +1221,7 @@ async def detect_egress() -> Dict[str, Any]:
 
 async def main() -> None:
     global CONFIG
+    plat.setup_console()
     CONFIG = load_config()
 
     parser = argparse.ArgumentParser(
@@ -1371,7 +1339,10 @@ async def main() -> None:
 
     global BIND_INTERFACE
     BIND_INTERFACE = (args.interface or "").strip()
-    if BIND_INTERFACE:
+    if BIND_INTERFACE and not plat.can_bind_interface():
+        print(f"   ⚠️  {plat.interface_notes()}")
+        BIND_INTERFACE = ""
+    elif BIND_INTERFACE:
         print(f"   пробы через интерфейс: {BIND_INTERFACE}")
 
     signal.signal(signal.SIGINT, signal_handler)

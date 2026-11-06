@@ -23,6 +23,8 @@ TOOLS_DIR = Path(__file__).resolve().parent
 ROOT = TOOLS_DIR.parent
 sys.path.insert(0, str(TOOLS_DIR))
 
+import platform_support as plat  # noqa: E402
+
 from build_release import aggregate, collect_ips, read_domains  # noqa: E402
 from operators import canonical_key  # noqa: E402
 
@@ -117,6 +119,7 @@ def build(operator, spec):
 
 
 def main():
+    plat.setup_console()
     parser = argparse.ArgumentParser(description="Сборка release-списков по операторам")
     parser.add_argument("--config", default=str(MANIFEST), help="Манифест операторов")
     parser.add_argument("--only", action="append", default=[],
