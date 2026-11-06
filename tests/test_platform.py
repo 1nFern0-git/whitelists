@@ -43,6 +43,19 @@ def windows(monkeypatch):
     return plat
 
 
+def test_address_family_as_number(monkeypatch):
+    """Windows PowerShell 5.1 отдаёт AddressFamily числом: 2 — IPv4, 23 — IPv6."""
+    payload = json.loads(json.dumps(WINDOWS_PAYLOAD))
+    for item in payload["addresses"]:
+        item["AddressFamily"] = 23 if ":" in item["IPAddress"] else 2
+    monkeypatch.setattr(plat, "IS_WINDOWS", True)
+    monkeypatch.setattr(plat, "_NET_CACHE", None)
+    monkeypatch.setattr(plat, "_run", lambda command, timeout=5.0: json.dumps(payload))
+    link = plat._windows_link("Ethernet 3")
+    assert link["address"] == "192.168.42.129"
+    assert link["address6"] == "2a00:1fa0::5"
+
+
 def test_gateway_found_not_none(windows):
     """Раньше шлюз не находился ни в одной локали: ipconfig в cp866."""
     assert windows.interface_gateway() == "192.168.1.1"
