@@ -54,18 +54,27 @@ else:
     print("⚠️  модем не найден: подключите телефон/USB-модем для проверки привязки")
     modem = None
 
+# Первой цель из эталона (configs/control-domains.txt): в режиме белого списка
+# 1.1.1.1 закрыт, и проверка через модем показывала бы таймаут при рабочей
+# привязке. 1.1.1.1 остаётся запасной целью для обычной сети.
+TARGETS = (("77.88.55.88", 443, "ya.ru"), ("1.1.1.1", 443, "1.1.1.1"))
+
+
 def try_connect(iface):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(6)
-    try:
-        if not plat.bind_to_device(sock, iface):
-            return "привязка не удалась"
-        sock.connect(("1.1.1.1", 443))
-        return "соединение есть"
-    except OSError as exc:
-        return f"{type(exc).__name__}: {exc}"
-    finally:
-        sock.close()
+    errors = []
+    for host, port, label in TARGETS:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(6)
+        try:
+            if not plat.bind_to_device(sock, iface):
+                return "привязка не удалась"
+            sock.connect((host, port))
+            return f"соединение есть ({label}, источник {sock.getsockname()[0]})"
+        except OSError as exc:
+            errors.append(f"{label}: {type(exc).__name__}: {exc}")
+        finally:
+            sock.close()
+    return "; ".join(errors)
 
 print()
 if modem:
