@@ -179,15 +179,23 @@ def check_channel():
     return "unknown"
 
 
-def detect_operator(timeout: float = 8.0):
+def detect_operator(timeout: float = 8.0, iface: str = ""):
     """Оператор по внешнему IP: возвращает (ключ, org).
 
     ASN оператора не зависит от того, что выбрано в меню: если прогон пойдёт
-    не в той сети, это видно сразу, а не по странным результатам.
+    не в той сети, это видно сразу, а не по странным результатам. Запрос идёт
+    через тот же интерфейс, что и пробы: иначе при домашнем Wi-Fi он покажет
+    провайдера Wi-Fi и предупреждение будет ложным.
     """
     try:
-        with urllib.request.urlopen("https://ipinfo.io/json", timeout=timeout) as resp:
-            data = json.loads(resp.read().decode("utf-8", "replace"))
+        if iface:
+            import check_pairs
+            check_pairs.BIND_INTERFACE = iface
+            raw = check_pairs.bound_https_get("https://ipinfo.io/json", timeout)
+            data = json.loads(raw)
+        else:
+            with urllib.request.urlopen("https://ipinfo.io/json", timeout=timeout) as resp:
+                data = json.loads(resp.read().decode("utf-8", "replace"))
     except Exception:
         return "", ""
     org = str(data.get("org") or "")
@@ -354,8 +362,9 @@ def main():
     operator = slug(operator)
     print(f"\n=== Проверка доменов · оператор: {operator} · фаза: {args.phase} ===")
     channel = check_channel()
+    iface = pick_interface(args.interface)
 
-    detected, org = detect_operator()
+    detected, org = detect_operator(iface=iface)
     if org:
         print(f"🌐 сеть по внешнему IP: {org}" + (f" → {detected}" if detected else ""))
     if not args.operator and detected:
@@ -394,7 +403,6 @@ def main():
         pairs += ["--pace", str(args.pace)]
     if args.chunk:
         pairs += ["--chunk", str(args.chunk), "--chunk-pause", str(args.chunk_pause)]
-    iface = pick_interface(args.interface)
     if iface:
         # Привязка к интерфейсу: иначе пробы уйдут по маршруту с меньшим metric
         # (например, в домашний Wi-Fi), и измерена будет чужая сеть.
