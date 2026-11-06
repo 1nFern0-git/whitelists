@@ -32,3 +32,6 @@ build/
 runs/
 
 AGENTS.md
+
+# Локальный слой кэша адресов: свои дополнения, общий кэш обновляет workflow
+configs/dns-cache.local.json

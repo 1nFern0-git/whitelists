@@ -87,10 +87,10 @@
   модема, USB-модем, роутер с модемом.
 - На Linux дополнительно нужен `ip` (пакет iproute2) — он определяет канал.
 
-Зависимости:
+Зависимости — в `requirements.txt` (нижние границы версий):
 
 ```bash
-pip install httpx curl_cffi aiodns dnspython cryptography tqdm
+pip install -r requirements.txt
 ```
 
 Без `curl_cffi` работает медленнее и хуже маскируется под браузер,
@@ -103,7 +103,7 @@ pip install httpx curl_cffi aiodns dnspython cryptography tqdm
 git clone https://github.com/kirilllavrov/whitelists.git
 cd whitelists
 python3 -m venv .venv && source .venv/bin/activate
-pip install httpx curl_cffi aiodns dnspython cryptography tqdm
+pip install -r requirements.txt
 ```
 
 ## Установка на Windows
@@ -113,7 +113,7 @@ git clone https://github.com/kirilllavrov/whitelists.git
 cd whitelists
 py -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install httpx curl_cffi aiodns dnspython cryptography tqdm
+pip install -r requirements.txt
 ```
 
 Если PowerShell запрещает активацию окружения, выполните от администратора:
@@ -122,19 +122,35 @@ pip install httpx curl_cffi aiodns dnspython cryptography tqdm
 Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ```
 
-> **Ограничение Windows.** Привязать пробы к модему там нельзя (в Linux это
-> делает `SO_BINDTODEVICE`), поэтому модем должен быть маршрутом по умолчанию:
-> выключите Wi-Fi и отключите другие адаптеры. Инструмент предупредит, если
-> адрес не похож на мобильный. Всё остальное — замеры, отчёты, сборка
-> списков — работает одинаково.
+**Привязка к модему на Windows.** Работает так же, как в Linux, только
+другим способом: вместо `SO_BINDTODEVICE` используется адрес адаптера
+(в Windows пакет с таким адресом источника уходит только через свой
+интерфейс). Модем можно не делать маршрутом по умолчанию:
+
+```powershell
+python tools/check.py -o Megafon --phase on --interface "Ethernet 3"
+```
+
+Имя адаптера показывает `Get-NetAdapter`, оно же печатается в отчёте.
+Мобильный канал определяется по описанию адаптера («Remote NDIS based
+Internet Sharing Device», «Apple Mobile Device Ethernet», WWAN), поэтому
+раздача с телефона не считается домашней сетью.
+
+Если интерфейс не указан, пробы идут по маршруту по умолчанию, и модем
+должен быть им — как и раньше.
+
+**`python` вместо `python3`.** В окружении Windows файла `python3.exe` нет:
+после активации venv `python3` подхватит алиас Microsoft Store или системный
+Python без зависимостей. В примерах ниже для Windows используйте `python`.
 
 ## Быстрый старт
 
 Режим белого списка включён, модем подключён, Wi-Fi выключен:
 
 ```bash
-# 1. свежие адреса доменов (делать до включения режима — потом DNS может не отвечать)
-python3 tools/cache_dns.py --merge
+# 1. свежие адреса доменов (делать до включения режима — потом DNS может не отвечать).
+#    --local пишет в configs/dns-cache.local.json, не трогая общий кэш из репозитория
+python3 tools/cache_dns.py --local --merge
 
 # 2. один прогон: пары, HTTP-проверка, наблюдения в runs/, release
 python3 tools/check.py -o Megafon --phase on
@@ -174,6 +190,30 @@ python3 tools/classify.py -o Megafon --phase on --write-release
 python3 tools/build_common.py --write-release
 ```
 
+То же для PowerShell (`python`, не `python3`):
+
+```powershell
+1..3 | ForEach-Object {
+    python tools/check.py -o Megafon --phase off --no-release
+    Start-Sleep -Seconds 180
+}
+1..3 | ForEach-Object {
+    python tools/check.py -o Megafon --phase on
+    Start-Sleep -Seconds 180
+}
+python tools/classify.py -o Megafon --phase on --write-release
+python tools/build_common.py --write-release
+```
+
+Переменные окружения вместо флагов — тоже по-разному:
+
+```bash
+LIMIT=50 python3 tools/check.py          # bash
+```
+```powershell
+$env:LIMIT = 50; python tools/check.py   # PowerShell
+```
+
 > **Сколько это занимает.** Один прогон по 560 доменам — 40–60 минут: темп
 > специально низкий, иначе в сети срабатывает шейпер и начинают теряться
 > соединения, а замер врёт.
@@ -181,6 +221,10 @@ python3 tools/build_common.py --write-release
 Флаг `--phase` обязателен по смыслу: `off` — «как работает сеть без
 ограничений», `on` — «что разрешает оператор». Наблюдения раскладываются
 по папкам `runs/<оператор>/<фаза>/`, release собирается только из `on`.
+
+> **Прерывание.** Ctrl+C не теряет прогон: дочерний шаг дописывает уже
+> собранное, наблюдения сохраняются с пометкой `interrupted`, HTTP-проверка
+> и release не запускаются. Второй Ctrl+C бросает шаг сразу.
 
 ## Что на выходе
 
@@ -299,11 +343,12 @@ python3 tools/check.py -o Megafon --phase on
 | `--repeat N` | 1 | повторов на пару |
 | `--dns-probe` | — | спросить DNS оператора по каждому домену |
 | `--dns-cache` | — | адреса из кэша вместо живого DNS |
+| `--dns-cache-extra` | — | локальный слой поверх общего кэша (можно несколько раз) |
 | `--ipv6-check` | — | проверить IPv6 и отключить AAAA, если его нет |
 | `--no-control` | — | выключить контрольные пробы (по умолчанию включены) |
 | `--shuffle` | — | случайный порядок доменов |
 | `--chunk` / `--chunk-pause` | — | блоки с паузами |
-| `--interface` | — | привязать пробы к интерфейсу (Linux) |
+| `--interface` | — | привязать пробы к интерфейсу (Linux — имя, Windows — адаптер) |
 | `--link-watch` | — | следить за живучестью канала во время прогона |
 | `-o`, `--operator` | unknown | оператор для маркировки наблюдений |
 | `--format` | both | `jsonl`, `tsv` или `both` |
@@ -321,6 +366,7 @@ python3 tools/check.py -o Megafon --phase on
 | `-c`, `--concurrency` | из конфига | одновременных запросов |
 | `-e`, `--exclude` | — | исключить категорию доменов |
 | `--dns-cache` | — | адреса из кэша |
+| `--dns-cache-extra` | — | локальный слой поверх общего кэша |
 | `--all-addresses` | — | проверять все адреса, а не до первого рабочего |
 | `--no-verify-cert` | — | не сверять сертификат с доменом |
 | `--no-stub-detect` | — | не искать страницы-заглушки |
@@ -359,10 +405,14 @@ python3 tools/check.py -o Megafon --phase on
 Кэш адресов в `configs/dns-cache.json`.
 
 ```bash
-python3 tools/cache_dns.py --merge     # дополнить, не теряя прежние адреса
+python3 tools/cache_dns.py --local --merge   # локальный слой, общий кэш не трогаем
+python3 tools/cache_dns.py --merge           # обновить общий (его ведёт workflow)
 ```
 
-Обновляется workflow раз в неделю и при изменении `src/domains/`.
+Общий кэш обновляется workflow раз в неделю и при изменении `src/domains/`,
+поэтому руками его лучше не переписывать: следующий `git pull` даст конфликт.
+Свои адреса складывайте в локальный слой — `check.py` читает его поверх
+общего и в git он не попадает.
 
 ### cell_watch.py
 
@@ -383,7 +433,8 @@ python3 tools/cache_dns.py --merge     # дополнить, не теряя п�
 | `configs/check_pairs.json` | параллельность и таймаут пар, порт, контрольные пробы |
 | `configs/release.json` | операторы: название, источники, режим сборки |
 | `configs/control-domains.txt` | эталон для калибровки порога |
-| `configs/dns-cache.json` | адреса доменов, собранные вне сети оператора |
+| `configs/dns-cache.json` | адреса доменов, собранные вне сети оператора (обновляет workflow) |
+| `configs/dns-cache.local.json` | ваш локальный слой поверх общего, в git не попадает |
 
 Домены для проверки — в `src/domains/`, один файл на категорию. Формат:
 

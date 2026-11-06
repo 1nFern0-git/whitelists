@@ -323,8 +323,7 @@ def write_outputs(data: Dict[str, Any], out_dir: Path) -> None:
     }
     for verdict, filename in names.items():
         values = sorted(groups.get(verdict, []))
-        (out_dir / filename).write_text("\n".join(values) + ("\n" if values else ""),
-                                        encoding="utf-8")
+        plat.write_lines(out_dir / filename, values)
     (out_dir / "classify.json").write_text(
         json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 

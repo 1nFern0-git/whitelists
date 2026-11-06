@@ -37,8 +37,9 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install dnspython
-        run: pip install dnspython==2.7.0
+      - name: Install dependencies
+        # Один источник версий для пользователя, этого workflow и CI-тестов.
+        run: pip install -r requirements.txt
 
       - name: Build DNS cache
         run: python3 tools/cache_dns.py

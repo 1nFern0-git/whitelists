@@ -1,0 +1,50 @@
+name: CI
+
+# Проверки без сети: синтаксис, справка каждого инструмента и тесты на
+# разбор данных. Замеры здесь не запускаются — для них нужна сеть оператора.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Compile
+        run: python -m compileall -q tools
+
+      - name: Help of every tool
+        run: |
+          python tools/check.py --help
+          python tools/check_pairs.py --help
+          python tools/check-domains.py --help
+          python tools/classify.py --help
+          python tools/build_common.py --help
+          python tools/cache_dns.py --help
+          python tools/build_release.py --help
+          python tools/build_all_release.py --help
+          python tools/merge_runs.py --help
+          python tools/pairs_report.py --help
+          python tools/cell_watch.py --help
+
+      - name: Tests
+        run: python -m pytest tests -q

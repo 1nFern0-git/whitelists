@@ -1,0 +1,9 @@
+# Хранить и отдавать файлы с LF независимо от core.autocrlf у пользователя.
+# Списки доменов с CRLF приезжают на роутер с \r в конце строки.
+* text=auto eol=lf
+
+# JSON-кэш адресов обновляет workflow: конфликты из-за переводов строк лишние.
+configs/dns-cache.json text eol=lf
+
+*.png binary
+*.ico binary

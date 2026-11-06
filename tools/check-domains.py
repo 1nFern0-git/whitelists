@@ -333,8 +333,13 @@ def extract_domain(line: str) -> str:
     return value if len(value.rsplit('.', 1)[1]) >= 2 else ""
 
 
-def load_dns_cache(path: Optional[str]) -> Dict[str, Any]:
-    """Адреса, собранные заранее (`tools/cache_dns.py`)."""
+def load_dns_cache(path: Optional[str], extra: Optional[List[str]] = None
+                   ) -> Dict[str, Any]:
+    """Адреса, собранные заранее (`tools/cache_dns.py`).
+
+    `extra` — локальный слой поверх общего кэша: общий обновляет workflow,
+    а локальный дополняет его и в git не попадает.
+    """
     if not path:
         return {}
     cache_path = Path(path)
@@ -349,11 +354,37 @@ def load_dns_cache(path: Optional[str]) -> Dict[str, Any]:
         print(f"⚠️  кэш DNS не прочитан: {exc}")
         return {}
     domains = data.get("domains", data)
-    if isinstance(domains, dict):
-        print(f"📦 кэш DNS: {len(domains)} доменов из {cache_path.name} "
-              f"(собран {data.get('generated_at', 'неизвестно')})")
-        return domains
-    return {}
+    if not isinstance(domains, dict):
+        return {}
+    domains = dict(domains)
+    print(f"📦 кэш DNS: {len(domains)} доменов из {cache_path.name} "
+          f"(собран {data.get('generated_at', 'неизвестно')})")
+    for item in extra or []:
+        overlay = Path(item)
+        if not overlay.is_absolute():
+            overlay = PROJECT_ROOT / overlay
+        if not overlay.exists():
+            continue
+        try:
+            layer = json.loads(overlay.read_text(encoding="utf-8"))
+        except Exception as exc:
+            print(f"⚠️  локальный кэш {overlay.name} не прочитан: {exc}")
+            continue
+        layer_domains = layer.get("domains", layer)
+        if not isinstance(layer_domains, dict):
+            continue
+        for domain, entry in layer_domains.items():
+            current = domains.get(domain)
+            if not isinstance(current, dict) or not isinstance(entry, dict):
+                domains[domain] = entry
+                continue
+            for family in ("A", "AAAA"):
+                merged = list(current.get(family) or [])
+                merged += [value for value in (entry.get(family) or [])
+                           if value not in merged]
+                current[family] = merged
+        print(f"   + локальный слой {overlay.name}: {len(layer_domains)} доменов")
+    return domains
 
 
 def get_files_to_process(directory: str, excludes: Set[str]) -> List[Path]:
@@ -1258,6 +1289,9 @@ async def main() -> None:
     parser.add_argument('--dns-cache', default=None,
                         help='Кэш адресов (tools/cache_dns.py): нужен, когда DNS '
                              'оператора не отвечает на домены вне белого списка')
+    parser.add_argument('--dns-cache-extra', action='append', default=None,
+                        help='Локальный слой поверх общего кэша '
+                             '(configs/dns-cache.local.json); можно несколько раз')
     parser.add_argument('--cache-only', action='store_true',
                         help='Не обращаться к DNS вовсе: только адреса из кэша')
     parser.add_argument('--verify-ssl', action='store_true', help='Проверять SSL')
@@ -1304,7 +1338,8 @@ async def main() -> None:
         return
 
     settings = Settings(args)
-    args.dns_cache_data = load_dns_cache(args.dns_cache)
+    args.dns_cache_data = load_dns_cache(args.dns_cache,
+                                             getattr(args, "dns_cache_extra", None))
     args.cache_only = bool(args.cache_only or get_config_value("probe", "cache_only", default=False))
     if args.cache_only and not args.dns_cache_data:
         print("❌ --cache-only требует кэш с данными (--dns-cache)")

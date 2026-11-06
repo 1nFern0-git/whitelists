@@ -31,10 +31,14 @@ from typing import List
 TOOLS = Path(__file__).resolve().parent
 ROOT = TOOLS.parent
 RELEASE_CONFIG = ROOT / "configs" / "release.json"
+# Прерывание пользователем: собранное всё равно сохраняем, остальные шаги — нет.
+INTERRUPTED = False
 DOMAINS_DIR = ROOT / "src" / "domains"
 # Кэш адресов, который собирает workflow: в сети оператора DNS не отвечает,
 # и без готовых адресов домен нечем проверять.
 DNS_CACHE = ROOT / "configs" / "dns-cache.json"
+# Локальный слой поверх общего кэша: свои адреса, не в git.
+DNS_CACHE_LOCAL = ROOT / "configs" / "dns-cache.local.json"
 HTTP_CONFIG = ROOT / "configs" / "check-domains.json"
 
 # Скрипт запускают как `python3 tools/check.py`, поэтому каталог скрипта уже
@@ -79,15 +83,32 @@ def run(cmd, title):
     """
     print(f"\n── {title} " + "─" * max(0, 60 - len(title)), flush=True)
     print("   " + " ".join(str(part) for part in cmd[1:]), flush=True)
+    global INTERRUPTED
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
     process = subprocess.Popen(cmd, cwd=str(TOOLS), stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT, text=True, bufsize=1,
                                encoding="utf-8", errors="replace", env=env)
-    for line in process.stdout:
-        sys.stdout.write(line)
-    process.stdout.close()
-    code = process.wait()
-    if code != 0:
+    try:
+        while True:
+            try:
+                for line in process.stdout:
+                    sys.stdout.write(line)
+                break
+            except KeyboardInterrupt:
+                # Ctrl+C получает вся группа процессов, включая потомка:
+                # он дописывает уже собранное. Если выйти сразу, потомок
+                # пишет в закрытый канал и падает до записи сводки.
+                if INTERRUPTED:
+                    print("\n⚠️  повторное прерывание — шаг останавливается")
+                    process.kill()
+                    break
+                INTERRUPTED = True
+                print("\n⚠️  прерывание: дочитываю наблюдения "
+                      "(Ctrl+C ещё раз — прервать сразу)", flush=True)
+    finally:
+        process.stdout.close()
+        code = process.wait()
+    if code != 0 and not INTERRUPTED:
         print(f"   ⚠️  шаг завершился с кодом {code}")
     return code
 
@@ -368,6 +389,11 @@ def main():
     if DNS_CACHE.exists() and not args.no_cache:
         print(f"\n📦 адреса из кэша: {DNS_CACHE.name}")
         cache_args = ["--dns-cache", str(DNS_CACHE)]
+        # Локальный слой: дополнения из своей сети, не трогая общий кэш,
+        # который обновляет workflow (иначе следующий pull даёт конфликт).
+        if DNS_CACHE_LOCAL.exists():
+            print(f"   + локальный слой: {DNS_CACHE_LOCAL.name}")
+            cache_args += ["--dns-cache-extra", str(DNS_CACHE_LOCAL)]
     elif not args.no_cache:
         print("\nℹ️  кэша адресов нет: домены вне белого списка получат DNS_NX")
         print("   собрать заранее (нужен обычный интернет): python3 tools/cache_dns.py")
@@ -397,17 +423,20 @@ def main():
     if args.limit:
         pairs += ["--limit", str(args.limit)]
     pairs_code = run(pairs, "1/3 Проверка пар SNI × IP")
+    if INTERRUPTED:
+        print("\n⚠️  прогон прерван — сохраняю то, что успели собрать; "
+              "HTTP-проверка и release не запускаются")
 
     jsonl = sorted((out / "pairs").glob("pairs-*.jsonl"))
-    if jsonl:
+    if jsonl and not INTERRUPTED:
         run([sys.executable, "pairs_report.py", *map(str, jsonl),
              "-o", str(out / "report"), "--domains-dir", str(DOMAINS_DIR)],
             "2/3 Отчёт по прошедшим парам")
-    else:
+    elif not jsonl:
         print("\n⚠️  наблюдений нет — отчёт пропущен")
 
     http_file = None
-    if not args.no_http:
+    if not args.no_http and not INTERRUPTED:
         before = newest(ROOT / "build" / "domains_checked" / "*.txt")
         http_cmd = [sys.executable, "check-domains.py", str(DOMAINS_DIR),
                     "-q", "-c", str(args.http_concurrency), "--operator", operator]
@@ -452,7 +481,7 @@ def main():
             saved.append(target)
 
     release_line = ""
-    if saved and not args.no_release:
+    if saved and not args.no_release and not INTERRUPTED:
         if args.phase != "on":
             print("\nℹ️  release не собирается: он строится только из прогонов "
                   "с включённым режимом белого списка (--phase on)")
@@ -479,6 +508,10 @@ def main():
     if release_line:
         print(release_line)
     print(f"   подробности: {out.relative_to(ROOT)}")
+    if INTERRUPTED:
+        print("   ⚠️  прогон неполный: наблюдения сохранены с пометкой interrupted, "
+              "в вердикты такую серию лучше не брать целиком")
+        return 130
     if pairs_code != 0:
         print("   ⚠️  проверка пар завершилась с ошибкой — смотрите вывод выше")
     return 0

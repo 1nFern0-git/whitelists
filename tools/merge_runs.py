@@ -110,13 +110,11 @@ def main() -> None:
 
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    (out / "stable-pass.txt").write_text(
-        "\n".join(d for d, _ in stable_pass) + "\n", encoding="utf-8")
-    (out / "flap-pass.txt").write_text(
-        "\n".join(f"{d}\t{p}/{c}" for d, p, c in
-                  sorted(flap, key=lambda x: (-x[1] / x[2], x[0]))) + "\n", encoding="utf-8")
-    (out / "stable-blocked.txt").write_text(
-        "\n".join(d for d, _ in blocked) + "\n", encoding="utf-8")
+    plat.write_lines(out / "stable-pass.txt", [d for d, _ in stable_pass])
+    plat.write_lines(out / "flap-pass.txt",
+                     [f"{d}\t{p}/{c}" for d, p, c in
+                      sorted(flap, key=lambda x: (-x[1] / x[2], x[0]))])
+    plat.write_lines(out / "stable-blocked.txt", [d for d, _ in blocked])
 
     lines = ["# Агрегация полевых прогонов", "",
              f"- прогонов: {total}",

@@ -87,6 +87,9 @@ async def main() -> None:
     parser.add_argument("--timeout", type=float, default=5.0, help="Таймаут запроса, сек")
     parser.add_argument("--merge", action="store_true",
                         help="Дополнить существующий кэш, не теряя прежние записи")
+    parser.add_argument("--local", action="store_true",
+                        help="Писать в configs/dns-cache.local.json (в git не попадает), "
+                             "а не в общий кэш, который обновляет workflow")
     args = parser.parse_args()
 
     directory = Path(args.directory) if args.directory else PROJECT_ROOT / "src" / "domains"
@@ -96,6 +99,8 @@ async def main() -> None:
         output = Path(args.output)
         if not output.is_absolute():
             output = Path.cwd() / output      # относительный путь — от текущего каталога
+    elif args.local:
+        output = PROJECT_ROOT / "configs" / "dns-cache.local.json"
     else:
         output = PROJECT_ROOT / "configs" / "dns-cache.json"
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -124,13 +129,23 @@ async def main() -> None:
         "domains": {},
     }
 
-    if args.merge and output.exists():
-        try:
-            previous = json.loads(output.read_text(encoding="utf-8"))
-            cache["domains"].update(previous.get("domains", {}))
-            print(f"   дополняю существующий кэш ({len(previous.get('domains', {}))} записей)")
-        except Exception as exc:
-            print(f"   ⚠️  старый кэш не прочитан: {exc}")
+    if args.merge:
+        # Для локального слоя основой служит общий кэш: иначе первый --local
+        # начал бы с пустого файла и потерял адреса, собранные workflow.
+        sources = [output]
+        base = PROJECT_ROOT / "configs" / "dns-cache.json"
+        if args.local and base.exists() and base != output:
+            sources.append(base)
+        for source in sources:
+            if not source.exists():
+                continue
+            try:
+                previous = json.loads(source.read_text(encoding="utf-8"))
+                cache["domains"].update(previous.get("domains", {}))
+                print(f"   дополняю {source.name} "
+                      f"({len(previous.get('domains', {}))} записей)")
+            except Exception as exc:
+                print(f"   ⚠️  {source.name} не прочитан: {exc}")
 
     resolved = partial = failed = 0
     kept = 0

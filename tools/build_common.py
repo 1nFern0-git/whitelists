@@ -161,10 +161,8 @@ def main() -> None:
     print(f"  из них на общем адресе:    {len(flags)}")
     print(f"адресов:                     {len(ips)}")
 
-    (out_dir / "whitelist-common.txt").write_text(
-        "\n".join(chosen) + ("\n" if chosen else ""), encoding="utf-8")
-    (out_dir / "ips-common.txt").write_text(
-        "\n".join(sorted(ips)) + ("\n" if ips else ""), encoding="utf-8")
+    plat.write_lines(out_dir / "whitelist-common.txt", chosen)
+    plat.write_lines(out_dir / "ips-common.txt", sorted(ips))
     (out_dir / "verdicts.json").write_text(
         json.dumps({"operators": list(data), "domains": details,
                     "shared_addresses": flags}, indent=2, ensure_ascii=False) + "\n",
@@ -201,10 +199,8 @@ def main() -> None:
 
     if args.write_release:
         RELEASE_DIR.mkdir(parents=True, exist_ok=True)
-        (RELEASE_DIR / "whitelist-common.txt").write_text(
-            "\n".join(chosen) + ("\n" if chosen else ""), encoding="utf-8")
-        (RELEASE_DIR / "IP-whitelist-common.txt").write_text(
-            "\n".join(sorted(ips)) + ("\n" if ips else ""), encoding="utf-8")
+        plat.write_lines(RELEASE_DIR / "whitelist-common.txt", chosen)
+        plat.write_lines(RELEASE_DIR / "IP-whitelist-common.txt", sorted(ips))
         (RELEASE_DIR / "whitelist-common.meta.json").write_text(
             json.dumps({
                 "built_at": datetime.now().strftime("%Y-%m-%dT%H:%M:%S%z"),

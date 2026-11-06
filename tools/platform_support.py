@@ -398,8 +398,10 @@ def flush_dns() -> bool:
 def is_mobile_address(ip: Optional[str]) -> Optional[bool]:
     """Похож ли адрес на мобильный CGNAT (100.64.0.0/10).
 
-    На Windows это единственный способ хоть как-то отличить мобильную сеть:
-    имена интерфейсов и маршруты там недоступны.
+    Один из признаков мобильного канала, но не решающий: при раздаче с
+    телефона или HiLink-модема компьютер получает адрес локальной сети
+    устройства (192.168.42.x, 172.20.10.x, 192.168.8.x), а не CGNAT.
+    Основной признак — тип адаптера (см. interface_kind).
     """
     if not ip:
         return None
@@ -407,3 +409,19 @@ def is_mobile_address(ip: Optional[str]) -> Optional[bool]:
         return ipaddress.ip_address(ip) in ipaddress.ip_network("100.64.0.0/10")
     except ValueError:
         return None
+
+
+def write_text(path, text: str) -> None:
+    """Запись текста с переводами строк LF в любой ОС.
+
+    По умолчанию open() на Windows превращает \\n в \\r\\n, и список доменов
+    приезжает на роутер с \\r в конце строки. pathlib.write_text(newline=...)
+    появился только в 3.10, а проект обещает 3.9.
+    """
+    with open(path, "w", encoding="utf-8", newline="\n") as handle:
+        handle.write(text)
+
+
+def write_lines(path, values: List[str]) -> None:
+    """Список строк по одной на строку, LF, завершающий перевод строки."""
+    write_text(path, "\n".join(values) + ("\n" if values else ""))

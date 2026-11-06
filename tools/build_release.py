@@ -169,7 +169,7 @@ def main() -> None:
 
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text("\n".join(result) + "\n", encoding="utf-8")
+    plat.write_lines(out, result)
 
     print("📊 источники:")
     for name, values in sets.items():
@@ -184,7 +184,7 @@ def main() -> None:
         nets = aggregate(ips)
         ip_path = Path(args.ip_output)
         ip_path.parent.mkdir(parents=True, exist_ok=True)
-        ip_path.write_text("\n".join(str(n) for n in nets) + "\n", encoding="utf-8")
+        plat.write_lines(ip_path, [str(n) for n in nets])
         print(f"🌐 IP-список: {len(ips)} адресов → {len(nets)} записей → {ip_path}")
 
     if args.report:
