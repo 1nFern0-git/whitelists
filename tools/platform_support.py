@@ -175,11 +175,12 @@ def windows_network(refresh: bool = False) -> List[Dict[str, Any]]:
     for item in payload.get("addresses") or []:
         index = item.get("InterfaceIndex")
         address = (item.get("IPAddress") or "").strip()
-        family = (item.get("AddressFamily") or "IPv4").lower()
         if index is None or not address:
             continue
         index = int(index)
-        if family.endswith("v6"):
+        # AddressFamily не читаем: Windows PowerShell 5.1 отдаёт его числом
+        # (2 — IPv4, 23 — IPv6), PowerShell 7 — строкой. Адрес однозначнее.
+        if ":" in address:
             # link-local не годится как адрес источника для внешних проб.
             if address and not address.lower().startswith("fe80"):
                 addresses6.setdefault(index, address)
