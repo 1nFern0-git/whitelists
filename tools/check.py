@@ -84,7 +84,10 @@ def run(cmd, title):
     print(f"\n── {title} " + "─" * max(0, 60 - len(title)), flush=True)
     print("   " + " ".join(str(part) for part in cmd[1:]), flush=True)
     global INTERRUPTED
-    env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    # PYTHONUNBUFFERED: stdout потомка — pipe, и без этого Python копит вывод
+    # блоками по 8 КБ. Шаг пар идёт 40–60 минут, и журнал с терминалом
+    # минутами стояли пустыми, хотя пробы шли.
+    env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1")
     process = subprocess.Popen(cmd, cwd=str(TOOLS), stdout=subprocess.PIPE,
                                stderr=subprocess.STDOUT, text=True, bufsize=1,
                                encoding="utf-8", errors="replace", env=env)
