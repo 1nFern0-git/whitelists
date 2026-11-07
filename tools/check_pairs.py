@@ -63,6 +63,7 @@ except ImportError:
     CRYPTO_LIB = False
 
 import platform_support as plat  # noqa: E402
+import mode_check  # noqa: E402
 
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_ROOT = SCRIPT_DIR.parent
@@ -70,6 +71,10 @@ CONFIG_FILE = PROJECT_ROOT / "configs" / "check_pairs.json"
 
 CONFIG: Dict[str, Any] = {}
 SHUTDOWN_REQUESTED = False
+# Причина остановки, если режим белого списка в сети разошёлся с фазой
+# прогона (--mode-guard). Такие наблюдения в вердикт брать нельзя.
+MODE_LOST: Optional[str] = None
+EXIT_MODE_LOST = 3
 
 # Интерфейс, через который идут пробы. Пусто — как решит маршрут по умолчанию.
 # Нужен, когда в системе несколько выходов (Wi-Fi и модем): без привязки
@@ -732,12 +737,60 @@ async def run_matrix(domains: List[str], args: argparse.Namespace,
     for index in range(0, len(domains), chunk):
         part = domains[index:index + chunk]
         await asyncio.gather(*(one(d) for d in part))
+        if SHUTDOWN_REQUESTED:
+            # Иначе пустые блоки продолжали бы выдерживать паузы: при остановке
+            # в начале прогона выход растягивался на десятки минут.
+            break
         done = index + len(part)
         if done < len(domains):
             print(f"   блок {done // chunk}/{total_chunks}: {done}/{len(domains)} доменов, "
                   f"пауза {pause:.0f} с", flush=True)
-            await asyncio.sleep(pause)
+            await interruptible_sleep(pause)
     return records
+
+
+async def interruptible_sleep(seconds: float, step: float = 0.5) -> None:
+    """Пауза, которую прерывает остановка прогона (Ctrl+C или смена режима)."""
+    deadline = time.monotonic() + seconds
+    while not SHUTDOWN_REQUESTED:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            return
+        await asyncio.sleep(min(step, left))
+
+
+async def run_mode_guard(args: argparse.Namespace, meta: Dict[str, Any],
+                         stop: asyncio.Event, emit=None) -> None:
+    """Следит, что режим белого списка в сети совпадает с фазой прогона.
+
+    Оператор может выключить режим посреди прогона — тогда дальше меряется
+    обычная сеть, всё проходит, и в release попадает лишнее. Один ответ
+    может быть случайным, поэтому прогон останавливается после
+    --mode-strikes расхождений подряд. Каждая проверка пишется в наблюдения
+    (probe=mode).
+    """
+    global SHUTDOWN_REQUESTED, MODE_LOST
+    loop = asyncio.get_running_loop()
+    strikes = 0
+    while not stop.is_set() and not SHUTDOWN_REQUESTED:
+        result = await loop.run_in_executor(None, mode_check.probe_mode, BIND_INTERFACE)
+        if emit is not None:
+            emit(make_record("mode", "", "", "", "", False, result, meta))
+        reason = mode_check.mismatch(args.phase, result["state"])
+        strikes = strikes + 1 if reason else 0
+        if reason:
+            print(f"\n⚠️  режим: {mode_check.describe(result)} "
+                  f"({strikes}/{args.mode_strikes})", flush=True)
+        if reason and strikes >= args.mode_strikes:
+            MODE_LOST = reason
+            SHUTDOWN_REQUESTED = True
+            print(f"⛔ {reason}. Прогон остановлен, наблюдения не годятся для вердикта.",
+                  flush=True)
+            return
+        try:
+            await asyncio.wait_for(stop.wait(), timeout=args.mode_interval)
+        except asyncio.TimeoutError:
+            continue
 
 
 async def probe_dns(domain: str, nameservers: List[str], timeout: float) -> Dict[str, Any]:
@@ -1004,11 +1057,15 @@ async def run_dns_probes(domains: List[str], args: argparse.Namespace,
     for index in range(0, len(domains), chunk):
         part = domains[index:index + chunk]
         await asyncio.gather(*(one(d) for d in part))
+        if SHUTDOWN_REQUESTED:
+            # Иначе пустые блоки продолжали бы выдерживать паузы: при остановке
+            # в начале прогона выход растягивался на десятки минут.
+            break
         done = index + len(part)
         if done < len(domains):
             print(f"   блок {done // chunk}/{total_chunks}: {done}/{len(domains)} доменов, "
                   f"пауза {pause:.0f} с", flush=True)
-            await asyncio.sleep(pause)
+            await interruptible_sleep(pause)
     return records
 
 
@@ -1305,6 +1362,13 @@ async def main() -> None:
     parser.add_argument("--interface", default=None,
                         help="Интерфейс для проб (модем, usb0, wwan0): нужен, когда "
                              "в системе есть другие выходы, например Wi-Fi")
+    parser.add_argument("--mode-guard", action="store_true",
+                        help="Проверять режим белого списка во время прогона и "
+                             "остановиться, если он разошёлся с --phase")
+    parser.add_argument("--mode-interval", type=float, default=30.0,
+                        help="Период проверки режима, сек")
+    parser.add_argument("--mode-strikes", type=int, default=2,
+                        help="Сколько расхождений подряд останавливают прогон")
     parser.add_argument("--link-watch", action="store_true",
                         help="Следить за живучестью канала во время прогона: "
                              "падают шлюз/DNS/внешний адрес или только цели")
@@ -1466,6 +1530,14 @@ async def main() -> None:
             bar.add(record)
             bar.tick()
 
+    # Сторож режима стартует до DNS-проб: они тоже зависят от режима.
+    guard_stop = asyncio.Event()
+    guard_task = None
+    if args.mode_guard and args.phase in ("on", "off"):
+        print(f"   проверка режима белого списка: каждые {args.mode_interval:g} с, "
+              f"остановка после {args.mode_strikes} расхождений с фазой {args.phase}")
+        guard_task = asyncio.create_task(run_mode_guard(args, meta, guard_stop, emit))
+
     dns_records: List[Dict[str, Any]] = []
     if args.dns_probe:
         print("\n1/4 DNS-пробы (DNS оператора)")
@@ -1505,11 +1577,14 @@ async def main() -> None:
         bar.close()
         heartbeat_task.cancel()
         watch_stop.set()
-        if watch_task is not None:
+        guard_stop.set()
+        for task in (watch_task, guard_task):
+            if task is None:
+                continue
             try:
-                await asyncio.wait_for(watch_task, timeout=5)
+                await asyncio.wait_for(task, timeout=5)
             except (asyncio.TimeoutError, asyncio.CancelledError):
-                watch_task.cancel()
+                task.cancel()
         jsonl_file.close()
     print(f"    матрица: {len(records)} проб за {time.perf_counter() - started:.1f} с")
 
@@ -1518,6 +1593,7 @@ async def main() -> None:
         "domains_total": len(domains),
         "probes_total": len(records),
         "interrupted": SHUTDOWN_REQUESTED,
+        "mode_lost": MODE_LOST,
         "ipv6_available": getattr(args, "ipv6_available", None),
         "repeat": getattr(args, "repeat", 1),
         "operator": args.operator,
@@ -1568,6 +1644,8 @@ async def main() -> None:
     print("   pair — работает только конкретная пара SNI + IP")
     print("   no_contrast — заблокированных нет, тип фильтрации не определить")
     print(f"\n💾 Результаты: {out_dir}")
+    if MODE_LOST:
+        print(f"⛔ прогон остановлен: {MODE_LOST}. Наблюдения не годятся для вердикта.")
 
 
 if __name__ == "__main__":
@@ -1576,3 +1654,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n👋 Завершение")
         sys.exit(0)
+    # Отдельный код: check.py по нему не запускает HTTP-шаг и не кладёт
+    # такие наблюдения в runs/.
+    sys.exit(EXIT_MODE_LOST if MODE_LOST else 0)

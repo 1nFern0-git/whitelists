@@ -44,7 +44,33 @@ HTTP_CONFIG = ROOT / "configs" / "check-domains.json"
 # Скрипт запускают как `python3 tools/check.py`, поэтому каталог скрипта уже
 # в sys.path — общие помощники лежат рядом с ним.
 import platform_support as plat  # noqa: E402
+import mode_check  # noqa: E402
 from operators import slug  # noqa: E402
+
+# Код выхода check_pairs.py, когда режим белого списка разошёлся с фазой.
+EXIT_MODE_LOST = 3
+
+
+def confirm_mismatch(iface: str, phase: str, attempts: int = 2,
+                     pause: float = 5.0) -> str:
+    """Причина, если режим в сети не совпадает с фазой; пусто — совпадает.
+
+    Расхождение подтверждается повторной проверкой: один ответ может быть
+    случайным, а остановка прогона — дорогое решение.
+    """
+    if phase not in ("on", "off"):
+        return ""
+    for attempt in range(attempts):
+        result = mode_check.probe_mode(iface)
+        reason = mode_check.mismatch(phase, result["state"])
+        print(f"   режим белого списка: {mode_check.describe(result)}", flush=True)
+        if not reason:
+            if result["state"] in (mode_check.STATE_NO_LINK, mode_check.STATE_UNCLEAR):
+                print("   ⚠️  режим не определить — прогон продолжится без этой гарантии")
+            return ""
+        if attempt + 1 < attempts:
+            time.sleep(pause)
+    return reason
 
 
 # Сеть оператора по названию: нужно, чтобы прогон попал в правильную папку runs/.
@@ -368,6 +394,9 @@ def main():
                         default=os.environ.get("PHASE", "unknown"),
                         help="Фаза сети: off — режим белого списка выключен, "
                              "on — включён. Отделяет базовый прогон от целевого")
+    parser.add_argument("--no-mode-check", action="store_true",
+                        help="Не проверять, что режим белого списка в сети совпадает "
+                             "с --phase (в начале и во время прогона)")
     args = parser.parse_args()
 
     started = time.time()
@@ -396,6 +425,17 @@ def main():
     if args.phase == "unknown":
         print("   ℹ️  фаза не указана (--phase off|on): базовый прогон и прогон "
               "белого списка будут в одной папке")
+
+    # Режим проверяется до старта: прогон фазы on при выключенном белом
+    # списке занял бы 40–60 минут и намерил бы обычную сеть.
+    mode_guard = not args.no_mode_check and args.phase in ("on", "off")
+    if mode_guard:
+        reason = confirm_mismatch(iface, args.phase)
+        if reason:
+            print(f"\n⛔ {reason}.")
+            print("   Прогон не запущен. Проверьте режим у оператора или фазу "
+                  "(--phase); проверку можно отключить: --no-mode-check")
+            return 2
 
     cache_args = []
     if DNS_CACHE.exists() and not args.no_cache:
@@ -434,13 +474,18 @@ def main():
         print(f"   пробы привязаны к интерфейсу: {iface}", flush=True)
     if args.limit:
         pairs += ["--limit", str(args.limit)]
+    if mode_guard:
+        pairs += ["--mode-guard"]
     pairs_code = run(pairs, "1/3 Проверка пар SNI × IP")
     if INTERRUPTED:
         print("\n⚠️  прогон прерван — сохраняю то, что успели собрать; "
               "HTTP-проверка и release не запускаются")
+    mode_lost = ""
+    if mode_guard and pairs_code == EXIT_MODE_LOST:
+        mode_lost = "режим белого списка разошёлся с фазой во время проверки пар"
 
     jsonl = sorted((out / "pairs").glob("pairs-*.jsonl"))
-    if jsonl and not INTERRUPTED:
+    if jsonl and not INTERRUPTED and not mode_lost:
         run([sys.executable, "pairs_report.py", *map(str, jsonl),
              "-o", str(out / "report"), "--domains-dir", str(DOMAINS_DIR)],
             "2/3 Отчёт по прошедшим парам")
@@ -448,7 +493,11 @@ def main():
         print("\n⚠️  наблюдений нет — отчёт пропущен")
 
     http_file = None
-    if not args.no_http and not INTERRUPTED:
+    # HTTP-шаг идёт своим процессом без сторожа: режим проверяется до и после
+    # него, и при расхождении его результат не сохраняется.
+    if mode_guard and not mode_lost and not INTERRUPTED and not args.no_http:
+        mode_lost = confirm_mismatch(iface, args.phase)
+    if not args.no_http and not INTERRUPTED and not mode_lost:
         before = newest(ROOT / "build" / "domains_checked" / "*.txt")
         http_cmd = [sys.executable, "check-domains.py", str(DOMAINS_DIR),
                     "-q", "-c", str(args.http_concurrency), "--operator", operator]
@@ -474,26 +523,33 @@ def main():
         after = newest(ROOT / "build" / "domains_checked" / "*.txt")
         if after and after != before:
             http_file = after
+        if mode_guard and not INTERRUPTED:
+            mode_lost = confirm_mismatch(iface, args.phase)
 
-    runs_dir = ROOT / "runs" / operator / args.phase
-    runs_dir.mkdir(parents=True, exist_ok=True)
-    # Полные наблюдения кладём рядом: вердикт по адресам требует и провалов,
-    # а pairs.tsv содержит только прошедшие пары.
-    jsonl = sorted((out / "pairs").glob("pairs-*.jsonl"))
-    summary_file = sorted((out / "pairs").glob("summary-*.json"))
     saved = []
-    for source, suffix in ((out / "report" / "domains.txt", "tls.txt"),
-                           (out / "report" / "pairs.tsv", "tls.tsv"),
-                           (jsonl[0] if jsonl else None, "pairs.jsonl"),
-                           (summary_file[0] if summary_file else None, "summary.json"),
-                           (http_file, "http.txt")):
-        if source and Path(source).exists():
-            target = runs_dir / f"{stamp}-{suffix}"
-            shutil.copyfile(source, target)
-            saved.append(target)
+    if mode_lost:
+        # Не «прерванный», а негодный прогон: часть проб снята при другом
+        # режиме, и в runs/ он испортил бы вердикт всей серии.
+        print(f"\n⛔ {mode_lost}: наблюдения в runs/ не сохраняются, release не собирается")
+    else:
+        runs_dir = ROOT / "runs" / operator / args.phase
+        runs_dir.mkdir(parents=True, exist_ok=True)
+        # Полные наблюдения кладём рядом: вердикт по адресам требует и провалов,
+        # а pairs.tsv содержит только прошедшие пары.
+        jsonl = sorted((out / "pairs").glob("pairs-*.jsonl"))
+        summary_file = sorted((out / "pairs").glob("summary-*.json"))
+        for source, suffix in ((out / "report" / "domains.txt", "tls.txt"),
+                               (out / "report" / "pairs.tsv", "tls.tsv"),
+                               (jsonl[0] if jsonl else None, "pairs.jsonl"),
+                               (summary_file[0] if summary_file else None, "summary.json"),
+                               (http_file, "http.txt")):
+            if source and Path(source).exists():
+                target = runs_dir / f"{stamp}-{suffix}"
+                shutil.copyfile(source, target)
+                saved.append(target)
 
     release_line = ""
-    if saved and not args.no_release and not INTERRUPTED:
+    if saved and not args.no_release and not INTERRUPTED and not mode_lost:
         if args.phase != "on":
             print("\nℹ️  release не собирается: он строится только из прогонов "
                   "с включённым режимом белого списка (--phase on)")
@@ -520,6 +576,10 @@ def main():
     if release_line:
         print(release_line)
     print(f"   подробности: {out.relative_to(ROOT)}")
+    if mode_lost:
+        print(f"   ⛔ прогон негоден: {mode_lost}. Повторите, когда режим будет "
+              f"соответствовать --phase {args.phase}")
+        return EXIT_MODE_LOST
     if INTERRUPTED:
         print("   ⚠️  прогон неполный: наблюдения сохранены с пометкой interrupted, "
               "в вердикты такую серию лучше не брать целиком")

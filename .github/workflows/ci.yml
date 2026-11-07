@@ -46,6 +46,7 @@ jobs:
           python tools/pairs_report.py --help
           python tools/cell_watch.py --help
           python tools/win_check.py --help
+          python tools/mode_check.py --help
 
       - name: Tests
         run: python -m pytest tests -q
