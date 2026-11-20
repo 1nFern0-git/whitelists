@@ -3,20 +3,6 @@
 # проверяйте его фактический хост (например, alfabank.gcdn.co).
 # добавил для "чисто посмотреть" ))
 
-# AWS CloudFront
-d1.awsstatic.com
-
-# Bunny
-b-cdn.net
-bunnycdn.com
-
-# Cloudflare / cdnjs
-cdnjs.cloudflare.com
-
-# Facebook / Instagram
-fbcdn.net
-scontent.xx.fbcdn.net
-static.xx.fbcdn.net
 
 # Fastly
 fastly.net
@@ -28,14 +14,3 @@ gcdn.co
 # Google
 googleusercontent.com
 gstatic.com
-
-# jsDelivr / unpkg
-jsdelivr.net
-unpkg.com
-
-# Twitter / X
-pbs.twimg.com
-
-# YouTube
-i.ytimg.com
-yt3.ggpht.com
