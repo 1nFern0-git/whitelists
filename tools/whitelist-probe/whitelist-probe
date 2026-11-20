@@ -282,10 +282,67 @@ find_network() {
   return 1
 }
 
+stale_networks() {
+  # Модем может переподключиться под другим именем (u1u2 -> u1u3). Сеть
+  # остаётся от старого интерфейса и держит ту же подсеть, из-за чего
+  # docker network create падает с "Pool overlaps". Такие сети свои — убираем.
+  local n parent
+  while read -r n; do
+    [ -n "$n" ] || continue
+    case "$n" in whitelist-macvlan-*) ;; *) continue ;; esac
+    parent=$(docker network inspect -f '{{index .Options "parent"}}' "$n" 2>/dev/null || true)
+    if [ -z "$parent" ] || ! ip link show "$parent" >/dev/null 2>&1; then
+      printf '%s\t%s\n' "$n" "${parent:-неизвестен}"
+    fi
+  done < <(docker network ls --filter driver=macvlan --format '{{.Name}}' 2>/dev/null)
+}
+
+prune_stale_networks() {
+  local n parent
+  while IFS=$'\t' read -r n parent; do
+    [ -n "$n" ] || continue
+    info "удаляю устаревшую сеть $n (интерфейс $parent больше не существует)"
+    docker network rm "$n" >/dev/null 2>&1 || true
+  done < <(stale_networks)
+}
+
+overlap_network() {
+  # Ищет чужую сеть, которая уже занимает нашу подсеть.
+  local n sub
+  while read -r n; do
+    [ -n "$n" ] || continue
+    sub=$(docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}} {{end}}' "$n" 2>/dev/null || true)
+    for s in $sub; do
+      if [ "$s" = "$SUBNET" ]; then
+        echo "$n"
+        return 0
+      fi
+    done
+  done < <(docker network ls --format '{{.Name}}' 2>/dev/null)
+  return 1
+}
+
 ensure_network() {
   if [ -n "$NETWORK" ] && docker network inspect "$NETWORK" >/dev/null 2>&1; then
-    return
+    local p s
+    p=$(docker network inspect -f '{{index .Options "parent"}}' "$NETWORK" 2>/dev/null || true)
+    s=$(docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}}{{end}}' "$NETWORK" 2>/dev/null || true)
+    if [ "$p" = "$IFACE" ] && [ "$s" = "$SUBNET" ]; then
+      return
+    fi
+    case "$NETWORK" in
+      whitelist-macvlan-*)
+        info "сеть $NETWORK не подходит ($p/$s вместо $IFACE/$SUBNET), пересоздаю"
+        docker network rm "$NETWORK" >/dev/null 2>&1 || true
+        ;;
+      *)
+        die "сеть $NETWORK есть, но она не на $IFACE/$SUBNET (сейчас $p/$s)
+Удалите её, укажите другую через WLP_NETWORK или запустите без этой переменной"
+        ;;
+    esac
   fi
+
+  prune_stale_networks
 
   local existing
   if existing=$(find_network); then
@@ -299,9 +356,18 @@ ensure_network() {
   fi
 
   info "создаю сеть $NETWORK на $IFACE ($SUBNET)"
-  docker network create -d macvlan \
-    --subnet "$SUBNET" --gateway "$GATEWAY" \
-    -o parent="$IFACE" "$NETWORK" >/dev/null
+  local err
+  if ! err=$(docker network create -d macvlan \
+        --subnet "$SUBNET" --gateway "$GATEWAY" \
+        -o parent="$IFACE" "$NETWORK" 2>&1 >/dev/null); then
+    local holder
+    if holder=$(overlap_network); then
+      die "подсеть $SUBNET уже занята сетью '$holder'
+Удалите её и повторите:
+  docker network rm $holder"
+    fi
+    die "не удалось создать сеть $NETWORK: $err"
+  fi
 }
 
 ensure_image() {
@@ -382,6 +448,14 @@ cmd_doctor() {
     net=$(find_network || true)
   fi
   printf 'сеть docker: '; if [ -n "$net" ]; then echo "$net"; else echo "нет (создастся при запуске)"; fi
+  local stale
+  stale=$(stale_networks || true)
+  if [ -n "$stale" ]; then
+    printf 'устаревшие:  '
+    while IFS=$'\t' read -r n p; do
+      echo "$n (интерфейс $p) — удалю при запуске"
+    done <<< "$stale"
+  fi
   printf 'образ:       '; if docker image inspect "$IMAGE" >/dev/null 2>&1; then echo "$IMAGE есть"; else echo "$IMAGE нет (соберётся при запуске)"; fi
   return $fail
 }
