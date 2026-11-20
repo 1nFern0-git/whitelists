@@ -1,31 +1,48 @@
-# whitelist-probe
+# Whitelist RU
 
 Проверка доменов и IP на прохождение через белый список мобильного оператора.
 
-Работает через USB-модем: поднимает изолированный `macvlan`-контейнер на интерфейсе модема, поэтому маршруты хоста и обычный интернет не затрагиваются. Можно пользоваться при активном VPN и не бояться, что трафик уйдёт не туда.
+Работает через USB-модем: поднимает изолированный `macvlan`-контейнер на интерфейсе модема, чтобы маршруты хоста и обычный интернет не затрагивались. Можно пользоваться при активном VPN и не бояться, что трафик уйдёт не туда.
 
 ## Быстрый старт
 
 ```bash
 cd tools/whitelist-probe
-./whitelist-probe doctor                        # проверить модем и docker
-./net-guard status                              # не утекает ли трафик в модем
-./whitelist-probe operator                      # оператор, сеть, сигнал
-./whitelist-probe check                         # src/domains проекта, всё в checks/
+```
+
+```bash
+./whitelist-probe doctor                # проверить модем и docker
+```
+
+```bash
+./net-guard fix                         # исправить маршруты хоста, чтобы трафик не уходил в модем
+```
+
+```bash
+./whitelist-probe check                 # src/domains проекта, всё в checks/
+```
+
+```bash
+../whitelist-merge/whitelist-merge      # пересечение всех прогонов -> release/
+```
+
+## Запуск с параметрами
+
+```bash
+cd tools/whitelist-probe
+./net-guard status                               # не утекает ли трафик в модем
+./whitelist-probe operator                       # оператор, сеть, сигнал
 ./whitelist-probe check -o result.tsv list.txt   # только TSV, без каталога
 ./whitelist-probe check --dry-run                # только показать цели
-../whitelist-merge/whitelist-merge               # пересечение всех прогонов -> release/
 ```
 
 Без аргументов `check` берёт домены из `src/domains` проекта (для копии инструмента — `../../src/domains`). Явный путь тоже работает: `./whitelist-probe check ../../src/domains`.
 
-Пути считаются от текущего каталога. Из корня проекта то же самое: `tools/whitelist-probe/whitelist-probe check src/domains`.
-
 Без аргументов вывода (`-o`, `--allow-out`, `--deny-out`, `--domains-out`, `--ips-out`) результат складывается в `checks/` в корне проекта, в каталог со штампом времени и оператора:
 
-```
+```text
 checks/
-└── 2026-11-19_214500_megafon/
+└── 2026-01-01_214500_megafon/
     ├── result.tsv           полный TSV со статусами
     ├── allow-domains.txt    домены, по одному в строке
     └── allow-ips.txt        IP, по одному в строке
@@ -34,8 +51,6 @@ checks/
 Если инструмент скопирован отдельно (нет `src/` и `tools/` рядом), каталог создаётся в `./checks` от текущего каталога. Переопределить можно через `--outdir DIR` или `WLP_OUTDIR`. При неудачном запуске пустой каталог удаляется.
 
 Каталоги читаются рекурсивно, имя файла попадает в колонку `source` — так сохраняется разбивка по категориям. Одинаковые значения (после нормализации IDN и URL) проверяются один раз.
-
-Интерфейс и шлюз ищутся сами: скрипт берёт USB-устройство (модем или телефон в режиме тестеринга) с IPv4-адресом, берёт шлюз из маршрута по умолчанию или пробует `.1` его подсети и проверяет, что шлюз отвечает. Если подходит несколько — используется первый рабочий; какой именно выбран, видно в выводе. Переопределить можно через `--gateway` / `--iface`.
 
 Первый запуск соберёт образ `whitelist-probe:latest` (alpine + python3 + bind-tools), дальше он переиспользуется.
 
@@ -95,7 +110,9 @@ checks/
 | `--subnet CIDR` | авто | подсеть macvlan |
 | `--container-ip IP` | авто | адрес контейнера |
 
-Вход читается из файлов и/или stdin (`-`). Пустые строки и `#` игнорируются. Можно передавать URL — инструмент выделит хост. IDN-домены переводятся в punycode. В `--kind ips` принимаются одиночные IPv4 и CIDR (до `--max-cidr`, по умолчанию 1024 адреса).
+Вход читается из файлов и/или stdin (`-`). Пустые строки и `#` игнорируются. Можно передавать URL — инструмент выделит хост. IDN-домены переводятся в punycode.
+
+В `--kind ips` принимаются одиночные IPv4 и CIDR (до `--max-cidr`, по умолчанию 1024 адреса).
 
 ## Формат результата
 
@@ -120,8 +137,8 @@ input  kind  status  checked_ip  all_ips  reason  ms  source  allowed_ips
 ./whitelist-probe check
 ```
 
-```
-checks/2026-11-19_214500_megafon/
+```text
+checks/2026-01-01_214500_megafon/
 ├── result.tsv
 ├── allow-domains.txt
 └── allow-ips.txt
@@ -165,48 +182,6 @@ awk -F'\t' 'NR>1 { n=split($9, a, " "); for (i=1;i<=n;i++) if (a[i] != "") print
 ```
 
 Колонка `$9` (`allowed_ips`) содержит все подтверждённые адреса строки — их и берёт второй фильтр.
-
-## Оператор
-
-```bash
-./whitelist-probe operator   # интерфейс, шлюз, оператор, сеть, сигнал
-./whitelist-probe doctor     # строка «оператор:» в общей проверке
-```
-
-Определяется локально, интернет не нужен — работает и при включённом белом списке. Источники по порядку:
-
-1. **HiLink API** на шлюзе модема (Huawei и подобные). Новые прошивки требуют сессию и токен: `GET /api/webserver/SesTokInfo`, затем `GET /api/net/current-plmn` с `Cookie: SessionID=…` и `__RequestVerificationToken`. Если название пустое — MCC/MNC берётся из `Imsi` в `/api/device/information`.
-2. **ModemManager** — `mmcli -m any` (`operator name`, `operator id`); если их нет, `AT+COPS?`, затем `AT+CIMI` → MCC/MNC.
-3. **ADB** — для телефона в режиме тестеринга: `getprop gsm.sim.operator.alpha` и `.numeric`, если включена отладка по USB.
-
-Если модем не сообщил название, MCC/MNC переводится в имя по таблице основных российских операторов (МТС, МегаФон, Tele2, Билайн, Yota, Ростелеком).
-
-Пример:
-
-```
-$ ./whitelist-probe operator
-интерфейс: enp3s0f3u1u3
-шлюз:      192.168.8.1
-оператор:  TELE2 RU (MCC/MNC 25020)
-источник:  HiLink 192.168.8.1
-сеть:      LTE+ (19)
-сигнал:    4/5
-WAN IP:    100.81.77.200
-```
-
-`WAN IP` — адрес модема в сети оператора; из `100.64.0.0/10` означает CGNAT, то есть внешний адрес общий.
-
-Если ни один источник не ответил, строка будет «не определён». Можно задать имя вручную — оно попадёт и в консоль, и в имя каталога:
-
-```bash
-WLP_OPERATOR="mts-sim2" ./whitelist-probe check
-```
-
-Во время `check` оператор печатается в шапке, чтобы результат был привязан к конкретной SIM:
-
-```
-== оператор: TELE2 RU (MCC/MNC 25020) [HiLink 192.168.8.1]
-```
 
 ## Сеть
 
@@ -286,7 +261,7 @@ WLP_NETWORK=modem-macvlan ./whitelist-probe check list.txt
 ./net-guard status
 ```
 
-```
+```text
 маршрут по умолчанию:
   default via 192.168.8.1 dev enp3s0f3u1u3 proto dhcp src 192.168.8.100 metric 100
   default via 192.168.1.120 dev wlp1s0 proto dhcp src 192.168.1.130 metric 600
@@ -327,7 +302,7 @@ tools/whitelist-merge/whitelist-merge --dry-run  # только посчитат
 
 Результат:
 
-```
+```text
 release/
 ├── whitelist-common.txt        домены, разрешённые во всех прогонах
 └── IP-whitelist-common.txt     IP, разрешённые во всех прогонах
@@ -343,12 +318,8 @@ release/
 Опции: `--checks DIR`, `--out DIR` (или `WLP_CHECKS`, `WLP_RELEASE`). Можно передать конкретные каталоги аргументами вместо `checks/`:
 
 ```bash
-tools/whitelist-merge/whitelist-merge checks/2026-11-19_220011_unknown checks/2026-11-20_101500_megafon
+tools/whitelist-merge/whitelist-merge checks/2026-01-01_220011_unknown checks/2026-01-01_101500_megafon
 ```
-
-Если прогон один, пересечение совпадает с ним — инструмент об этом предупреждает.
-
-Чтобы пересечение было полным, не используйте `--first-ip`: иначе от каждого домена в прогон попадает только первый рабочий адрес, и общих IP окажется меньше, чем есть на самом деле.
 
 ## Ограничения
 
@@ -357,7 +328,7 @@ tools/whitelist-merge/whitelist-merge checks/2026-11-19_220011_unknown checks/20
 - `blocked_timeout` может означать как блокировку, так и молчание самого сервера. Если адрес подозрительный, проверьте его повторно с разными `--sni`: блокировка по IP не зависит от SNI.
 - Список адресов домена — снимок текущих DNS-ответов. У CDN он меняется.
 
-## Перенос на другую машину
+## Требования к окружению
 
 Инструмент — это папка `tools/whitelist-probe` целиком (4 файла: `whitelist-probe`, `probe.py`, `Dockerfile`, `net-guard`). Скопируйте её, остальное соберётся само.
 
