@@ -11,7 +11,8 @@
   http_redirect   по 80 редирект на https, который недоступен
   blocked_portal  по 80 редирект на страницу оператора «Доступ ограничен»
   blocked_tls     RST во время рукопожатия
-  blocked_timeout таймаут соединения
+  blocked_timeout     TCP-соединение не установилось (таймаут)
+  blocked_tls_timeout TCP есть, но TLS-рукопожатие не завершилось (таймаут)
   blocked_dns     DNS вернул заглушку (8.6.112.x, 8.47.69.x, 0.0.0.0, 127.0.0.1)
   refused         соединение отклонено
   no_dns          A-записей нет
@@ -34,8 +35,8 @@ SINK_EXACT = {"0.0.0.0", "127.0.0.1", "192.168.8.1"}
 
 STATUS_ORDER = [
     "allow", "allow_tls", "open_http", "http_redirect", "blocked_portal",
-    "blocked_dns", "blocked_tls", "blocked_timeout", "refused",
-    "no_dns", "error",
+    "blocked_dns", "blocked_tls", "blocked_timeout", "blocked_tls_timeout",
+    "refused", "no_dns", "error",
 ]
 
 CIDR_RE = re.compile(r"^[0-9a-fA-F:.]+/\d{1,3}$")
@@ -107,21 +108,35 @@ def tls_probe(ip, sni, timeout):
     ctx.verify_mode = ssl.CERT_NONE
     t0 = time.time()
     sock = None
+
+    def ms():
+        return round((time.time() - t0) * 1000)
+
     try:
-        sock = socket.create_connection((ip, 443), timeout=timeout)
-        ss = ctx.wrap_socket(sock, server_hostname=sni)
-        ss.close()
-        return "allow", round((time.time() - t0) * 1000), ""
-    except ssl.SSLError as e:
-        return "allow_tls", round((time.time() - t0) * 1000), str(e)[:90]
-    except ConnectionResetError:
-        return "blocked_tls", round((time.time() - t0) * 1000), "connection reset"
-    except socket.timeout:
-        return "blocked_timeout", round((time.time() - t0) * 1000), "timeout"
-    except ConnectionRefusedError:
-        return "refused", round((time.time() - t0) * 1000), "connection refused"
-    except OSError as e:
-        return "error", round((time.time() - t0) * 1000), str(e)[:90]
+        # отдельно TCP: важно отличить «до хоста не дошли» от «хост молчит на TLS»
+        try:
+            sock = socket.create_connection((ip, 443), timeout=timeout)
+        except ConnectionRefusedError:
+            return "refused", ms(), "connection refused"
+        except ConnectionResetError:
+            return "blocked_tls", ms(), "connection reset"
+        except socket.timeout:
+            return "blocked_timeout", ms(), "tcp connect timeout"
+        except OSError as e:
+            return "error", ms(), str(e)[:90]
+
+        try:
+            ss = ctx.wrap_socket(sock, server_hostname=sni)
+            ss.close()
+            return "allow", ms(), ""
+        except socket.timeout:
+            return "blocked_tls_timeout", ms(), "tls handshake timeout"
+        except ssl.SSLError as e:
+            return "allow_tls", ms(), str(e)[:90]
+        except ConnectionResetError:
+            return "blocked_tls", ms(), "connection reset"
+        except OSError as e:
+            return "error", ms(), str(e)[:90]
     finally:
         if sock is not None:
             try:
@@ -263,7 +278,7 @@ def check_domain(domain, args):
         if result["status"] in FINAL:
             break
         # таймаут — самый дорогой вариант, его повторяем не больше одного раза
-        if result["status"] == "blocked_timeout" and tries >= 2:
+        if result["status"] in ("blocked_timeout", "blocked_tls_timeout") and tries >= 2:
             break
 
     result["ms"] = round((time.time() - t0) * 1000)
@@ -285,7 +300,7 @@ def check_ip(ip, args):
         tries += 1
         if st in ("allow", "allow_tls") or st in STABLE:
             break
-        if st == "blocked_timeout" and tries >= 2:
+        if st in ("blocked_timeout", "blocked_tls_timeout") and tries >= 2:
             break
     if st in ("allow", "allow_tls"):
         return dict(status=st, checked_ip=ip, ips=ip, reason=err,
