@@ -474,6 +474,7 @@ usage() {
       --timeout SEC     таймаут соединения (5)
       --jobs N          параллельных проверок (1; больше 1 даёт ложные блокировки)
       --max-ips N       сколько адресов домена проверять (0 — все, по умолчанию)
+      --max-cidr N      предел адресов в одном CIDR (1024); крупнее — пропуск
       --retries N       дополнительных попыток при неудаче (1)
       --no-http80       не проверять порт 80
       --portal-host H   домен страницы блокировки (access.rt.ru)
@@ -506,7 +507,7 @@ EOF
 
 cmd_check() {
   local out="" kind="auto" sni="gosuslugi.ru" timeout="5" jobs="1"
-  local max_ips="0" retries="1" http="--http80" allow_out="" deny_out="" portal_host="access.rt.ru"
+  local max_ips="0" max_cidr="1024" retries="1" http="--http80" allow_out="" deny_out="" portal_host="access.rt.ru"
   local domains_out="" ips_out="" all_ips=1 dry_run=0
   local outdir="" explicit_out=0
   local -a files=()
@@ -519,6 +520,7 @@ cmd_check() {
       --timeout) timeout="$2"; shift 2 ;;
       --jobs) jobs="$2"; shift 2 ;;
       --max-ips) max_ips="$2"; shift 2 ;;
+      --max-cidr) max_cidr="$2"; shift 2 ;;
       --retries) retries="$2"; shift 2 ;;
       --no-http80) http="--no-http80"; shift ;;
       --portal-host) portal_host="$2"; shift 2 ;;
@@ -674,6 +676,7 @@ cmd_check() {
       "$IMAGE" python3 /tool/probe.py \
         --input /data/input.txt --kind "$kind" --resolver "$GATEWAY" \
         --sni "$sni" --timeout "$timeout" --jobs "$jobs" --max-ips "$max_ips" \
+        --max-cidr "$max_cidr" \
         --retries "$retries" \
         $http --portal-host "$portal_host" $dry_arg $all_arg --out /data/result.tsv
     rc=$?
