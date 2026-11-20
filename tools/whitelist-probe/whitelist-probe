@@ -476,6 +476,7 @@ usage() {
       --max-ips N       сколько адресов домена проверять (0 — все, по умолчанию)
       --max-cidr N      предел адресов в одном CIDR (1024); крупнее — пропуск
       --retries N       дополнительных попыток при неудаче (1)
+      --delay SEC       пауза между целями (0.3; 0 — без паузы)
       --no-http80       не проверять порт 80
       --portal-host H   домен страницы блокировки (access.rt.ru)
       --dry-run         только показать, что будет проверено
@@ -507,7 +508,7 @@ EOF
 
 cmd_check() {
   local out="" kind="auto" sni="gosuslugi.ru" timeout="5" jobs="1"
-  local max_ips="0" max_cidr="1024" retries="1" http="--http80" allow_out="" deny_out="" portal_host="access.rt.ru"
+  local max_ips="0" max_cidr="1024" retries="1" delay="0.3" http="--http80" allow_out="" deny_out="" portal_host="access.rt.ru"
   local domains_out="" ips_out="" all_ips=1 dry_run=0
   local outdir="" explicit_out=0
   local -a files=()
@@ -520,6 +521,7 @@ cmd_check() {
       --timeout) timeout="$2"; shift 2 ;;
       --jobs) jobs="$2"; shift 2 ;;
       --max-ips) max_ips="$2"; shift 2 ;;
+      --delay) delay="$2"; shift 2 ;;
       --max-cidr) max_cidr="$2"; shift 2 ;;
       --retries) retries="$2"; shift 2 ;;
       --no-http80) http="--no-http80"; shift ;;
@@ -677,7 +679,7 @@ cmd_check() {
         --input /data/input.txt --kind "$kind" --resolver "$GATEWAY" \
         --sni "$sni" --timeout "$timeout" --jobs "$jobs" --max-ips "$max_ips" \
         --max-cidr "$max_cidr" \
-        --retries "$retries" \
+        --retries "$retries" --delay "$delay" \
         $http --portal-host "$portal_host" $dry_arg $all_arg --out /data/result.tsv
     rc=$?
     set -e

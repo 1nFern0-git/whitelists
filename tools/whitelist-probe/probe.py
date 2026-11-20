@@ -21,6 +21,7 @@
 
 import argparse
 import ipaddress
+import random
 import re
 import socket
 import ssl
@@ -383,6 +384,8 @@ def main():
     ap.add_argument("--timeout", type=float, default=5.0)
     ap.add_argument("--dns-timeout", type=float, default=3.0)
     ap.add_argument("--jobs", type=int, default=1)
+    ap.add_argument("--delay", type=float, default=0.3,
+                    help="пауза между целями, секунды (0 — без паузы)")
     ap.add_argument("--max-ips", type=int, default=0,
                     help="сколько адресов домена проверять, 0 — все")
     ap.add_argument("--retries", type=int, default=1,
@@ -421,6 +424,11 @@ def main():
 
     results = []
 
+    def pause():
+        # небольшая неровная пауза: ровный ритм выглядит как бот
+        if args.delay > 0:
+            time.sleep(random.uniform(args.delay * 0.5, args.delay * 1.5))
+
     def run(item):
         name, kind, source = item
         r = check_ip(name, args) if kind == "ip" else check_domain(name, args)
@@ -437,7 +445,11 @@ def main():
 
     if args.jobs > 1:
         with ThreadPoolExecutor(max_workers=args.jobs) as ex:
-            it = ex.map(run, targets)
+            def run_paced(item):
+                r = run(item)
+                pause()
+                return r
+            it = ex.map(run_paced, targets)
             for i, r in enumerate(it, 1):
                 results.append(r)
                 print("[%d/%d] %s -> %s" % (i, len(targets), r["input"], r["status"]),
@@ -448,6 +460,8 @@ def main():
             results.append(r)
             print("[%d/%d] %s -> %s" % (i, len(targets), r["input"], r["status"]),
                   file=sys.stderr, flush=True)
+            if i < len(targets):
+                pause()
 
     header = "input\tkind\tstatus\tchecked_ip\tall_ips\treason\tms\tsource\tallowed_ips\n"
     body = "".join(
