@@ -5,3 +5,4 @@
 checks/
 AGENTS.md
 .mcp.json
+__pycache__/
