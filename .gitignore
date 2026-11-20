@@ -1,0 +1,6 @@
+.codebase-memory/
+.github/instructions
+.github/copilot-instructions.md
+.vscode/
+checks/
+AGENTS.md

@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+# Модем не должен быть маршрутом по умолчанию на хосте.
+# Проверки whitelist-probe идут через macvlan и от этого не зависят,
+# а вот браузер, обновления и прочий фоновый трафик — зависят.
+
+set -euo pipefail
+
+IFACE=""
+
+usage() {
+  cat <<'EOF'
+Использование:
+  net-guard status            проверить, куда идёт трафик хоста
+  net-guard fix [--iface X]   убрать модем из маршрутов по умолчанию
+  net-guard revert [--iface X] вернуть как было
+
+Что делает fix (через NetworkManager):
+  ipv4.never-default yes, ipv4.route-metric 1000, ipv4.ignore-auto-dns yes,
+  ipv6.never-default yes — модем остаётся доступен по своей подсети,
+  но перестаёт быть шлюзом и DNS для хоста.
+
+Если NetworkManager недоступен, будет предложена команда ip route del
+(её нужно выполнить через sudo; действует до переподключения модема).
+EOF
+}
+
+die() { echo "ошибка: $*" >&2; exit 1; }
+info() { echo "== $*" >&2; }
+
+route_iface() {
+  ip route get "$1" 2>/dev/null | sed -n 's/.* dev \([^ ]*\).*/\1/p' | head -1
+}
+
+route_gw() {
+  ip route show default dev "$1" 2>/dev/null \
+    | awk '{for(i=1;i<=NF;i++) if($i=="via"){print $(i+1); exit}}'
+}
+
+usb_ifaces() {
+  local path name dev drv
+  for path in /sys/class/net/*; do
+    name=$(basename "$path")
+    [ "$name" = "lo" ] && continue
+    [ -e "$path/wireless" ] && continue
+    drv=$(basename "$(readlink -f "$path/device/driver" 2>/dev/null || true)")
+    case "$drv" in
+      rndis_host|cdc_ether|cdc_ncm|cdc_subset|huawei_cdc_ncm|qmi_wwan|option|usbnet|ax88179_178a|r8152)
+        echo "$name"
+        continue ;;
+    esac
+    dev=$(readlink -f "$path/device" 2>/dev/null || true)
+    case "$dev" in
+      */usb*) echo "$name" ;;
+    esac
+  done
+}
+
+# Модем, который сейчас реально является маршрутом по умолчанию.
+detect_modem_default() {
+  local dev u
+  dev=$(route_iface 1.1.1.1)
+  [ -n "$dev" ] || return 1
+  for u in $(usb_ifaces); do
+    [ "$u" = "$dev" ] && { echo "$u"; return 0; }
+  done
+  return 1
+}
+
+nm_conn_for() {
+  nmcli -t -f NAME,DEVICE connection show --active 2>/dev/null \
+    | awk -F: -v d="$1" '$2 == d { print $1; exit }'
+}
+
+print_routes() {
+  local dev
+  dev=$(route_iface 1.1.1.1)
+  echo "маршрут по умолчанию:"
+  ip route show default | sed 's/^/  /'
+  echo "внешний адрес пойдёт через: ${dev:-неизвестно}"
+}
+
+cmd_status() {
+  local dev modem rc=0 conn
+  dev=$(route_iface 1.1.1.1)
+  print_routes
+  echo
+  if modem=$(detect_modem_default); then
+    echo "проблема: трафик хоста идёт через модем $modem — фоновые программы расходуют его трафик"
+    conn=$(nm_conn_for "$modem" || true)
+    [ -n "$conn" ] && echo "соединение NetworkManager: $conn"
+    echo "исправить: $0 fix"
+    rc=1
+  else
+    echo "ок: модем не является маршрутом по умолчанию"
+  fi
+  return $rc
+}
+
+# Есть ли другой маршрут по умолчанию, кроме модема.
+has_other_default() {
+  local dev=$1
+  ip route show default | awk -v d="$dev" '$0 !~ ("dev " d "( |$)")' | grep -q .
+}
+
+cmd_fix() {
+  local force=0
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --iface) IFACE="$2"; shift 2 ;;
+      --force) force=1; shift ;;
+      *) die "неизвестная опция: $1" ;;
+    esac
+  done
+
+  local modem=$IFACE
+  [ -n "$modem" ] || modem=$(detect_modem_default || true)
+  if [ -z "$modem" ] && [ -z "$IFACE" ]; then
+    info "модем не является маршрутом по умолчанию — уже исправлено"
+    cmd_status
+    return 0
+  fi
+  [ -n "$modem" ] || die "модем не найден среди маршрутов по умолчанию (укажите --iface)"
+  [ -d "/sys/class/net/$modem" ] || die "интерфейса $modem нет"
+
+  if [ "$force" -eq 0 ] && docker ps --filter "ancestor=whitelist-probe:latest" --format '{{.ID}}' 2>/dev/null | grep -q .; then
+    die "идёт проверка (контейнер whitelist-probe) — переподключение модема испортит результат.
+       Дождитесь окончания или повторите с --force"
+  fi
+
+  if ! has_other_default "$modem"; then
+    if [ "$force" -eq 0 ]; then
+      die "другого маршрута по умолчанию нет — после fix хост останется без интернета.
+       Подключите Wi-Fi или повторите с --force"
+    fi
+    info "другого маршрута нет, но --force задан"
+  fi
+
+  if ! command -v nmcli >/dev/null 2>&1; then
+    local gw
+    gw=$(route_gw "$modem")
+    cat <<EOF
+NetworkManager недоступен. Удалите маршрут вручную (до переподключения модема):
+
+  sudo ip route del default via ${gw:-<шлюз>} dev $modem
+  sudo ip -6 route del default dev $modem 2>/dev/null || true
+
+Чтобы не возвращалось: отключите получение маршрута по умолчанию в настройках
+DHCP этого интерфейса (networkd: UseRoutes=no, dhcpcd: nogateway).
+EOF
+    return 1
+  fi
+
+  local conn
+  conn=$(nm_conn_for "$modem")
+  [ -n "$conn" ] || die "NetworkManager не управляет $modem (нет активного соединения)"
+
+  info "правлю соединение «$conn»"
+  nmcli connection modify "$conn" \
+    ipv4.never-default no \
+    ipv4.route-metric 1000 \
+    ipv4.ignore-auto-dns yes \
+    ipv6.never-default yes
+  info "переподключаю $modem"
+  nmcli connection up "$conn" >/dev/null
+
+  local dev
+  dev=$(route_iface 1.1.1.1)
+  if [ "$dev" = "$modem" ]; then
+    die "не помогло: маршрут всё ещё через $modem"
+  fi
+  info "ок: трафик хоста идёт через ${dev:-другой интерфейс}, модем — только для проверок"
+  print_routes
+}
+
+cmd_revert() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --iface) IFACE="$2"; shift 2 ;;
+      *) die "неизвестная опция: $1" ;;
+    esac
+  done
+
+  local modem=$IFACE
+  [ -n "$modem" ] || modem=$(detect_modem_default || true)
+  if [ -z "$modem" ]; then
+    local u
+    for u in $(usb_ifaces); do
+      if [ -n "$(ip -o -4 addr show "$u" 2>/dev/null)" ]; then
+        modem=$u
+        break
+      fi
+    done
+  fi
+  [ -n "$modem" ] || die "модем не найден (укажите --iface)"
+  command -v nmcli >/dev/null 2>&1 || die "NetworkManager недоступен"
+
+  local conn
+  conn=$(nm_conn_for "$modem")
+  [ -n "$conn" ] || die "NetworkManager не управляет $modem"
+
+  info "возвращаю настройки соединения «$conn»"
+  nmcli connection modify "$conn" \
+    ipv4.never-default no \
+    ipv4.route-metric -1 \
+    ipv4.ignore-auto-dns no \
+    ipv6.never-default no
+  nmcli connection up "$conn" >/dev/null
+  info "готово"
+}
+
+case "${1:-}" in
+  status) shift; cmd_status "$@" ;;
+  fix) shift; cmd_fix "$@" ;;
+  revert) shift; cmd_revert "$@" ;;
+  -h|--help|help|"") usage ;;
+  *) die "неизвестная команда: $1" ;;
+esac

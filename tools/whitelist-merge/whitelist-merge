@@ -1,0 +1,194 @@
+#!/usr/bin/env bash
+# Объединение прогонов whitelist-probe.
+# Оставляет значения, разрешённые во ВСЕХ прогонах (пересечение).
+# Результат: release/whitelist-common.txt (домены) и release/IP-whitelist-common.txt (IP).
+
+set -euo pipefail
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+CHECKS=${WLP_CHECKS:-}
+OUT=${WLP_RELEASE:-}
+
+die() { echo "ошибка: $*" >&2; exit 1; }
+info() { echo "== $*" >&2; }
+
+project_root() {
+  local root
+  root=$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || true)
+  if [ -n "$root" ] && [ -d "$root/src" ] && [ -d "$root/tools" ]; then
+    echo "$root"
+  fi
+}
+
+usage() {
+  cat <<'EOF'
+Использование:
+  whitelist-merge [опции] [каталоги прогонов...]
+
+Без аргументов берёт все прогоны из checks/ и пишет пересечение в release/:
+  release/whitelist-common.txt      домены, разрешённые во всех прогонах
+  release/IP-whitelist-common.txt   IP, разрешённые во всех прогонах
+
+Опции:
+  --checks DIR   где искать прогоны (по умолчанию checks/ проекта)
+  --out DIR      куда писать результат (по умолчанию release/ проекта)
+  --dry-run      только посчитать, ничего не писать
+  -h, --help     эта справка
+
+Прогоном считается каталог с result.tsv (или allow-domains.txt / allow-ips.txt).
+Если каталоги переданы аргументами, checks/ не используется.
+EOF
+}
+
+# Берём данные из result.tsv: там есть allowed_ips (все подтверждённые адреса).
+# Для старых прогонов без этой колонки — fallback на checked_ip.
+extract_run() {
+  local dir=$1 doms=$2 ips=$3
+  : > "$doms"
+  : > "$ips"
+
+  if [ -f "$dir/result.tsv" ]; then
+    awk -F'\t' -v dom="$doms" -v ips="$ips" '
+      NR == 1 {
+        for (j = 1; j <= NF; j++) {
+          if ($j == "status") s = j
+          if ($j == "kind") k = j
+          if ($j == "allowed_ips") a = j
+        }
+        next
+      }
+      {
+        st = s ? $s : $3
+        kd = k ? $k : $2
+        if (st != "allow" && st != "allow_tls" && st != "open_http") next
+        if (kd == "domain") print $1 > dom
+        if (a && $a != "") {
+          c = split($a, x, " ")
+          for (q = 1; q <= c; q++) print x[q] > ips
+        } else if (st == "allow" || st == "allow_tls") {
+          print $4 > ips
+        }
+      }' "$dir/result.tsv"
+  else
+    [ -f "$dir/allow-domains.txt" ] && cat "$dir/allow-domains.txt" > "$doms"
+    [ -f "$dir/allow-ips.txt" ] && cat "$dir/allow-ips.txt" > "$ips"
+  fi
+
+  LC_ALL=C sort -u -o "$doms" "$doms"
+  sort -u -t. -k1,1n -k2,2n -k3,3n -k4,4n -o "$ips" "$ips"
+}
+
+count_lines() {
+  [ -f "$1" ] && wc -l < "$1" || echo 0
+}
+
+cmd_merge() {
+  local dry_run=0
+  local -a dirs=()
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --checks) CHECKS="$2"; shift 2 ;;
+      --out) OUT="$2"; shift 2 ;;
+      --dry-run) dry_run=1; shift ;;
+      -h|--help) usage; exit 0 ;;
+      -*) die "неизвестная опция: $1" ;;
+      *) dirs+=("$1"); shift ;;
+    esac
+  done
+
+  local root
+  root=$(project_root || true)
+  if [ -z "$CHECKS" ]; then
+    if [ -n "$root" ] && [ -d "$root/checks" ]; then
+      CHECKS="$root/checks"
+    else
+      CHECKS="checks"
+    fi
+  fi
+  if [ -z "$OUT" ]; then
+    if [ -n "$root" ]; then
+      OUT="$root/release"
+    else
+      OUT="release"
+    fi
+  fi
+
+  [ -d "$CHECKS" ] || die "каталог прогонов не найден: $CHECKS"
+
+  if [ ${#dirs[@]} -eq 0 ]; then
+    while IFS= read -r d; do
+      [ -n "$d" ] && dirs+=("$d")
+    done < <(find "$CHECKS" -mindepth 1 -maxdepth 1 -type d | LC_ALL=C sort)
+  fi
+
+  local -a runs=()
+  local d
+  for d in "${dirs[@]}"; do
+    if [ -f "$d/result.tsv" ] || [ -f "$d/allow-domains.txt" ] || [ -f "$d/allow-ips.txt" ]; then
+      runs+=("$d")
+    else
+      info "пропуск $d: нет result.tsv / allow-domains.txt / allow-ips.txt"
+    fi
+  done
+
+  [ ${#runs[@]} -gt 0 ] || die "в $CHECKS нет прогонов"
+
+  local n=${#runs[@]}
+  if [ "$n" -eq 1 ]; then
+    info "внимание: один прогон, пересечение совпадает с ним"
+  fi
+
+  local tmp
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/whitelist-merge.XXXXXX")
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" EXIT
+
+  local i=0 doms ips
+  for d in "${runs[@]}"; do
+    i=$((i+1))
+    doms="$tmp/domains.$i"
+    ips="$tmp/ips.$i"
+    extract_run "$d" "$doms" "$ips"
+    info "прогон $(basename "$d"): доменов $(count_lines "$doms"), IP $(count_lines "$ips")"
+  done
+
+  local merged_domains="$tmp/merged-domains.txt" merged_ips="$tmp/merged-ips.txt"
+  cat "$tmp"/domains.* | LC_ALL=C sort | awk -v n="$n" '
+    { c[$0]++ }
+    END { for (v in c) if (c[v] == n) print v }' | LC_ALL=C sort > "$merged_domains"
+  cat "$tmp"/ips.* | awk -v n="$n" '
+    { c[$0]++ }
+    END { for (v in c) if (c[v] == n) print v }' \
+    | sort -u -t. -k1,1n -k2,2n -k3,3n -k4,4n > "$merged_ips"
+
+  # убираем возможные пустые строки
+  sed -i '/^$/d' "$merged_domains" "$merged_ips"
+
+  local nd ni
+  nd=$(count_lines "$merged_domains")
+  ni=$(count_lines "$merged_ips")
+  info "во всех $n прогонах: доменов $nd, IP $ni"
+
+  if [ "$dry_run" -eq 1 ]; then
+    echo "--- домены (первые 10) ---"
+    head -10 "$merged_domains"
+    echo "--- IP (первые 5) ---"
+    head -5 "$merged_ips"
+    info "dry-run: файлы не записаны"
+    return 0
+  fi
+
+  mkdir -p "$OUT" || die "не удалось создать $OUT"
+  cp "$merged_domains" "$OUT/whitelist-common.txt"
+  cp "$merged_ips" "$OUT/IP-whitelist-common.txt"
+  info "домены: $OUT/whitelist-common.txt ($nd)"
+  info "IP:     $OUT/IP-whitelist-common.txt ($ni)"
+}
+
+case "${1:-}" in
+  "") cmd_merge ;;
+  merge) shift; cmd_merge "$@" ;;
+  -h|--help|help) usage ;;
+  *) cmd_merge "$@" ;;
+esac

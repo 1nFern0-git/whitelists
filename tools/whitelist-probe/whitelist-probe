@@ -1,0 +1,756 @@
+#!/usr/bin/env bash
+# Проверка доменов и IP через белый список мобильного оператора.
+# Поднимает изолированный macvlan-контейнер на интерфейсе модема,
+# поэтому маршруты хоста и основной интернет не затрагиваются.
+
+set -euo pipefail
+
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+IMAGE=${WLP_IMAGE:-whitelist-probe:latest}
+NETWORK=${WLP_NETWORK:-}
+GATEWAY=${WLP_GATEWAY:-192.168.8.1}
+GATEWAY_EXPLICIT=0
+if [ -n "${WLP_GATEWAY:-}" ]; then GATEWAY_EXPLICIT=1; fi
+
+IFACE=""
+SUBNET=""
+CONTAINER_IP=""
+
+OP_NAME=""
+OP_ID=""
+OP_SRC=""
+
+die() { echo "ошибка: $*" >&2; exit 1; }
+info() { echo "== $*" >&2; }
+
+detect_iface() {
+  ip route get "$GATEWAY" 2>/dev/null \
+    | sed -n 's/.* dev \([^ ]*\).*/\1/p' | head -1
+}
+
+detect_subnet() {
+  local cidr
+  cidr=$(ip -o -f inet addr show "$IFACE" 2>/dev/null | awk '{print $4}' | head -1)
+  [ -n "$cidr" ] || return 1
+  local ip=${cidr%/*} prefix=${cidr#*/}
+  if [ "$prefix" = "24" ]; then
+    echo "$(echo "$ip" | awk -F. '{print $1"."$2"."$3".0"}')/24"
+  else
+    echo "$cidr"
+  fi
+}
+
+usb_ifaces() {
+  local path name dev drv
+  for path in /sys/class/net/*; do
+    name=$(basename "$path")
+    [ "$name" = "lo" ] && continue
+    [ -e "$path/wireless" ] && continue
+    drv=$(basename "$(readlink -f "$path/device/driver" 2>/dev/null || true)")
+    case "$drv" in
+      rndis_host|cdc_ether|cdc_ncm|cdc_subset|huawei_cdc_ncm|qmi_wwan|option|usbnet|ax88179_178a|r8152)
+        echo "$name"
+        continue ;;
+    esac
+    dev=$(readlink -f "$path/device" 2>/dev/null || true)
+    case "$dev" in
+      */usb*) echo "$name" ;;
+    esac
+  done
+}
+
+gw_for_iface() {
+  ip route show default dev "$1" 2>/dev/null \
+    | awk '{for(i=1;i<=NF;i++) if($i=="via"){print $(i+1); exit}}'
+}
+
+reachable() {
+  if ping -c1 -W2 "$1" >/dev/null 2>&1; then
+    return 0
+  fi
+  # модем может не отвечать на ICMP — пробуем TCP:80
+  if timeout 3 bash -c "exec 3<>/dev/tcp/$1/80" 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
+
+mno_name() {
+  case "$1" in
+    25001) echo "МТС" ;;
+    25002) echo "МегаФон" ;;
+    25011) echo "Yota" ;;
+    25020) echo "Tele2" ;;
+    25099) echo "Билайн" ;;
+    25039) echo "Ростелеком" ;;
+    *) echo "" ;;
+  esac
+}
+
+# Название оператора по MCC/MNC — только когда модем его не сообщил.
+# Источники локальные: HiLink API на шлюзе, ModemManager и ADB.
+# Интернет для них не нужен, работают и при включённом белом списке.
+HILINK_COOKIE=""
+HILINK_TOKEN=""
+HILINK_READY=0
+
+tag() {
+  printf '%s\n' "$1" | sed -n "s:.*<$2>\\(.*\\)</$2>.*:\\1:p" | head -1
+}
+
+hilink_api() {
+  curl -s --max-time 3 \
+    -H "Cookie: $HILINK_COOKIE" \
+    -H "__RequestVerificationToken: $HILINK_TOKEN" \
+    "http://$GATEWAY$1" 2>/dev/null || true
+}
+
+# Новые прошивки HiLink требуют SesInfo + токен из /api/webserver/SesTokInfo.
+hilink_init() {
+  local ses
+  HILINK_COOKIE="" HILINK_TOKEN="" HILINK_READY=0
+  command -v curl >/dev/null 2>&1 || return 1
+  ses=$(curl -s --max-time 2 "http://$GATEWAY/api/webserver/SesTokInfo" 2>/dev/null || true)
+  [ -n "$ses" ] || return 1
+  HILINK_COOKIE=$(tag "$ses" SesInfo)
+  HILINK_TOKEN=$(tag "$ses" TokInfo)
+  [ -n "$HILINK_COOKIE" ] || [ -n "$HILINK_TOKEN" ] || return 1
+  HILINK_READY=1
+}
+
+detect_hilink() {
+  hilink_init || return 1
+  local body full num imsi
+  body=$(hilink_api /api/net/current-plmn)
+  full=$(tag "$body" FullName)
+  num=$(tag "$body" Numeric)
+  # старые прошивки отдают JSON
+  if [ -z "$full" ] && [ -z "$num" ]; then
+    full=$(printf '%s' "$body" | sed -n 's/.*"FullName":"\([^"]*\)".*/\1/p' | head -1)
+    num=$(printf '%s' "$body" | sed -n 's/.*"Numeric":"\([^"]*\)".*/\1/p' | head -1)
+  fi
+  [ "$full" = "null" ] && full=""
+  num=$(printf '%s' "$num" | tr -cd '0-9')
+  if [ -z "$num" ]; then
+    body=$(hilink_api /api/device/information)
+    imsi=$(tag "$body" Imsi)
+    imsi=$(printf '%s' "$imsi" | tr -cd '0-9')
+    [ ${#imsi} -ge 5 ] && num=${imsi:0:5}
+  fi
+  if [ -n "$full" ] || [ -n "$num" ]; then
+    OP_NAME=$full
+    OP_ID=$num
+    [ -n "$OP_NAME" ] || OP_NAME=$(mno_name "$OP_ID")
+    OP_SRC="HiLink $GATEWAY"
+    return 0
+  fi
+  return 1
+}
+
+detect_mmcli() {
+  local out path full num
+  out=$(mmcli -m any 2>/dev/null || true)
+  if [ -z "$out" ]; then
+    path=$(mmcli -L 2>/dev/null | sed -n 's#.*\(/org/freedesktop/ModemManager1/Modem/[0-9]*\).*#\1#p' | head -1)
+    if [ -n "$path" ]; then
+      out=$(mmcli -m "$path" 2>/dev/null || true)
+    fi
+  fi
+  [ -n "$out" ] || return 1
+  full=$(mmcli_field "$out" "operator name")
+  num=$(mmcli_field "$out" "operator id" | tr -cd '0-9')
+  if [ -z "$full" ] && [ -z "$num" ]; then
+    # модем без оператора в 3GPP-блоке — спросим напрямую
+    out=$(mmcli -m any --command='AT+COPS?' 2>/dev/null || true)
+    full=$(printf '%s\n' "$out" | sed -n 's/.*+COPS:.*"\([^"]*\)".*/\1/p' | head -1)
+  fi
+  if [ -z "$num" ]; then
+    # последний шанс: IMSI, первые 5 цифр — MCC/MNC
+    out=$(mmcli -m any --command='AT+CIMI' 2>/dev/null || true)
+    local imsi
+    imsi=$(printf '%s\n' "$out" | sed -n "s/.*response: '\\([0-9]*\\)'.*/\\1/p" | head -1)
+    [ ${#imsi} -ge 5 ] && num=${imsi:0:5}
+  fi
+  if [ -n "$full" ] || [ -n "$num" ]; then
+    OP_NAME=$full
+    OP_ID=$num
+    [ -n "$OP_NAME" ] || OP_NAME=$(mno_name "$OP_ID")
+    OP_SRC="ModemManager"
+    return 0
+  fi
+  return 1
+}
+
+# Телефон в режиме тестеринга: ModemManager его не видит,
+# но при включённой отладке оператора можно спросить через ADB.
+detect_adb() {
+  command -v adb >/dev/null 2>&1 || return 1
+  local full num
+  full=$(timeout 3 adb shell getprop gsm.sim.operator.alpha 2>/dev/null | tr -d '\r' | head -1)
+  num=$(timeout 3 adb shell getprop gsm.sim.operator.numeric 2>/dev/null | tr -d '\r' | head -1)
+  [ -n "$full" ] || full=$(timeout 3 adb shell getprop gsm.operator.alpha 2>/dev/null | tr -d '\r' | head -1)
+  [ -n "$num" ] || num=$(timeout 3 adb shell getprop gsm.operator.numeric 2>/dev/null | tr -d '\r' | head -1)
+  num=$(printf '%s' "$num" | tr -cd '0-9')
+  if [ -n "$full" ] || [ -n "$num" ]; then
+    OP_NAME=$full
+    OP_ID=$num
+    [ -n "$OP_NAME" ] || OP_NAME=$(mno_name "$OP_ID")
+    OP_SRC="ADB"
+    return 0
+  fi
+  return 1
+}
+
+detect_operator() {
+  OP_NAME="" OP_ID="" OP_SRC=""
+  if [ -n "${WLP_OPERATOR:-}" ]; then
+    OP_NAME=$WLP_OPERATOR
+    OP_SRC="WLP_OPERATOR"
+    return 0
+  fi
+  detect_hilink && return 0
+  detect_mmcli && return 0
+  detect_adb && return 0
+  return 1
+}
+
+route_iface() {
+  ip route get "$1" 2>/dev/null | sed -n 's/.* dev \([^ ]*\).*/\1/p' | head -1
+}
+
+host_default_iface() {
+  route_iface 1.1.1.1
+}
+
+mmcli_field() {
+  printf '%s\n' "$1" | sed -n "s/.*$2:[[:space:]]*//p" | head -1
+}
+
+# Вход по умолчанию: src/domains проекта. Для переносимой копии —
+# ../../src/domains от папки инструмента.
+default_input() {
+  local root
+  root=$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || true)
+  if [ -n "$root" ] && [ -d "$root/src/domains" ]; then
+    echo "$root/src/domains"
+  else
+    echo "../../src/domains"
+  fi
+}
+
+resolve_target() {
+  if [ "$GATEWAY_EXPLICIT" -eq 0 ]; then
+    local cand gw cidr ip
+    for cand in $(usb_ifaces); do
+      gw=$(gw_for_iface "$cand")
+      # после net-guard у модема нет маршрута по умолчанию,
+      # поэтому пробуем шлюз .1 его подсети (проверка ниже отсеет неверный)
+      if [ -z "$gw" ]; then
+        cidr=$(ip -o -4 addr show "$cand" 2>/dev/null | awk '{print $4}' | head -1)
+        ip=${cidr%/*}
+        if [ -n "$ip" ]; then
+          gw=$(printf '%s' "$ip" | awk -F. '{print $1"."$2"."$3".1"}')
+        fi
+      fi
+      if [ -n "$gw" ] && reachable "$gw"; then
+        IFACE=$cand
+        GATEWAY=$gw
+        info "USB-интерфейс: $IFACE, шлюз $GATEWAY"
+        break
+      fi
+    done
+  fi
+  if [ -z "$IFACE" ]; then
+    IFACE=$(detect_iface || true)
+  fi
+  if [ -z "$SUBNET" ] && [ -n "$IFACE" ]; then
+    SUBNET=$(detect_subnet || true)
+  fi
+}
+
+find_network() {
+  local n parent sub
+  while read -r n; do
+    [ -n "$n" ] || continue
+    parent=$(docker network inspect -f '{{index .Options "parent"}}' "$n" 2>/dev/null || true)
+    sub=$(docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}}{{end}}' "$n" 2>/dev/null || true)
+    if [ "$parent" = "$IFACE" ] && [ "$sub" = "$SUBNET" ]; then
+      echo "$n"
+      return 0
+    fi
+  done < <(docker network ls --filter driver=macvlan --format '{{.Name}}' 2>/dev/null)
+  return 1
+}
+
+ensure_network() {
+  if [ -n "$NETWORK" ] && docker network inspect "$NETWORK" >/dev/null 2>&1; then
+    return
+  fi
+
+  local existing
+  if existing=$(find_network); then
+    NETWORK=$existing
+    info "использую существующую сеть $NETWORK"
+    return
+  fi
+
+  if [ -z "$NETWORK" ]; then
+    NETWORK="whitelist-macvlan-$(printf '%s' "$IFACE" | tr -c 'a-zA-Z0-9' '-')"
+  fi
+
+  info "создаю сеть $NETWORK на $IFACE ($SUBNET)"
+  docker network create -d macvlan \
+    --subnet "$SUBNET" --gateway "$GATEWAY" \
+    -o parent="$IFACE" "$NETWORK" >/dev/null
+}
+
+ensure_image() {
+  if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+    info "собираю образ $IMAGE"
+    docker build -t "$IMAGE" "$SCRIPT_DIR" >&2
+  fi
+}
+
+op_label() {
+  if [ -n "$OP_NAME" ] && [ -n "$OP_ID" ]; then
+    echo "$OP_NAME (MCC/MNC $OP_ID)"
+  elif [ -n "$OP_NAME" ]; then
+    echo "$OP_NAME"
+  elif [ -n "$OP_ID" ]; then
+    echo "MCC/MNC $OP_ID"
+  else
+    echo "неизвестен"
+  fi
+}
+
+# Латинское имя оператора для каталога с результатами.
+op_slug() {
+  case "$OP_ID" in
+    25001) echo "mts" ;;
+    25002) echo "megafon" ;;
+    25011) echo "yota" ;;
+    25020) echo "tele2" ;;
+    25099) echo "beeline" ;;
+    25039) echo "rostelecom" ;;
+    "") : ;;
+    *) echo "$OP_ID" ;;
+  esac
+}
+
+run_dir_name() {
+  local stamp slug
+  stamp=$(date +%Y-%m-%d_%H%M%S)
+  slug=$(op_slug)
+  if [ -z "$slug" ]; then
+    slug=$(printf '%s' "$OP_NAME" | tr '[:upper:]' '[:lower:]' \
+      | tr -cs 'a-z0-9' '-' | sed 's/^-*//; s/-*$//')
+  fi
+  [ -n "$slug" ] || slug="unknown"
+  echo "${stamp}_${slug}"
+}
+
+# Куда складывать каталоги проверок. В проекте это <корень>/checks,
+# для переносимой копии — ./checks рядом с текущим каталогом.
+default_outdir() {
+  local root
+  root=$(cd "$SCRIPT_DIR/../.." 2>/dev/null && pwd || true)
+  if [ -n "$root" ] && [ -d "$root/src" ] && [ -d "$root/tools" ]; then
+    echo "$root/checks"
+  else
+    echo "checks"
+  fi
+}
+
+cmd_doctor() {
+  local fail=0 net="" hd
+  hd=$(host_default_iface)
+  printf 'docker:      '; if command -v docker >/dev/null; then docker --version; else echo "нет"; fail=1; fi
+  printf 'модем:       '; if [ -n "$IFACE" ]; then echo "$IFACE"; else echo "не найден маршрут до $GATEWAY"; fail=1; fi
+  printf 'подсеть:     '; echo "${SUBNET:-неизвестна}"
+  printf 'шлюз:        '; if ping -c1 -W2 "$GATEWAY" >/dev/null 2>&1; then echo "$GATEWAY отвечает"; else echo "$GATEWAY не отвечает"; fail=1; fi
+  printf 'оператор:    '; if detect_operator; then echo "$(op_label), источник: $OP_SRC"; else echo "не определён (HiLink, ModemManager и ADB молчат)"; fi
+  printf 'проверки:    '; if [ -n "$IFACE" ]; then echo "через $IFACE в контейнере (macvlan), маршруты хоста не используются"; else echo "некуда идти"; fi
+  printf 'трафик хоста:'; if [ -n "$IFACE" ] && [ "$hd" = "$IFACE" ]; then
+    echo " идёт через модем — фоновые программы расходуют его трафик (net-guard fix)"
+  else
+    echo " через ${hd:-неизвестно} (на проверки не влияет)"
+  fi
+
+  if [ -n "$NETWORK" ] && docker network inspect "$NETWORK" >/dev/null 2>&1; then
+    net="$NETWORK"
+  elif [ -n "$IFACE" ] && [ -n "$SUBNET" ]; then
+    net=$(find_network || true)
+  fi
+  printf 'сеть docker: '; if [ -n "$net" ]; then echo "$net"; else echo "нет (создастся при запуске)"; fi
+  printf 'образ:       '; if docker image inspect "$IMAGE" >/dev/null 2>&1; then echo "$IMAGE есть"; else echo "$IMAGE нет (соберётся при запуске)"; fi
+  return $fail
+}
+
+net_type_name() {
+  case "$1" in
+    0) echo "нет сети" ;;
+    1) echo "GSM" ;;
+    2) echo "GPRS" ;;
+    3) echo "EDGE" ;;
+    4) echo "WCDMA" ;;
+    5) echo "HSDPA" ;;
+    6) echo "HSUPA" ;;
+    7) echo "HSPA" ;;
+    8) echo "TD-SCDMA" ;;
+    9) echo "LTE" ;;
+    10|11|12) echo "EVDO" ;;
+    13) echo "1xRTT" ;;
+    14) echo "UMTS" ;;
+    15) echo "HSPA+" ;;
+    16) echo "DC-HSPA+" ;;
+    17) echo "802.16e" ;;
+    19) echo "LTE+" ;;
+    *) echo "" ;;
+  esac
+}
+
+cmd_operator() {
+  resolve_target
+  printf 'интерфейс: %s\n' "${IFACE:-не найден}"
+  printf 'шлюз:      %s\n' "$GATEWAY"
+  if detect_operator; then
+    printf 'оператор:  %s\n' "$(op_label)"
+    printf 'источник:  %s\n' "$OP_SRC"
+  else
+    printf 'оператор:  не определён\n'
+    printf 'проверено: HiLink (%s), ModemManager, ADB\n' "$GATEWAY"
+  fi
+
+  if [ "$HILINK_READY" -eq 0 ]; then hilink_init || true; fi
+  if [ "$HILINK_READY" -eq 1 ]; then
+    local st net icon wan nname
+    st=$(hilink_api /api/monitoring/status)
+    net=$(tag "$st" CurrentNetworkType)
+    icon=$(tag "$st" SignalIcon)
+    wan=$(tag "$st" WanIPAddress)
+    if [ -n "$net" ]; then
+      nname=$(net_type_name "$net")
+      if [ -n "$nname" ]; then
+        printf 'сеть:      %s (%s)\n' "$nname" "$net"
+      else
+        printf 'сеть:      тип %s\n' "$net"
+      fi
+    fi
+    [ -n "$icon" ] && printf 'сигнал:    %s/5\n' "$icon"
+    [ -n "$wan" ] && printf 'WAN IP:    %s\n' "$wan"
+  fi
+
+  local out state tech sig imsi
+  out=$(mmcli -m any 2>/dev/null || true)
+  if [ -n "$out" ]; then
+    state=$(mmcli_field "$out" "state")
+    tech=$(mmcli_field "$out" "access tech")
+    sig=$(mmcli_field "$out" "signal quality")
+    imsi=$(mmcli_field "$out" "imsi")
+    [ -n "$state" ] && printf 'состояние: %s\n' "$state"
+    [ -n "$tech" ] && printf 'сеть:      %s\n' "$tech"
+    [ -n "$sig" ] && printf 'сигнал:    %s\n' "$sig"
+    [ -n "$imsi" ] && printf 'IMSI:      %s\n' "$imsi"
+  fi
+  return 0
+}
+
+usage() {
+  cat <<'EOF'
+Использование:
+  whitelist-probe check [опции] [файл|каталог|- ...]
+  whitelist-probe operator   показать оператора, сеть и сигнал
+  whitelist-probe doctor
+  whitelist-probe build
+
+Каталог читается рекурсивно: все файлы, имя файла попадает в колонку source.
+Без аргументов check берёт домены из ../../src/domains (src/domains проекта).
+
+Опции check:
+  -o, --out FILE        куда писать TSV (по умолчанию — каталог со штампом)
+      --outdir DIR      где создавать такой каталог (по умолчанию checks/)
+      --kind KIND       auto | domains | ips   (по умолчанию auto)
+      --sni NAME        SNI для проверки IP (по умолчанию gosuslugi.ru)
+      --timeout SEC     таймаут соединения (5)
+      --jobs N          параллельных проверок (1; больше 1 даёт ложные блокировки)
+      --max-ips N       сколько адресов домена проверять (0 — все, по умолчанию)
+      --retries N       дополнительных попыток при неудаче (1)
+      --no-http80       не проверять порт 80
+      --portal-host H   домен страницы блокировки (access.rt.ru)
+      --dry-run         только показать, что будет проверено
+      --allow-out FILE  записать только разрешённые значения
+      --deny-out FILE   записать только заблокированные значения
+      --domains-out FILE  разрешённые домены, по одному в строке
+      --ips-out FILE      IP, на которых проверка прошла, по одному в строке
+      --all-ips         проверять все A-записи (по умолчанию)
+      --first-ip        остановиться на первом рабочем адресе (быстрее)
+      --iface NAME      интерфейс модема (определяется автоматически)
+      --gateway IP      шлюз модема (по умолчанию ищется USB-модем сам)
+      --subnet CIDR     подсеть macvlan (определяется автоматически)
+      --container-ip IP адрес контейнера (подбирается автоматически)
+
+Примеры:
+  ./whitelist-probe check
+    # берёт ../../src/domains, пишет в checks/<штамп>_<оператор>/
+    # result.tsv, allow-domains.txt, allow-ips.txt
+  ./whitelist-probe check ../../src/domains      # то же самое, путь явно
+  ./whitelist-probe check -o result.tsv list.txt      # только TSV, без каталога
+  ./whitelist-probe check -o - list.txt               # TSV в stdout
+  ./whitelist-probe check --outdir runs ../../src/domains
+  ./whitelist-probe check --first-ip ../../src/domains  # быстрее, один IP на домен
+  ./whitelist-probe check -o result.tsv --allow-out allow.txt blocked.txt
+  ./whitelist-probe check --kind ips ips.txt
+  cat domains.txt | ./whitelist-probe check -
+EOF
+}
+
+cmd_check() {
+  local out="" kind="auto" sni="gosuslugi.ru" timeout="5" jobs="1"
+  local max_ips="0" retries="1" http="--http80" allow_out="" deny_out="" portal_host="access.rt.ru"
+  local domains_out="" ips_out="" all_ips=1 dry_run=0
+  local outdir="" explicit_out=0
+  local -a files=()
+
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -o|--out) out="$2"; explicit_out=1; shift 2 ;;
+      --kind) kind="$2"; shift 2 ;;
+      --sni) sni="$2"; shift 2 ;;
+      --timeout) timeout="$2"; shift 2 ;;
+      --jobs) jobs="$2"; shift 2 ;;
+      --max-ips) max_ips="$2"; shift 2 ;;
+      --retries) retries="$2"; shift 2 ;;
+      --no-http80) http="--no-http80"; shift ;;
+      --portal-host) portal_host="$2"; shift 2 ;;
+      --dry-run) dry_run=1; shift ;;
+      --allow-out) allow_out="$2"; explicit_out=1; shift 2 ;;
+      --deny-out) deny_out="$2"; explicit_out=1; shift 2 ;;
+      --domains-out) domains_out="$2"; explicit_out=1; shift 2 ;;
+      --ips-out) ips_out="$2"; explicit_out=1; shift 2 ;;
+      --all-ips) all_ips=1; shift ;;
+      --first-ip) all_ips=0; shift ;;
+      --outdir) outdir="$2"; shift 2 ;;
+      --iface) IFACE="$2"; shift 2 ;;
+      --gateway) GATEWAY="$2"; GATEWAY_EXPLICIT=1; shift 2 ;;
+      --subnet) SUBNET="$2"; shift 2 ;;
+      --container-ip) CONTAINER_IP="$2"; shift 2 ;;
+      -h|--help) usage; exit 0 ;;
+      -) files+=("-"); shift ;;
+      --) shift; while [ $# -gt 0 ]; do files+=("$1"); shift; done ;;
+      -*) die "неизвестная опция: $1" ;;
+      *) files+=("$1"); shift ;;
+    esac
+  done
+
+  if [ -z "$outdir" ]; then
+    outdir="${WLP_OUTDIR:-$(default_outdir)}"
+  fi
+
+  if [ ${#files[@]} -eq 0 ]; then
+    files=("$(default_input)")
+    info "вход по умолчанию: ${files[0]}"
+  fi
+  if [ "$jobs" -gt 1 ]; then
+    info "внимание: jobs>1 может давать ложные блокировки, надёжнее 1"
+  fi
+
+  command -v docker >/dev/null || die "docker не установлен"
+  docker info >/dev/null 2>&1 || die "docker недоступен: не запущен или нет прав (добавьте пользователя в группу docker)"
+  local busy
+  busy=$(docker ps --filter "ancestor=$IMAGE" --format '{{.ID}}' 2>/dev/null | head -1)
+  if [ -n "$busy" ]; then
+    info "внимание: уже идёт проверка (контейнер $busy); параллельные прогоны дают ложные блокировки"
+  fi
+
+  local tmp
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/whitelist-probe.XXXXXX")
+  # shellcheck disable=SC2064
+  trap "rm -rf '$tmp'" EXIT
+
+  # сначала входные данные: ошибка в пути не должна зависеть от модема
+  : > "$tmp/input.txt"
+  local f g n
+  for f in "${files[@]}"; do
+    if [ "$f" = "-" ]; then
+      cat >> "$tmp/input.txt"
+    elif [ -d "$f" ]; then
+      n=0
+      while IFS= read -r g; do
+        awk -v s="$(basename "$g")" '{print s "\t" $0}' "$g" >> "$tmp/input.txt"
+        n=$((n+1))
+      done < <(find "$f" -type f ! -name '.*' | LC_ALL=C sort)
+      info "каталог $f: файлов $n"
+    elif [ -f "$f" ]; then
+      awk -v s="$(basename "$f")" '{print s "\t" $0}' "$f" >> "$tmp/input.txt"
+    else
+      case "$f" in
+        /*) die "не найдено: $f" ;;
+        *) die "не найдено: $f
+       текущий каталог: $(pwd)
+       путь считается от него; для src/domains из tools/whitelist-probe нужен ../../src/domains" ;;
+      esac
+    fi
+    printf '\n' >> "$tmp/input.txt"
+  done
+  [ -s "$tmp/input.txt" ] || die "входные данные пусты"
+
+  resolve_target
+  [ -n "$IFACE" ] || die "не нашёл USB-интерфейс модема (подключён?) или маршрут до $GATEWAY"
+  [ -n "$SUBNET" ] || die "не определил подсеть для $IFACE"
+
+  if [ -d "/sys/class/net/$IFACE/wireless" ]; then
+    local u noaddr=""
+    for u in $(usb_ifaces); do
+      if [ -z "$(ip -o -4 addr show "$u" 2>/dev/null)" ]; then noaddr="$noaddr $u"; fi
+    done
+    if [ -n "$noaddr" ]; then
+      info "USB-интерфейс без IPv4-адреса:$noaddr — не поднялся DHCP или не включён режим тестеринга"
+    fi
+    if [ "$GATEWAY_EXPLICIT" -eq 0 ]; then
+      die "не нашёл USB-модем или телефон с IPv4-адресом. Сейчас маршрут идёт через Wi-Fi ($IFACE), а macvlan поверх Wi-Fi не работает.
+       Подключите USB-модем/телефон в режиме тестеринга или укажите --iface и --gateway явно."
+    fi
+    info "внимание: $IFACE — Wi-Fi. macvlan поверх Wi-Fi обычно не работает"
+  fi
+
+  reachable "$GATEWAY" || die "шлюз $GATEWAY не отвечает. Модем подключён? Если у него другой адрес, укажите --gateway"
+
+  if detect_operator; then
+    info "оператор: $(op_label) [$OP_SRC]"
+  else
+    info "оператор: не определён"
+  fi
+
+  local host_dev
+  host_dev=$(host_default_iface)
+  if [ -n "$host_dev" ] && [ "$host_dev" = "$IFACE" ]; then
+    info "внимание: трафик хоста идёт через модем; на проверку не влияет, но фоновые программы расходуют его трафик (net-guard)"
+  fi
+
+  local run_dir=""
+  if [ "$explicit_out" -eq 0 ] && [ "$dry_run" -eq 0 ]; then
+    local base n=2
+    base="$outdir/$(run_dir_name)"
+    run_dir=$base
+    while [ -e "$run_dir" ]; do
+      run_dir="${base}-$n"
+      n=$((n+1))
+    done
+    mkdir -p "$run_dir" || die "не удалось создать каталог $run_dir"
+    # shellcheck disable=SC2064
+    trap "rmdir '$run_dir' 2>/dev/null || true; rm -rf '$tmp'" EXIT
+    out="$run_dir/result.tsv"
+    domains_out="$run_dir/allow-domains.txt"
+    ips_out="$run_dir/allow-ips.txt"
+    info "результаты: $run_dir"
+  fi
+
+  ensure_image
+  ensure_network
+
+  local -a candidates=()
+  if [ -n "$CONTAINER_IP" ]; then
+    candidates=("$CONTAINER_IP")
+  elif [ "${SUBNET#*/}" = "24" ]; then
+    local base
+    base=$(echo "$SUBNET" | awk -F'[./]' '{print $1"."$2"."$3}')
+    candidates=("$base.250" "$base.251" "$base.252" "$base.253")
+  else
+    candidates=("")
+  fi
+
+  local ip rc=0 ok=0 dry_arg=""
+  if [ "$dry_run" -eq 1 ]; then dry_arg="--dry-run"; fi
+  local all_arg=""
+  if [ "$all_ips" -eq 0 ]; then all_arg="--first-ip"; fi
+  for ip in "${candidates[@]}"; do
+    local -a ip_arg=()
+    if [ -n "$ip" ]; then ip_arg=(--ip "$ip"); fi
+    info "проверяю через $IFACE, контейнер ${ip:-авто}"
+    set +e
+    docker run --rm --pull never --security-opt label=disable \
+      --network "$NETWORK" "${ip_arg[@]}" \
+      -v "$SCRIPT_DIR:/tool:ro" -v "$tmp:/data" \
+      "$IMAGE" python3 /tool/probe.py \
+        --input /data/input.txt --kind "$kind" --resolver "$GATEWAY" \
+        --sni "$sni" --timeout "$timeout" --jobs "$jobs" --max-ips "$max_ips" \
+        --retries "$retries" \
+        $http --portal-host "$portal_host" $dry_arg $all_arg --out /data/result.tsv
+    rc=$?
+    set -e
+    if [ $rc -eq 0 ]; then ok=1; break; fi
+    if [ $rc -eq 125 ]; then
+      info "адрес ${ip:-авто} занят или недоступен, пробую следующий"
+      continue
+    fi
+    break
+  done
+  [ $ok -eq 1 ] || die "не удалось запустить проверку"
+
+  if [ "$dry_run" -eq 0 ] && [ "$all_ips" -eq 0 ]; then
+    local partial
+    partial=$(awk -F'\t' 'NR>1 && ($3=="allow"||$3=="allow_tls") {
+      na=split($5,a," "); nb=split($9,b," "); if (na>nb) c++
+    } END {print c+0}' "$tmp/result.tsv")
+    if [ "$partial" -gt 0 ]; then
+      info "у $partial доменов проверена только часть A-записей (--first-ip); для полного перебора уберите этот флаг"
+    fi
+  fi
+
+  if [ "$out" = "-" ]; then
+    cat "$tmp/result.tsv"
+  elif [ -n "$out" ]; then
+    cp "$tmp/result.tsv" "$out"
+    info "результат: $out"
+  else
+    cat "$tmp/result.tsv"
+  fi
+
+  if [ "$dry_run" -eq 1 ]; then
+    return 0
+  fi
+
+  if [ -n "$allow_out" ]; then
+    awk -F'\t' 'NR>1 && ($3=="allow" || $3=="allow_tls" || $3=="open_http"){print $1}' \
+      "$tmp/result.tsv" > "$allow_out"
+    info "разрешено: $allow_out ($(wc -l < "$allow_out"))"
+  fi
+  if [ -n "$deny_out" ]; then
+    awk -F'\t' 'NR>1 && !($3=="allow" || $3=="allow_tls" || $3=="open_http"){print $1}' \
+      "$tmp/result.tsv" > "$deny_out"
+    info "заблокировано: $deny_out ($(wc -l < "$deny_out"))"
+  fi
+  if [ -n "$domains_out" ]; then
+    awk -F'\t' 'NR>1 && $2=="domain" && ($3=="allow" || $3=="allow_tls" || $3=="open_http"){print $1}' \
+      "$tmp/result.tsv" > "$domains_out"
+    info "домены: $domains_out ($(wc -l < "$domains_out"))"
+  fi
+  if [ -n "$ips_out" ]; then
+    awk -F'\t' 'NR>1 { n=split($9, a, " "); for (i=1;i<=n;i++) if (a[i] != "") print a[i] }' \
+      "$tmp/result.tsv" | sort -u -t. -k1,1n -k2,2n -k3,3n -k4,4n > "$ips_out"
+    info "IP: $ips_out ($(wc -l < "$ips_out"))"
+  fi
+
+  if [ -n "$run_dir" ]; then
+    info "каталог: $(cd "$run_dir" && pwd)"
+    info "файлы: result.tsv, allow-domains.txt, allow-ips.txt"
+  fi
+}
+
+cmd_build() {
+  docker build -t "$IMAGE" "$SCRIPT_DIR"
+}
+
+[ $# -gt 0 ] || { usage; exit 1; }
+cmd="$1"; shift
+case "$cmd" in
+  check) cmd_check "$@" ;;
+  doctor)
+    resolve_target
+    cmd_doctor ;;
+  operator)
+    cmd_operator ;;
+  build) cmd_build ;;
+  -h|--help|help) usage ;;
+  *) die "неизвестная команда: $cmd" ;;
+esac
