@@ -263,18 +263,20 @@ def is_https_redirect(code, loc):
     return code in ("301", "302", "303", "307", "308") and loc.lower().startswith("https://")
 
 
-def tls_round(domain, ips, args, stop_on_allow=False, timeout=None):
+def tls_round(domain, ips, args, stop_on_allow=False, timeout=None, sni=None):
     """Один проход по адресам.
 
     Возвращает (allowed, failed, last): allowed — список (ip, status, err),
     failed — адреса, которые не прошли, last — последняя неудача.
     """
     timeout = args.timeout if timeout is None else timeout
+    if sni is None:
+        sni = domain
     allowed = []
     failed = []
     last = ("error", "", "no attempts")
     for ip in ips:
-        st, _, err = tls_probe(ip, domain, timeout)
+        st, _, err = tls_probe(ip, sni, timeout)
         if st in ("allow", "allow_tls"):
             allowed.append((ip, st, err))
             if stop_on_allow:
@@ -285,142 +287,101 @@ def tls_round(domain, ips, args, stop_on_allow=False, timeout=None):
     return allowed, failed, last
 
 
-# Итоги, которые незачем повторять: успех, DNS-ответы и портал определяются
-# однозначно. http_redirect и open_http повторяем — они зависят от того,
-# прошёл ли TLS с первого раза.
-FINAL = ("allow", "allow_tls", "blocked_dns", "no_dns", "blocked_portal")
+# Итоги, после которых второй проход не нужен: TLS прошёл, DNS ответил
+# однозначно, либо адресов нет.
+TERMINAL = ("allow", "allow_tls", "blocked_dns", "no_dns")
 
 
-def slow_tls_retry(domain, ips, args):
-    """Повтор TLS с тройным таймаутом.
+def probe_tls_only(name, kind, args):
+    """Проход 1: DNS (для домена) и одно TLS-рукопожатие по каждому адресу.
 
-    На мобильном канале 443 иногда отвечает не сразу, а после потери пакета
-    и повторной передачи. Короткий таймаут успевает истечь, хотя сайт жив.
+    HTTP:80 здесь не трогаем: им занимается второй проход, и только для
+    того, что не прошло TLS. Возвращает (result, ips).
     """
-    allowed = None
-    if args.all_ips:
-        allowed, _, _ = tls_round(domain, ips, args, timeout=args.timeout * 3)
-        if allowed:
+    t0 = time.time()
+
+    def ms():
+        return round((time.time() - t0) * 1000)
+
+    sni = args.sni if kind == "ip" else name
+
+    if kind == "ip":
+        ips = [name]
+    else:
+        raw = raw_dig(name, args.resolver, args.dns_timeout)
+        if raw and all(any(x.startswith(p) for p in SINK_PREFIXES) or x in SINK_EXACT
+                       for x in raw):
+            return dict(status="blocked_dns", checked_ip="", ips=" ".join(raw),
+                        reason="DNS sinkhole", ms=ms(), tries=1), []
+        ips = [x for x in raw if not any(x.startswith(p) for p in SINK_PREFIXES)
+               and x not in SINK_EXACT]
+        if not ips:
+            ips = dig_a(name, args.resolver, args.dns_timeout)
+        if not ips:
+            return dict(status="no_dns", checked_ip="", ips="", reason="no A records",
+                        ms=ms(), tries=1), []
+        if args.max_ips > 0:
+            ips = ips[: args.max_ips]
+
+    allowed, _, last = tls_round(name, ips, args,
+                                 stop_on_allow=not args.all_ips, sni=sni)
+    if allowed:
+        if args.all_ips and len(ips) > 1:
             return dict(status="allow", checked_ip=allowed[0][0],
                         allowed=" ".join(x[0] for x in allowed),
-                        ips=" ".join(ips), reason="")
-    else:
-        allowed, _, _ = tls_round(domain, ips, args, stop_on_allow=True,
-                                  timeout=args.timeout * 3)
-        if allowed:
-            ip, st, err = allowed[0]
-            return dict(status=st, checked_ip=ip, ips=" ".join(ips), reason=err)
-    return None
+                        ips=" ".join(ips), reason="", ms=ms(), tries=1), ips
+        ip, st, err = allowed[0]
+        return dict(status=st, checked_ip=ip, ips=" ".join(ips), reason=err,
+                    ms=ms(), tries=1), ips
+    return dict(status=last[0], checked_ip=last[1], ips=" ".join(ips),
+                reason=last[2], ms=ms(), tries=1), ips
 
 
-def evaluate_domain(domain, ips, args):
-    """Один полный проход: TLS по адресам, затем HTTP:80."""
-    last = ("error", "", "no attempts")
-    if args.all_ips:
-        allowed, _, last = tls_round(domain, ips, args)
-        if allowed:
-            return dict(status="allow", checked_ip=allowed[0][0],
-                        allowed=" ".join(x[0] for x in allowed),
-                        ips=" ".join(ips), reason="")
-    else:
-        allowed, _, last = tls_round(domain, ips, args, stop_on_allow=True)
-        if allowed:
-            ip, st, err = allowed[0]
-            return dict(status=st, checked_ip=ip, ips=" ".join(ips), reason=err)
+def diagnose(name, kind, prev, ips, args):
+    """Проход 2: HTTP:80 и медленные повторы TLS.
 
+    Нужен только для целей, которые не прошли первый проход. Портал по 80
+    виден сразу; если его нет, TLS получает второй шанс с утроенным
+    таймаутом — на мобильном канале первый отказ часто оказывается потерей
+    пакета, а не блокировкой.
+    """
+    t0 = time.time()
+
+    def ms():
+        return round((time.time() - t0) * 1000)
+
+    sni = args.sni if kind == "ip" else name
+
+    http_code, http_loc, http_ip = "", "", ""
     if args.http80:
         for ip in ips:
-            code, loc, _, _ = http_probe(ip, domain, args.timeout, args.portal_host)
+            code, loc, _, _ = http_probe(ip, name, args.timeout, args.portal_host)
             if args.portal_host and args.portal_host in loc:
                 return dict(status="blocked_portal", checked_ip=ip, ips=" ".join(ips),
-                            reason="HTTP %s -> %s" % (code, loc))
+                            reason="HTTP %s -> %s" % (code, loc), ms=ms())
             if code and code not in ("000",):
-                # по 80 сайт ответил — значит таймаут на 443 скорее потеря
-                # пакета, чем блокировка: один медленный повтор
-                if last[0] in ("blocked_timeout", "blocked_tls_timeout"):
-                    slow = slow_tls_retry(domain, ips, args)
-                    if slow:
-                        return slow
-                if is_https_redirect(code, loc):
-                    return dict(status="http_redirect", checked_ip=ip, ips=" ".join(ips),
-                                reason="HTTP %s -> %s" % (code, loc))
-                return dict(status="open_http", checked_ip=ip, ips=" ".join(ips),
-                            reason="HTTP %s %s" % (code, loc))
-    return dict(status=last[0], checked_ip=last[1], ips=" ".join(ips), reason=last[2])
+                http_code, http_loc, http_ip = code, loc, ip
+                break
 
+    for _ in range(max(0, args.retries)):
+        allowed, _, _ = tls_round(name, ips, args, stop_on_allow=not args.all_ips,
+                                  timeout=args.timeout * 3, sni=sni)
+        if allowed:
+            if args.all_ips and len(ips) > 1:
+                return dict(status="allow", checked_ip=allowed[0][0],
+                            allowed=" ".join(x[0] for x in allowed),
+                            ips=" ".join(ips), reason="", ms=ms())
+            ip, st, err = allowed[0]
+            return dict(status=st, checked_ip=ip, ips=" ".join(ips), reason=err, ms=ms())
 
-def check_domain(domain, args):
-    t0 = time.time()
-    raw = raw_dig(domain, args.resolver, args.dns_timeout)
-    if raw and all(any(x.startswith(p) for p in SINK_PREFIXES) or x in SINK_EXACT for x in raw):
-        return dict(status="blocked_dns", checked_ip="", ips=" ".join(raw),
-                    reason="DNS sinkhole", ms=round((time.time() - t0) * 1000),
-                    tries=1)
-
-    ips = [x for x in raw if not any(x.startswith(p) for p in SINK_PREFIXES)
-           and x not in SINK_EXACT]
-    if not ips:
-        ips = dig_a(domain, args.resolver, args.dns_timeout)
-    if not ips:
-        return dict(status="no_dns", checked_ip="", ips="", reason="no A records",
-                    ms=round((time.time() - t0) * 1000), tries=1)
-
-    # --max-ips 0 — проверять все A-записи
-    if args.max_ips > 0:
-        ips = ips[: args.max_ips]
-
-    attempts = 1 + max(0, args.retries)
-    result = None
-    tries = 0
-    while tries < attempts:
-        tries += 1
-        result = evaluate_domain(domain, ips, args)
-        if result["status"] in FINAL:
-            break
-        # таймаут — самый дорогой вариант, его повторяем не больше одного раза
-        if result["status"] in ("blocked_timeout", "blocked_tls_timeout") and tries >= 2:
-            break
-
-    result["ms"] = round((time.time() - t0) * 1000)
-    result["tries"] = tries
-    return result
-
-
-# Для одиночного IP: эти итоги повторять незачем.
-STABLE = ("allow", "allow_tls", "blocked_dns", "no_dns", "blocked_portal", "http_redirect")
-
-
-def check_ip(ip, args):
-    t0 = time.time()
-    attempts = 1 + max(0, args.retries)
-    st, err = "error", "no attempts"
-    tries = 0
-    while tries < attempts:
-        st, _, err = tls_probe(ip, args.sni, args.timeout)
-        tries += 1
-        if st in ("allow", "allow_tls") or st in STABLE:
-            break
-        if st in ("blocked_timeout", "blocked_tls_timeout") and tries >= 2:
-            break
-    if st in ("allow", "allow_tls"):
-        return dict(status=st, checked_ip=ip, ips=ip, reason=err,
-                    ms=round((time.time() - t0) * 1000), tries=tries)
-    if args.http80:
-        code, loc, _, herr = http_probe(ip, args.sni, args.timeout, args.portal_host)
-        if args.portal_host and args.portal_host in loc:
-            return dict(status="blocked_portal", checked_ip=ip, ips=ip,
-                        reason="HTTP %s -> %s" % (code, loc),
-                        ms=round((time.time() - t0) * 1000), tries=tries)
-        if is_https_redirect(code, loc):
-            return dict(status="http_redirect", checked_ip=ip, ips=ip,
-                        reason="HTTP %s -> %s" % (code, loc),
-                        ms=round((time.time() - t0) * 1000), tries=tries)
-        if code:
-            return dict(status="open_http", checked_ip=ip, ips=ip,
-                        reason="HTTP %s %s" % (code, loc),
-                        ms=round((time.time() - t0) * 1000), tries=tries)
-    return dict(status=st, checked_ip=ip, ips=ip, reason=err,
-                ms=round((time.time() - t0) * 1000), tries=tries)
+    if http_code:
+        if is_https_redirect(http_code, http_loc):
+            return dict(status="http_redirect", checked_ip=http_ip, ips=" ".join(ips),
+                        reason="HTTP %s -> %s" % (http_code, http_loc), ms=ms())
+        return dict(status="open_http", checked_ip=http_ip, ips=" ".join(ips),
+                    reason="HTTP %s %s" % (http_code, http_loc), ms=ms())
+    return dict(status=prev["status"], checked_ip=prev["checked_ip"],
+                ips=prev["ips"], reason=prev["reason"], ms=ms())
 
 
 def expand_targets(lines, kind, max_cidr):
@@ -488,7 +449,11 @@ def main():
     ap.add_argument("--max-ips", type=int, default=0,
                     help="сколько адресов домена проверять, 0 — все")
     ap.add_argument("--retries", type=int, default=1,
-                    help="дополнительных попыток при неудаче")
+                    help="медленных повторов TLS во втором проходе (0 — только HTTP:80)")
+    ap.add_argument("--second-pass", dest="second_pass", action="store_true", default=True,
+                    help="второй проход для не прошедших TLS (по умолчанию)")
+    ap.add_argument("--no-second-pass", dest="second_pass", action="store_false",
+                    help="только TLS, без HTTP:80 и медленных повторов")
     ap.add_argument("--all-ips", dest="all_ips", action="store_true", default=True,
                     help="проверять все A-записи (по умолчанию)")
     ap.add_argument("--first-ip", dest="all_ips", action="store_false",
@@ -521,7 +486,7 @@ def main():
             sum(1 for _, k, _ in targets if k == "ip")), file=sys.stderr)
         return 0
 
-    results = []
+    state = []        # (item, result, ips) — порядок исходного списка
     interrupted = False
 
     def pause():
@@ -529,9 +494,8 @@ def main():
         if args.delay > 0:
             time.sleep(random.uniform(args.delay * 0.5, args.delay * 1.5))
 
-    def run(item):
+    def finalize(item, r):
         name, kind, source = item
-        r = check_ip(name, args) if kind == "ip" else check_domain(name, args)
         r["input"] = name
         r["kind"] = kind
         r["source"] = source
@@ -543,17 +507,19 @@ def main():
             r["reason"] = ("%s; %s" % (r["reason"], note)) if r["reason"] else note
         return r
 
+    # Проход 1: DNS и TLS по всему списку, без HTTP:80.
     if args.jobs > 1:
         ex = ThreadPoolExecutor(max_workers=args.jobs)
         try:
-            def run_paced(item):
-                r = run(item)
+            def first_paced(item):
+                r, ips = probe_tls_only(item[0], item[1], args)
                 pause()
-                return r
-            it = ex.map(run_paced, targets)
-            for i, r in enumerate(it, 1):
-                results.append(r)
-                print("[%d/%d] %s -> %s" % (i, len(targets), r["input"], r["status"]),
+                return r, ips
+            it = ex.map(first_paced, targets)
+            for i, (r, ips) in enumerate(it, 1):
+                item = targets[i - 1]
+                state.append((item, r, ips))
+                print("[1/2] [%d/%d] %s -> %s" % (i, len(targets), item[0], r["status"]),
                       file=sys.stderr, flush=True)
         except KeyboardInterrupt:
             interrupted = True
@@ -564,15 +530,38 @@ def main():
     else:
         try:
             for i, item in enumerate(targets, 1):
-                r = run(item)
-                results.append(r)
-                print("[%d/%d] %s -> %s" % (i, len(targets), r["input"], r["status"]),
+                r, ips = probe_tls_only(item[0], item[1], args)
+                state.append((item, r, ips))
+                print("[1/2] [%d/%d] %s -> %s" % (i, len(targets), item[0], r["status"]),
                       file=sys.stderr, flush=True)
                 if i < len(targets):
                     pause()
         except KeyboardInterrupt:
             interrupted = True
             print("\nпрервано (Ctrl+C)", file=sys.stderr, flush=True)
+
+    # Проход 2: только то, что не прошло TLS — HTTP:80 и медленный повтор.
+    if not interrupted and args.second_pass:
+        need = [k for k, (_, r, _) in enumerate(state) if r["status"] not in TERMINAL]
+        if need:
+            print("== второй проход: %d из %d" % (len(need), len(state)),
+                  file=sys.stderr, flush=True)
+        try:
+            for j, k in enumerate(need, 1):
+                item, prev, ips = state[k]
+                r = diagnose(item[0], item[1], prev, ips, args)
+                r["ms"] += prev["ms"]
+                r["tries"] = 2
+                state[k] = (item, r, ips)
+                print("[2/2] [%d/%d] %s -> %s" % (j, len(need), item[0], r["status"]),
+                      file=sys.stderr, flush=True)
+                if j < len(need):
+                    pause()
+        except KeyboardInterrupt:
+            interrupted = True
+            print("\nпрервано (Ctrl+C)", file=sys.stderr, flush=True)
+
+    results = [finalize(item, r) for item, r, _ in state]
 
     header = "input\tkind\tstatus\tchecked_ip\tall_ips\treason\tms\tsource\tallowed_ips\n"
     body = "".join(
