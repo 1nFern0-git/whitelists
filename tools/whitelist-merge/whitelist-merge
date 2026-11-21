@@ -125,7 +125,9 @@ cmd_merge() {
   local -a runs=()
   local d
   for d in "${dirs[@]}"; do
-    if [ -f "$d/result.tsv" ] || [ -f "$d/allow-domains.txt" ] || [ -f "$d/allow-ips.txt" ]; then
+    if [ -f "$d/partial.txt" ]; then
+      info "пропуск $d: прогон прерван, результаты неполные"
+    elif [ -f "$d/result.tsv" ] || [ -f "$d/allow-domains.txt" ] || [ -f "$d/allow-ips.txt" ]; then
       runs+=("$d")
     else
       info "пропуск $d: нет result.tsv / allow-domains.txt / allow-ips.txt"

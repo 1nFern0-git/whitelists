@@ -23,6 +23,25 @@ OP_SRC=""
 die() { echo "ошибка: $*" >&2; exit 1; }
 info() { echo "== $*" >&2; }
 
+# Состояние для уборки: заполняется в cmd_check, используется в cleanup.
+RUN_DIR=""
+TMP_DIR=""
+PROBE_CONTAINER=""
+
+cleanup() {
+  # контейнер мог остаться, если docker не успел его убрать
+  if [ -n "$PROBE_CONTAINER" ]; then
+    docker kill "$PROBE_CONTAINER" >/dev/null 2>&1 || true
+  fi
+  # каталог прогона удаляется только пустой: частичные результаты сохраняем
+  if [ -n "$RUN_DIR" ]; then
+    rmdir "$RUN_DIR" 2>/dev/null || true
+  fi
+  if [ -n "$TMP_DIR" ]; then
+    rm -rf "$TMP_DIR"
+  fi
+}
+
 detect_iface() {
   ip route get "$GATEWAY" 2>/dev/null \
     | sed -n 's/.* dev \([^ ]*\).*/\1/p' | head -1
@@ -642,8 +661,8 @@ cmd_check() {
 
   local tmp
   tmp=$(mktemp -d "${TMPDIR:-/tmp}/whitelist-probe.XXXXXX")
-  # shellcheck disable=SC2064
-  trap "rm -rf '$tmp'" EXIT
+  TMP_DIR=$tmp
+  trap cleanup EXIT
 
   # сначала входные данные: ошибка в пути не должна зависеть от модема
   : > "$tmp/input.txt"
@@ -715,8 +734,7 @@ cmd_check() {
       n=$((n+1))
     done
     mkdir -p "$run_dir" || die "не удалось создать каталог $run_dir"
-    # shellcheck disable=SC2064
-    trap "rmdir '$run_dir' 2>/dev/null || true; rm -rf '$tmp'" EXIT
+    RUN_DIR=$run_dir
     out="$run_dir/result.tsv"
     domains_out="$run_dir/allow-domains.txt"
     ips_out="$run_dir/allow-ips.txt"
@@ -737,16 +755,21 @@ cmd_check() {
     candidates=("")
   fi
 
-  local ip rc=0 ok=0 dry_arg=""
+  local ip rc=0 ok=0 dry_arg="" interrupted=0
   if [ "$dry_run" -eq 1 ]; then dry_arg="--dry-run"; fi
   local all_arg=""
   if [ "$all_ips" -eq 0 ]; then all_arg="--first-ip"; fi
+  PROBE_CONTAINER="whitelist-probe-$$"
+  # Мягкое прерывание: docker получит SIGINT и попросит probe.py сохранить
+  # уже проверенное. Повторное нажатие ничего не ускорит — ждём тот же сигнал.
+  trap 'interrupted=1' INT TERM
   for ip in "${candidates[@]}"; do
     local -a ip_arg=()
     if [ -n "$ip" ]; then ip_arg=(--ip "$ip"); fi
     info "проверяю через $IFACE, контейнер ${ip:-авто}"
     set +e
     docker run --rm --pull never --security-opt label=disable \
+      --name "$PROBE_CONTAINER" \
       --network "$NETWORK" "${ip_arg[@]}" \
       -v "$SCRIPT_DIR:/tool:ro" -v "$tmp:/data" \
       "$IMAGE" python3 /tool/probe.py \
@@ -757,6 +780,11 @@ cmd_check() {
         $http --portal-host "$portal_host" $dry_arg $all_arg --out /data/result.tsv
     rc=$?
     set -e
+    if [ "$interrupted" -ne 0 ] || [ $rc -eq 130 ]; then
+      interrupted=1
+      info "прервано: сохраняю то, что уже проверено"
+      break
+    fi
     if [ $rc -eq 0 ]; then ok=1; break; fi
     if [ $rc -eq 125 ]; then
       info "адрес ${ip:-авто} занят или недоступен, пробую следующий"
@@ -764,7 +792,21 @@ cmd_check() {
     fi
     break
   done
-  [ $ok -eq 1 ] || die "не удалось запустить проверку"
+  trap - INT TERM
+  PROBE_CONTAINER=""
+  if [ "$interrupted" -eq 0 ] && [ $ok -ne 1 ]; then
+    die "не удалось запустить проверку"
+  fi
+
+  local rows=0
+  if [ -f "$tmp/result.tsv" ]; then
+    rows=$(( $(wc -l < "$tmp/result.tsv") - 1 ))
+    [ "$rows" -gt 0 ] || rows=0
+  fi
+  if [ "$interrupted" -ne 0 ] && [ "$rows" -eq 0 ]; then
+    info "прервано до первого результата — сохранять нечего"
+    return 130
+  fi
 
   if [ "$dry_run" -eq 0 ] && [ "$all_ips" -eq 0 ]; then
     local partial
@@ -811,8 +853,26 @@ cmd_check() {
   fi
 
   if [ -n "$run_dir" ]; then
+    if [ "$interrupted" -ne 0 ]; then
+      {
+        echo "проверка прервана (Ctrl+C)"
+        echo "проверено целей: $rows"
+        echo "результат частичный: не все цели проверялись"
+        echo "whitelist-merge пропускает такие прогоны"
+      } > "$run_dir/partial.txt"
+    fi
     info "каталог: $(cd "$run_dir" && pwd)"
-    info "файлы: result.tsv, allow-domains.txt, allow-ips.txt"
+    if [ "$interrupted" -ne 0 ]; then
+      info "прогон неполный: проверено $rows целей, файлы пополнены частично (partial.txt)"
+    else
+      info "файлы: result.tsv, allow-domains.txt, allow-ips.txt"
+    fi
+  elif [ "$interrupted" -ne 0 ]; then
+    info "внимание: результат частичный, проверено $rows целей"
+  fi
+
+  if [ "$interrupted" -ne 0 ]; then
+    return 130
   fi
 }
 

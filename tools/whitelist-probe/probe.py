@@ -19,6 +19,19 @@
   error           прочее
 """
 
+import os
+import signal
+import sys
+
+
+def _startup_int(signum, frame):
+    # Ctrl+C во время импорта модулей: выходим тихо, без traceback.
+    sys.stderr.write("\nпрервано (Ctrl+C)\n")
+    os._exit(130)
+
+
+signal.signal(signal.SIGINT, _startup_int)
+
 import argparse
 import ipaddress
 import random
@@ -26,7 +39,6 @@ import re
 import socket
 import ssl
 import subprocess
-import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -423,6 +435,7 @@ def main():
         return 0
 
     results = []
+    interrupted = False
 
     def pause():
         # небольшая неровная пауза: ровный ритм выглядит как бот
@@ -444,7 +457,8 @@ def main():
         return r
 
     if args.jobs > 1:
-        with ThreadPoolExecutor(max_workers=args.jobs) as ex:
+        ex = ThreadPoolExecutor(max_workers=args.jobs)
+        try:
             def run_paced(item):
                 r = run(item)
                 pause()
@@ -454,14 +468,24 @@ def main():
                 results.append(r)
                 print("[%d/%d] %s -> %s" % (i, len(targets), r["input"], r["status"]),
                       file=sys.stderr, flush=True)
+        except KeyboardInterrupt:
+            interrupted = True
+            print("\nпрервано (Ctrl+C)", file=sys.stderr, flush=True)
+            ex.shutdown(wait=False, cancel_futures=True)
+        else:
+            ex.shutdown(wait=True)
     else:
-        for i, item in enumerate(targets, 1):
-            r = run(item)
-            results.append(r)
-            print("[%d/%d] %s -> %s" % (i, len(targets), r["input"], r["status"]),
-                  file=sys.stderr, flush=True)
-            if i < len(targets):
-                pause()
+        try:
+            for i, item in enumerate(targets, 1):
+                r = run(item)
+                results.append(r)
+                print("[%d/%d] %s -> %s" % (i, len(targets), r["input"], r["status"]),
+                      file=sys.stderr, flush=True)
+                if i < len(targets):
+                    pause()
+        except KeyboardInterrupt:
+            interrupted = True
+            print("\nпрервано (Ctrl+C)", file=sys.stderr, flush=True)
 
     header = "input\tkind\tstatus\tchecked_ip\tall_ips\treason\tms\tsource\tallowed_ips\n"
     body = "".join(
@@ -480,12 +504,24 @@ def main():
     counts = {}
     for r in results:
         counts[r["status"]] = counts.get(r["status"], 0) + 1
-    print("\nитого: %d" % len(results), file=sys.stderr)
+    print("\nитого: %d%s" % (len(results),
+                            " (прервано, проверено не всё)" if interrupted else ""),
+          file=sys.stderr)
     for s in STATUS_ORDER:
         if counts.get(s):
             print("  %-15s %d" % (s, counts[s]), file=sys.stderr)
+    if interrupted:
+        print("сохранено: %d из %d целей" % (len(results), len(targets)), file=sys.stderr)
+        return 130
     return 0
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    # дальше Ctrl+C обрабатывается как KeyboardInterrupt: он нужен, чтобы
+    # сохранить уже проверенное
+    signal.signal(signal.SIGINT, signal.default_int_handler)
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        print("\nпрервано (Ctrl+C)", file=sys.stderr)
+        sys.exit(130)
