@@ -42,6 +42,15 @@ import subprocess
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+try:
+    from curl_cffi import CurlOpt
+    from curl_cffi import requests as browser_requests
+    HAVE_BROWSER_TLS = True
+except Exception:
+    CurlOpt = None
+    browser_requests = None
+    HAVE_BROWSER_TLS = False
+
 IPV4_RE = re.compile(r"^(\d{1,3}\.){3}\d{1,3}$")
 SINK_PREFIXES = ("8.6.112.", "8.47.69.")
 SINK_EXACT = {"0.0.0.0", "127.0.0.1", "192.168.8.1"}
@@ -115,6 +124,50 @@ def raw_dig(domain, resolver, timeout):
         return []
 
 
+def browser_tls_probe(ip, sni, timeout):
+    """TLS-рукопожатие с отпечатком Chrome.
+
+    Обычный ssl-клиент Python часть банков (vtb.ru) молча блокирует на
+    несколько минут: TCP проходит, а на ClientHello сервер перестаёт
+    отвечать, и все следующие проверки дают blocked_timeout. Chrome-отпечаток
+    проходит и блокировку не запускает.
+    """
+    t0 = time.time()
+
+    def ms():
+        return round((time.time() - t0) * 1000)
+
+    kwargs = dict(
+        impersonate="chrome",
+        verify=False,
+        allow_redirects=False,
+        timeout=timeout,
+        stream=True,
+    )
+    # домен резолвим сами: соединение — на проверяемый адрес, SNI — домен
+    if not is_ipv4(sni):
+        kwargs["curl_options"] = {CurlOpt.RESOLVE: ["%s:443:%s" % (sni, ip)]}
+    try:
+        resp = browser_requests.get("https://%s/" % sni, **kwargs)
+        resp.close()
+        return "allow", ms(), ""
+    except Exception as e:
+        name = type(e).__name__.lower()
+        text = str(e)
+        low = text.lower()
+        if "timeout" in name or "timed out" in low:
+            return "blocked_tls_timeout", ms(), "tls handshake timeout"
+        if "reset" in low or "recv failure" in low:
+            return "blocked_tls", ms(), text[:90]
+        if "refused" in low:
+            return "refused", ms(), "connection refused"
+        if "ssl" in name or "certificate" in name or "tls" in low:
+            return "allow_tls", ms(), text[:90]
+        if "connect" in low or "connection" in low:
+            return "blocked_tls", ms(), text[:90]
+        return "error", ms(), text[:90]
+
+
 def tls_probe(ip, sni, timeout):
     ctx = ssl.create_default_context()
     ctx.check_hostname = False
@@ -137,6 +190,11 @@ def tls_probe(ip, sni, timeout):
             return "blocked_timeout", ms(), "tcp connect timeout"
         except OSError as e:
             return "error", ms(), str(e)[:90]
+
+        if HAVE_BROWSER_TLS:
+            sock.close()
+            sock = None
+            return browser_tls_probe(ip, sni, timeout)
 
         try:
             ss = ctx.wrap_socket(sock, server_hostname=sni)
@@ -205,17 +263,18 @@ def is_https_redirect(code, loc):
     return code in ("301", "302", "303", "307", "308") and loc.lower().startswith("https://")
 
 
-def tls_round(domain, ips, args, stop_on_allow=False):
+def tls_round(domain, ips, args, stop_on_allow=False, timeout=None):
     """Один проход по адресам.
 
     Возвращает (allowed, failed, last): allowed — список (ip, status, err),
     failed — адреса, которые не прошли, last — последняя неудача.
     """
+    timeout = args.timeout if timeout is None else timeout
     allowed = []
     failed = []
     last = ("error", "", "no attempts")
     for ip in ips:
-        st, _, err = tls_probe(ip, domain, args.timeout)
+        st, _, err = tls_probe(ip, domain, timeout)
         if st in ("allow", "allow_tls"):
             allowed.append((ip, st, err))
             if stop_on_allow:
@@ -230,6 +289,28 @@ def tls_round(domain, ips, args, stop_on_allow=False):
 # однозначно. http_redirect и open_http повторяем — они зависят от того,
 # прошёл ли TLS с первого раза.
 FINAL = ("allow", "allow_tls", "blocked_dns", "no_dns", "blocked_portal")
+
+
+def slow_tls_retry(domain, ips, args):
+    """Повтор TLS с тройным таймаутом.
+
+    На мобильном канале 443 иногда отвечает не сразу, а после потери пакета
+    и повторной передачи. Короткий таймаут успевает истечь, хотя сайт жив.
+    """
+    allowed = None
+    if args.all_ips:
+        allowed, _, _ = tls_round(domain, ips, args, timeout=args.timeout * 3)
+        if allowed:
+            return dict(status="allow", checked_ip=allowed[0][0],
+                        allowed=" ".join(x[0] for x in allowed),
+                        ips=" ".join(ips), reason="")
+    else:
+        allowed, _, _ = tls_round(domain, ips, args, stop_on_allow=True,
+                                  timeout=args.timeout * 3)
+        if allowed:
+            ip, st, err = allowed[0]
+            return dict(status=st, checked_ip=ip, ips=" ".join(ips), reason=err)
+    return None
 
 
 def evaluate_domain(domain, ips, args):
@@ -253,10 +334,16 @@ def evaluate_domain(domain, ips, args):
             if args.portal_host and args.portal_host in loc:
                 return dict(status="blocked_portal", checked_ip=ip, ips=" ".join(ips),
                             reason="HTTP %s -> %s" % (code, loc))
-            if is_https_redirect(code, loc):
-                return dict(status="http_redirect", checked_ip=ip, ips=" ".join(ips),
-                            reason="HTTP %s -> %s" % (code, loc))
             if code and code not in ("000",):
+                # по 80 сайт ответил — значит таймаут на 443 скорее потеря
+                # пакета, чем блокировка: один медленный повтор
+                if last[0] in ("blocked_timeout", "blocked_tls_timeout"):
+                    slow = slow_tls_retry(domain, ips, args)
+                    if slow:
+                        return slow
+                if is_https_redirect(code, loc):
+                    return dict(status="http_redirect", checked_ip=ip, ips=" ".join(ips),
+                                reason="HTTP %s -> %s" % (code, loc))
                 return dict(status="open_http", checked_ip=ip, ips=" ".join(ips),
                             reason="HTTP %s %s" % (code, loc))
     return dict(status=last[0], checked_ip=last[1], ips=" ".join(ips), reason=last[2])
