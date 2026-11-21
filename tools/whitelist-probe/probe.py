@@ -288,15 +288,17 @@ def tls_round(domain, ips, args, stop_on_allow=False, timeout=None, sni=None):
 
 
 # Итоги, после которых второй проход не нужен: TLS прошёл, DNS ответил
-# однозначно, либо адресов нет.
-TERMINAL = ("allow", "allow_tls", "blocked_dns", "no_dns")
+# однозначно, адресов нет, либо по 80 показан портал оператора.
+TERMINAL = ("allow", "allow_tls", "blocked_dns", "no_dns", "blocked_portal")
 
 
 def probe_tls_only(name, kind, args):
-    """Проход 1: DNS (для домена) и одно TLS-рукопожатие по каждому адресу.
+    """Проход 1: DNS, TLS и — если TLS не прошёл — HTTP:80.
 
-    HTTP:80 здесь не трогаем: им занимается второй проход, и только для
-    того, что не прошло TLS. Возвращает (result, ips).
+    HTTP нужен здесь, потому что портал оператора виден только по 80:
+    по 443 блокировка выглядит как обычный таймаут или RST. Портал сразу
+    даёт терминальный blocked_portal, остальные ответы по 80 — open_http
+    или http_redirect. Возвращает (result, ips).
     """
     t0 = time.time()
 
@@ -333,35 +335,41 @@ def probe_tls_only(name, kind, args):
         ip, st, err = allowed[0]
         return dict(status=st, checked_ip=ip, ips=" ".join(ips), reason=err,
                     ms=ms(), tries=1), ips
-    return dict(status=last[0], checked_ip=last[1], ips=" ".join(ips),
-                reason=last[2], ms=ms(), tries=1), ips
 
-
-def diagnose(name, kind, prev, ips, args):
-    """Проход 2: HTTP:80 и медленные повторы TLS.
-
-    Нужен только для целей, которые не прошли первый проход. Портал по 80
-    виден сразу; если его нет, TLS получает второй шанс с утроенным
-    таймаутом — на мобильном канале первый отказ часто оказывается потерей
-    пакета, а не блокировкой.
-    """
-    t0 = time.time()
-
-    def ms():
-        return round((time.time() - t0) * 1000)
-
-    sni = args.sni if kind == "ip" else name
-
-    http_code, http_loc, http_ip = "", "", ""
+    result = dict(status=last[0], checked_ip=last[1], ips=" ".join(ips),
+                  reason=last[2], tries=1)
     if args.http80:
         for ip in ips:
             code, loc, _, _ = http_probe(ip, name, args.timeout, args.portal_host)
             if args.portal_host and args.portal_host in loc:
-                return dict(status="blocked_portal", checked_ip=ip, ips=" ".join(ips),
-                            reason="HTTP %s -> %s" % (code, loc), ms=ms())
-            if code and code not in ("000",):
-                http_code, http_loc, http_ip = code, loc, ip
+                result.update(status="blocked_portal", checked_ip=ip,
+                              reason="HTTP %s -> %s" % (code, loc))
                 break
+            if code and code not in ("000",):
+                if is_https_redirect(code, loc):
+                    result.update(status="http_redirect", checked_ip=ip,
+                                  reason="HTTP %s -> %s" % (code, loc))
+                else:
+                    result.update(status="open_http", checked_ip=ip,
+                                  reason="HTTP %s %s" % (code, loc))
+                break
+    result["ms"] = ms()
+    return result, ips
+
+
+def diagnose(name, kind, prev, ips, args):
+    """Проход 2: медленные повторы TLS для тех, кто не прошёл первый.
+
+    Портал и DNS уже отсеяны в первом проходе, здесь остаются только
+    неоднозначные отказы. На мобильном канале первый отказ часто оказывается
+    потерей пакета, поэтому таймаут утраивается. Если TLS прошёл — статус
+    становится allow, иначе остаётся то, что дал первый проход.
+    """
+    t0 = time.time()
+    sni = args.sni if kind == "ip" else name
+
+    def ms():
+        return round((time.time() - t0) * 1000)
 
     for _ in range(max(0, args.retries)):
         allowed, _, _ = tls_round(name, ips, args, stop_on_allow=not args.all_ips,
@@ -374,12 +382,6 @@ def diagnose(name, kind, prev, ips, args):
             ip, st, err = allowed[0]
             return dict(status=st, checked_ip=ip, ips=" ".join(ips), reason=err, ms=ms())
 
-    if http_code:
-        if is_https_redirect(http_code, http_loc):
-            return dict(status="http_redirect", checked_ip=http_ip, ips=" ".join(ips),
-                        reason="HTTP %s -> %s" % (http_code, http_loc), ms=ms())
-        return dict(status="open_http", checked_ip=http_ip, ips=" ".join(ips),
-                    reason="HTTP %s %s" % (http_code, http_loc), ms=ms())
     return dict(status=prev["status"], checked_ip=prev["checked_ip"],
                 ips=prev["ips"], reason=prev["reason"], ms=ms())
 
@@ -449,11 +451,11 @@ def main():
     ap.add_argument("--max-ips", type=int, default=0,
                     help="сколько адресов домена проверять, 0 — все")
     ap.add_argument("--retries", type=int, default=1,
-                    help="медленных повторов TLS во втором проходе (0 — только HTTP:80)")
+                    help="медленных повторов TLS во втором проходе (0 — без второго прохода)")
     ap.add_argument("--second-pass", dest="second_pass", action="store_true", default=True,
-                    help="второй проход для не прошедших TLS (по умолчанию)")
+                    help="второй проход для неоднозначных отказов (по умолчанию)")
     ap.add_argument("--no-second-pass", dest="second_pass", action="store_false",
-                    help="только TLS, без HTTP:80 и медленных повторов")
+                    help="только первый проход, без медленных повторов TLS")
     ap.add_argument("--all-ips", dest="all_ips", action="store_true", default=True,
                     help="проверять все A-записи (по умолчанию)")
     ap.add_argument("--first-ip", dest="all_ips", action="store_false",
@@ -540,8 +542,8 @@ def main():
             interrupted = True
             print("\nпрервано (Ctrl+C)", file=sys.stderr, flush=True)
 
-    # Проход 2: только то, что не прошло TLS — HTTP:80 и медленный повтор.
-    if not interrupted and args.second_pass:
+    # Проход 2: только медленные повторы TLS для неоднозначных отказов.
+    if not interrupted and args.second_pass and args.retries > 0:
         need = [k for k, (_, r, _) in enumerate(state) if r["status"] not in TERMINAL]
         if need:
             print("== второй проход: %d из %d" % (len(need), len(state)),
