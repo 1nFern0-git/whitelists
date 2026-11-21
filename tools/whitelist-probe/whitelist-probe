@@ -48,8 +48,12 @@ detect_iface() {
 }
 
 detect_subnet() {
+  subnet_for_iface "$IFACE"
+}
+
+subnet_for_iface() {
   local cidr
-  cidr=$(ip -o -f inet addr show "$IFACE" 2>/dev/null | awk '{print $4}' | head -1)
+  cidr=$(ip -o -f inet addr show "$1" 2>/dev/null | awk '{print $4}' | head -1)
   [ -n "$cidr" ] || return 1
   local ip=${cidr%/*} prefix=${cidr#*/}
   if [ "$prefix" = "24" ]; then
@@ -81,6 +85,40 @@ usb_ifaces() {
 gw_for_iface() {
   ip route show default dev "$1" 2>/dev/null \
     | awk '{for(i=1;i<=NF;i++) if($i=="via"){print $(i+1); exit}}'
+}
+
+# Телефон в режиме USB-модема не становится маршрутом по умолчанию,
+# поэтому шлюза в таблице маршрутов нет. Спрашиваем его у NetworkManager,
+# который получил адрес по DHCP.
+nmcli_gw() {
+  command -v nmcli >/dev/null 2>&1 || return 1
+  local gw
+  gw=$(nmcli -g IP4.GATEWAY device show "$1" 2>/dev/null | head -1)
+  case "$gw" in
+    ""|--|" ") return 1 ;;
+  esac
+  printf '%s\n' "$gw"
+}
+
+# Шлюз USB-тетеринга: телефон обычно .129 (Android) или .1 (старые прошивки).
+phony_gw() {
+  local ip=$1 try
+  for try in "${ip%.*}.129" "${ip%.*}.1" "${ip%.*}.254"; do
+    if gateway_ok "$try" "$2"; then
+      printf '%s\n' "$try"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Шлюз может не отвечать на ICMP и не слушать :80 (телефон),
+# но присутствовать в ARP — этого достаточно, чтобы macvlan работал.
+gateway_ok() {
+  local gw=$1 via=$2
+  reachable "$gw" && return 0
+  [ -n "$via" ] || return 1
+  ip neigh show "$gw" dev "$via" 2>/dev/null | grep -q 'lladdr'
 }
 
 reachable() {
@@ -262,16 +300,18 @@ resolve_target() {
     local cand gw cidr ip
     for cand in $(usb_ifaces); do
       gw=$(gw_for_iface "$cand")
-      # после net-guard у модема нет маршрута по умолчанию,
-      # поэтому пробуем шлюз .1 его подсети (проверка ниже отсеет неверный)
+      # телефон в режиме USB-модема не становится маршрутом по умолчанию
+      [ -n "$gw" ] || gw=$(nmcli_gw "$cand" || true)
+      # после net-guard у модема нет маршрута по умолчанию:
+      # пробуем типовые адреса шлюза его подсети (проверка ниже отсеет неверный)
       if [ -z "$gw" ]; then
         cidr=$(ip -o -4 addr show "$cand" 2>/dev/null | awk '{print $4}' | head -1)
         ip=${cidr%/*}
         if [ -n "$ip" ]; then
-          gw=$(printf '%s' "$ip" | awk -F. '{print $1"."$2"."$3".1"}')
+          gw=$(phony_gw "$ip" "$cand" || true)
         fi
       fi
-      if [ -n "$gw" ] && reachable "$gw"; then
+      if [ -n "$gw" ] && gateway_ok "$gw" "$cand"; then
         IFACE=$cand
         GATEWAY=$gw
         info "USB-интерфейс: $IFACE, шлюз $GATEWAY"
@@ -305,13 +345,21 @@ stale_networks() {
   # Модем может переподключиться под другим именем (u1u2 -> u1u3). Сеть
   # остаётся от старого интерфейса и держит ту же подсеть, из-за чего
   # docker network create падает с "Pool overlaps". Такие сети свои — убираем.
-  local n parent
+  # Тем же именем может завладеть другое устройство (телефон -> модем):
+  # тогда сеть жива по имени родителя, но подсеть у него уже другая.
+  local n parent sub cur
   while read -r n; do
     [ -n "$n" ] || continue
     case "$n" in whitelist-macvlan-*) ;; *) continue ;; esac
     parent=$(docker network inspect -f '{{index .Options "parent"}}' "$n" 2>/dev/null || true)
     if [ -z "$parent" ] || ! ip link show "$parent" >/dev/null 2>&1; then
       printf '%s\t%s\n' "$n" "${parent:-неизвестен}"
+      continue
+    fi
+    sub=$(docker network inspect -f '{{range .IPAM.Config}}{{.Subnet}}{{end}}' "$n" 2>/dev/null || true)
+    cur=$(subnet_for_iface "$parent" || true)
+    if [ -n "$cur" ] && [ -n "$sub" ] && [ "$sub" != "$cur" ]; then
+      printf '%s\t%s\n' "$n" "$parent: подсеть $sub, сейчас $cur"
     fi
   done < <(docker network ls --filter driver=macvlan --format '{{.Name}}' 2>/dev/null)
 }
@@ -320,7 +368,7 @@ prune_stale_networks() {
   local n parent
   while IFS=$'\t' read -r n parent; do
     [ -n "$n" ] || continue
-    info "удаляю устаревшую сеть $n (интерфейс $parent больше не существует)"
+    info "удаляю устаревшую сеть $n ($parent)"
     docker network rm "$n" >/dev/null 2>&1 || true
   done < <(stale_networks)
 }
@@ -472,7 +520,7 @@ cmd_doctor() {
   if [ -n "$stale" ]; then
     printf 'устаревшие:  '
     while IFS=$'\t' read -r n p; do
-      echo "$n (интерфейс $p) — удалю при запуске"
+      echo "$n ($p) — удалю при запуске"
     done <<< "$stale"
   fi
   printf 'образ:       '; if docker image inspect "$IMAGE" >/dev/null 2>&1; then echo "$IMAGE есть"; else echo "$IMAGE нет (соберётся при запуске)"; fi
@@ -710,7 +758,7 @@ cmd_check() {
     info "внимание: $IFACE — Wi-Fi. macvlan поверх Wi-Fi обычно не работает"
   fi
 
-  reachable "$GATEWAY" || die "шлюз $GATEWAY не отвечает. Модем подключён? Если у него другой адрес, укажите --gateway"
+  gateway_ok "$GATEWAY" "$IFACE" || die "шлюз $GATEWAY не отвечает. Модем подключён? Если у него другой адрес, укажите --gateway"
 
   if detect_operator; then
     info "оператор: $(op_label) [$OP_SRC]"
