@@ -137,16 +137,22 @@ def browser_tls_probe(ip, sni, timeout):
     def ms():
         return round((time.time() - t0) * 1000)
 
+    # Тело ответа не читается: нужен только факт рукопожатия. Декодирование
+    # выключено намеренно — некоторые серверы отдают Content-Encoding, которого
+    # libcurl не знает (sber.ru: aws-chunked), и он падает с ошибкой 61 уже
+    # после того, как TLS и HTTP-ответ прошли.
+    curl_opts = {CurlOpt.HTTP_CONTENT_DECODING: 0}
+    # домен резолвим сами: соединение — на проверяемый адрес, SNI — домен
+    if not is_ipv4(sni):
+        curl_opts[CurlOpt.RESOLVE] = ["%s:443:%s" % (sni, ip)]
     kwargs = dict(
         impersonate="chrome",
         verify=False,
         allow_redirects=False,
         timeout=timeout,
         stream=True,
+        curl_options=curl_opts,
     )
-    # домен резолвим сами: соединение — на проверяемый адрес, SNI — домен
-    if not is_ipv4(sni):
-        kwargs["curl_options"] = {CurlOpt.RESOLVE: ["%s:443:%s" % (sni, ip)]}
     try:
         resp = browser_requests.get("https://%s/" % sni, **kwargs)
         resp.close()
@@ -165,6 +171,9 @@ def browser_tls_probe(ip, sni, timeout):
             return "allow_tls", ms(), text[:90]
         if "connect" in low or "connection" in low:
             return "blocked_tls", ms(), text[:90]
+        # ответ сервера получен, просто тело не разобрать — сайт доступен
+        if "content encoding" in low or "unrecognized" in low:
+            return "allow", ms(), "server answered, body not decoded"
         return "error", ms(), text[:90]
 
 
