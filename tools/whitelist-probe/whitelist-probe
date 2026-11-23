@@ -612,11 +612,11 @@ usage() {
       --outdir DIR      где создавать такой каталог (по умолчанию checks/)
       --kind KIND       auto | domains | ips   (по умолчанию auto)
       --sni NAME        SNI для проверки IP (по умолчанию gosuslugi.ru)
-      --timeout SEC     таймаут соединения (5)
+      --timeout SEC     таймаут соединения (8)
       --jobs N          параллельных проверок (1; больше 1 даёт ложные блокировки)
       --max-ips N       сколько адресов домена проверять (0 — все, по умолчанию)
       --max-cidr N      предел адресов в одном CIDR (1024); крупнее — пропуск
-      --retries N       медленных повторов TLS во втором проходе (1; 0 — без него)
+      --retries N       медленных повторов TLS во втором проходе (2; 0 — без него)
       --no-second-pass  только первый проход
       --delay SEC       пауза между целями (0.3; 0 — без паузы)
       --no-http80       не проверять порт 80
@@ -649,8 +649,8 @@ EOF
 }
 
 cmd_check() {
-  local out="" kind="auto" sni="gosuslugi.ru" timeout="5" jobs="1"
-  local max_ips="0" max_cidr="1024" retries="1" delay="0.3" http="--http80" allow_out="" deny_out="" portal_host="access.rt.ru"
+  local out="" kind="auto" sni="gosuslugi.ru" timeout="8" jobs="1"
+  local max_ips="0" max_cidr="1024" retries="2" delay="0.3" http="--http80" allow_out="" deny_out="" portal_host="access.rt.ru"
   local domains_out="" ips_out="" all_ips=1 dry_run=0 second_pass="--second-pass"
   local outdir="" explicit_out=0
   local -a files=()

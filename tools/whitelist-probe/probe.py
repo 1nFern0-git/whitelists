@@ -452,14 +452,14 @@ def main():
     ap.add_argument("--kind", choices=["auto", "domains", "ips"], default="auto")
     ap.add_argument("--resolver", default="192.168.8.1")
     ap.add_argument("--sni", default="gosuslugi.ru")
-    ap.add_argument("--timeout", type=float, default=5.0)
+    ap.add_argument("--timeout", type=float, default=8.0)
     ap.add_argument("--dns-timeout", type=float, default=3.0)
     ap.add_argument("--jobs", type=int, default=1)
     ap.add_argument("--delay", type=float, default=0.3,
                     help="пауза между целями, секунды (0 — без паузы)")
     ap.add_argument("--max-ips", type=int, default=0,
                     help="сколько адресов домена проверять, 0 — все")
-    ap.add_argument("--retries", type=int, default=1,
+    ap.add_argument("--retries", type=int, default=2,
                     help="медленных повторов TLS во втором проходе (0 — без второго прохода)")
     ap.add_argument("--second-pass", dest="second_pass", action="store_true", default=True,
                     help="второй проход для неоднозначных отказов (по умолчанию)")
