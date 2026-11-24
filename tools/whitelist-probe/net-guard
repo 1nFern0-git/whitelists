@@ -156,7 +156,7 @@ EOF
 
   info "правлю соединение «$conn»"
   nmcli connection modify "$conn" \
-    ipv4.never-default no \
+    ipv4.never-default yes \
     ipv4.route-metric 1000 \
     ipv4.ignore-auto-dns yes \
     ipv6.never-default yes
