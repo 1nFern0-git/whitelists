@@ -63,12 +63,39 @@ subnet_for_iface() {
   local cidr
   cidr=$(ip -o -f inet addr show "$1" 2>/dev/null | awk '{print $4}' | head -1)
   [ -n "$cidr" ] || return 1
+  # docker принимает только адрес сети: 172.20.10.2/28 -> 172.20.10.0/28
   local ip=${cidr%/*} prefix=${cidr#*/}
-  if [ "$prefix" = "24" ]; then
-    echo "$(echo "$ip" | awk -F. '{print $1"."$2"."$3".0"}')/24"
-  else
-    echo "$cidr"
-  fi
+  echo "$(int2ip $(( $(ip2int "$ip") & $(prefix_mask "$prefix") )))/$prefix"
+}
+
+ip2int() {
+  local a b c d
+  IFS=. read -r a b c d <<< "$1"
+  echo $(( (a << 24) | (b << 16) | (c << 8) | d ))
+}
+
+int2ip() {
+  echo "$(( $1 >> 24 & 255 )).$(( $1 >> 16 & 255 )).$(( $1 >> 8 & 255 )).$(( $1 & 255 ))"
+}
+
+prefix_mask() {
+  echo $(( $1 == 0 ? 0 : (0xFFFFFFFF << (32 - $1)) & 0xFFFFFFFF ))
+}
+
+# Адреса контейнера для подсети не /24: последние перед broadcast, кроме
+# шлюза и адреса хоста. DHCP телефона (iPhone: 172.20.10.0/28) раздаёт
+# с начала подсети, а IPAM docker выбрал бы как раз первый свободный.
+tail_ips() {
+  local net=${1%/*} prefix=${1#*/} host=$2 n bcast ip
+  [ "$prefix" -lt 30 ] || return 0
+  bcast=$(( $(ip2int "$net") | ($(prefix_mask "$prefix") ^ 0xFFFFFFFF) ))
+  n=0
+  for ((ip = bcast - 1; ip > bcast - 8 && n < 4; ip--)); do
+    [ "$(int2ip "$ip")" = "$GATEWAY" ] && continue
+    [ "$(int2ip "$ip")" = "$host" ] && continue
+    int2ip "$ip"
+    n=$((n + 1))
+  done
 }
 
 usb_ifaces() {
@@ -837,7 +864,10 @@ cmd_check() {
     base=$(echo "$SUBNET" | awk -F'[./]' '{print $1"."$2"."$3}')
     candidates=("$base.250" "$base.251" "$base.252" "$base.253")
   else
-    candidates=("")
+    local host_ip
+    host_ip=$(ip -o -4 addr show "$IFACE" 2>/dev/null | awk '{print $4}' | head -1)
+    mapfile -t candidates < <(tail_ips "$SUBNET" "${host_ip%/*}")
+    [ ${#candidates[@]} -gt 0 ] || candidates=("")
   fi
 
   local ip rc=0 ok=0 dry_arg="" interrupted=0
