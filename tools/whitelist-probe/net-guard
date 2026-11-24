@@ -27,6 +27,14 @@ EOF
 die() { echo "ошибка: $*" >&2; exit 1; }
 info() { echo "== $*" >&2; }
 
+# Без iproute2 (Windows, macOS) `x=$(ip ... | sed)` под set -euo pipefail
+# роняет скрипт с кодом 127 и без единого сообщения — говорим прямо.
+require_ip() {
+  command -v ip >/dev/null 2>&1 && return 0
+  die "не найдена команда ip (iproute2). Нужен Linux: Windows и macOS не поддерживаются,
+       в Docker Desktop нет macvlan до USB-модема (README, «Требования к окружению»)"
+}
+
 route_iface() {
   ip route get "$1" 2>/dev/null | sed -n 's/.* dev \([^ ]*\).*/\1/p' | head -1
 }
@@ -209,9 +217,9 @@ cmd_revert() {
 }
 
 case "${1:-}" in
-  status) shift; cmd_status "$@" ;;
-  fix) shift; cmd_fix "$@" ;;
-  revert) shift; cmd_revert "$@" ;;
+  status) shift; require_ip; cmd_status "$@" ;;
+  fix) shift; require_ip; cmd_fix "$@" ;;
+  revert) shift; require_ip; cmd_revert "$@" ;;
   -h|--help|help|"") usage ;;
   *) die "неизвестная команда: $1" ;;
 esac
