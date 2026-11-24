@@ -811,41 +811,66 @@ cmd_check() {
   local all_arg=""
   if [ "$all_ips" -eq 0 ]; then all_arg="--first-ip"; fi
   PROBE_CONTAINER="whitelist-probe-$$"
+  local run_err="$tmp/docker-run.err"
   # Мягкое прерывание: docker получит SIGINT и попросит probe.py сохранить
   # уже проверенное. Повторное нажатие ничего не ускорит — ждём тот же сигнал.
   trap 'interrupted=1' INT TERM
-  for ip in "${candidates[@]}"; do
-    local -a ip_arg=()
-    if [ -n "$ip" ]; then ip_arg=(--ip "$ip"); fi
-    info "проверяю через $IFACE, контейнер ${ip:-авто}"
-    set +e
-    docker run --rm --pull never --security-opt label=disable \
-      --name "$PROBE_CONTAINER" \
-      --network "$NETWORK" "${ip_arg[@]}" \
-      -v "$SCRIPT_DIR:/tool:ro" -v "$tmp:/data" \
-      "$IMAGE" python3 /tool/probe.py \
-        --input /data/input.txt --kind "$kind" --resolver "$GATEWAY" \
-        --sni "$sni" --timeout "$timeout" --jobs "$jobs" --max-ips "$max_ips" \
-        --max-cidr "$max_cidr" \
-        --retries "$retries" --delay "$delay" \
-        $http --portal-host "$portal_host" $second_pass $dry_arg $all_arg --out /data/result.tsv
-    rc=$?
-    set -e
-    if [ "$interrupted" -ne 0 ] || [ $rc -eq 130 ]; then
-      interrupted=1
-      info "прервано: сохраняю то, что уже проверено"
-      break
-    fi
-    if [ $rc -eq 0 ]; then ok=1; break; fi
-    if [ $rc -eq 125 ]; then
-      info "адрес ${ip:-авто} занят или недоступен, пробую следующий"
-      continue
-    fi
-    break
-  done
+
+  # Один заход по адресам контейнера. Вынесено в функцию, чтобы повторить
+  # запуск, если docker потерял состояние macvlan-сети.
+  start_probe() {
+    local ip
+    ok=0
+    : > "$run_err"
+    for ip in "${candidates[@]}"; do
+      local -a ip_arg=()
+      if [ -n "$ip" ]; then ip_arg=(--ip "$ip"); fi
+      info "проверяю через $IFACE, контейнер ${ip:-авто}"
+      set +e
+      docker run --rm --pull never --security-opt label=disable \
+        --name "$PROBE_CONTAINER" \
+        --network "$NETWORK" "${ip_arg[@]}" \
+        -v "$SCRIPT_DIR:/tool:ro" -v "$tmp:/data" \
+        "$IMAGE" python3 /tool/probe.py \
+          --input /data/input.txt --kind "$kind" --resolver "$GATEWAY" \
+          --sni "$sni" --timeout "$timeout" --jobs "$jobs" --max-ips "$max_ips" \
+          --max-cidr "$max_cidr" \
+          --retries "$retries" --delay "$delay" \
+          $http --portal-host "$portal_host" $second_pass $dry_arg $all_arg --out /data/result.tsv \
+          2> >(tee -a "$run_err" >&2)
+      rc=$?
+      set -e
+      if [ "$interrupted" -ne 0 ] || [ $rc -eq 130 ]; then
+        interrupted=1
+        info "прервано: сохраняю то, что уже проверено"
+        return 0
+      fi
+      if [ $rc -eq 0 ]; then ok=1; return 0; fi
+      if [ $rc -eq 125 ]; then
+        info "адрес ${ip:-авто} занят или недоступен, пробую следующий"
+        continue
+      fi
+      return 0
+    done
+  }
+
+  start_probe
+  # Бывает, что сеть числится в docker network ls, но libnetwork не находит
+  # её id при создании endpoint (после перезапуска docker или переподключения
+  # модема). Лечится пересозданием своей сети.
+  if [ "$interrupted" -eq 0 ] && [ $ok -ne 1 ] \
+     && grep -q 'network id .* not found' "$run_err" 2>/dev/null \
+     && case "$NETWORK" in whitelist-macvlan-*) true ;; *) false ;; esac; then
+    info "docker потерял состояние сети $NETWORK — пересоздаю"
+    docker network rm "$NETWORK" >/dev/null 2>&1 || true
+    NETWORK=""
+    ensure_network
+    start_probe
+  fi
   trap - INT TERM
   PROBE_CONTAINER=""
   if [ "$interrupted" -eq 0 ] && [ $ok -ne 1 ]; then
+    [ -s "$run_err" ] && cat "$run_err" >&2
     die "не удалось запустить проверку"
   fi
 
