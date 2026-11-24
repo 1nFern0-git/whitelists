@@ -114,9 +114,8 @@ cmd_merge() {
     fi
   fi
 
-  [ -d "$CHECKS" ] || die "каталог прогонов не найден: $CHECKS"
-
   if [ ${#dirs[@]} -eq 0 ]; then
+    [ -d "$CHECKS" ] || die "каталог прогонов не найден: $CHECKS"
     while IFS= read -r d; do
       [ -n "$d" ] && dirs+=("$d")
     done < <(find "$CHECKS" -mindepth 1 -maxdepth 1 -type d | LC_ALL=C sort)
