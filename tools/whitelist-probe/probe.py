@@ -167,6 +167,11 @@ def browser_tls_probe(ip, sni, timeout):
             return "blocked_tls", ms(), text[:90]
         if "refused" in low:
             return "refused", ms(), "connection refused"
+        # Соединение закрыли до ответа сервера (FIN без ServerHello): так же
+        # выглядит DPI, обрывающий соединение по SNI. От сервера не пришло ни
+        # байта TLS, поэтому это не allow_tls.
+        if "closed abruptly" in low or "ssl_error_syscall" in low or "unexpected eof" in low:
+            return "blocked_tls", ms(), text[:90]
         if "ssl" in name or "certificate" in name or "tls" in low:
             return "allow_tls", ms(), text[:90]
         if "connect" in low or "connection" in low:
@@ -211,6 +216,9 @@ def tls_probe(ip, sni, timeout):
             return "allow", ms(), ""
         except socket.timeout:
             return "blocked_tls_timeout", ms(), "tls handshake timeout"
+        except ssl.SSLEOFError:
+            # закрыто до ответа сервера — см. browser_tls_probe
+            return "blocked_tls", ms(), "connection closed before server reply"
         except ssl.SSLError as e:
             return "allow_tls", ms(), str(e)[:90]
         except ConnectionResetError:
