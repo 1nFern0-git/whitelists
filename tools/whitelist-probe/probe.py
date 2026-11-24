@@ -37,6 +37,7 @@ import argparse
 import ipaddress
 import random
 import re
+import shutil
 import socket
 import ssl
 import subprocess
@@ -535,6 +536,14 @@ def main():
             sum(1 for _, k, _ in targets if k == "domain"),
             sum(1 for _, k, _ in targets if k == "ip")), file=sys.stderr)
         return 0
+
+    # Без dig каждый домен молча получает no_dns, и такой result.tsv
+    # не отличить от настоящего. Важно при запуске вне образа (Termux).
+    if any(k == "domain" for _, k, _ in targets) and not shutil.which("dig"):
+        print("не найден dig: нужен для DNS-запросов к модему "
+              "(alpine: bind-tools, debian: dnsutils, termux: pkg install dnsutils)",
+              file=sys.stderr)
+        return 2
 
     state = []        # (item, result, ips) — порядок исходного списка
     interrupted = False
