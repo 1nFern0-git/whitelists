@@ -711,14 +711,6 @@ cmd_check() {
     info "внимание: jobs>1 может давать ложные блокировки, надёжнее 1"
   fi
 
-  command -v docker >/dev/null || die "docker не установлен"
-  docker info >/dev/null 2>&1 || die "docker недоступен: не запущен или нет прав (добавьте пользователя в группу docker)"
-  local busy
-  busy=$(docker ps --filter "ancestor=$IMAGE" --format '{{.ID}}' 2>/dev/null | head -1)
-  if [ -n "$busy" ]; then
-    info "внимание: уже идёт проверка (контейнер $busy); параллельные прогоны дают ложные блокировки"
-  fi
-
   local tmp
   tmp=$(mktemp -d "${TMPDIR:-/tmp}/whitelist-probe.XXXXXX")
   TMP_DIR=$tmp
@@ -750,6 +742,39 @@ cmd_check() {
     printf '\n' >> "$tmp/input.txt"
   done
   [ -s "$tmp/input.txt" ] || die "входные данные пусты"
+
+  # --dry-run только разбирает вход: модем, macvlan-сеть и сам docker
+  # для этого не нужны
+  if [ "$dry_run" -eq 1 ]; then
+    local -a dry=(--input input.txt --kind "$kind" --max-cidr "$max_cidr"
+                  --dry-run --out result.tsv)
+    if command -v python3 >/dev/null 2>&1; then
+      (cd "$tmp" && python3 "$SCRIPT_DIR/probe.py" "${dry[@]}") \
+        || die "не удалось разобрать входные данные"
+    else
+      command -v docker >/dev/null || die "для --dry-run нужен python3 или docker"
+      ensure_image
+      docker run --rm --pull never --network none --security-opt label=disable \
+        -v "$SCRIPT_DIR:/tool:ro" -v "$tmp:/data" -w /data \
+        "$IMAGE" python3 /tool/probe.py "${dry[@]}" \
+        || die "не удалось разобрать входные данные"
+    fi
+    if [ -n "$out" ] && [ "$out" != "-" ]; then
+      cp "$tmp/result.tsv" "$out"
+      info "результат: $out"
+    else
+      cat "$tmp/result.tsv"
+    fi
+    return 0
+  fi
+
+  command -v docker >/dev/null || die "docker не установлен"
+  docker info >/dev/null 2>&1 || die "docker недоступен: не запущен или нет прав (добавьте пользователя в группу docker)"
+  local busy
+  busy=$(docker ps --filter "ancestor=$IMAGE" --format '{{.ID}}' 2>/dev/null | head -1)
+  if [ -n "$busy" ]; then
+    info "внимание: уже идёт проверка (контейнер $busy); параллельные прогоны дают ложные блокировки"
+  fi
 
   resolve_target
   [ -n "$IFACE" ] || die "не нашёл USB-интерфейс модема (подключён?) или маршрут до $GATEWAY"
