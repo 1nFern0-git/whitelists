@@ -95,6 +95,10 @@ def norm_domain(raw):
 
 
 def dig_a(domain, resolver, timeout, attempts=4):
+    """До attempts запросов A, до первого непустого ответа.
+
+    Заглушки не отсеиваются: их распознаёт probe_tls_only.
+    """
     for _ in range(attempts):
         try:
             p = subprocess.run(
@@ -102,7 +106,7 @@ def dig_a(domain, resolver, timeout, attempts=4):
                  "A", domain, "@" + resolver],
                 capture_output=True, text=True, timeout=timeout + 3,
             )
-            ips = [x for x in p.stdout.split() if is_ipv4(x) and x not in SINK_EXACT]
+            ips = [x for x in p.stdout.split() if is_ipv4(x)]
             if ips:
                 return sorted(set(ips))
         except Exception:
@@ -335,14 +339,16 @@ def probe_tls_only(name, kind, args):
         ips = [name]
     else:
         raw = raw_dig(name, args.resolver, args.dns_timeout)
+        if not raw:
+            # первый запрос мог потеряться: повторяем до проверки на заглушки,
+            # иначе заглушка из повтора уходит в TLS как обычный адрес
+            raw = dig_a(name, args.resolver, args.dns_timeout)
         if raw and all(any(x.startswith(p) for p in SINK_PREFIXES) or x in SINK_EXACT
                        for x in raw):
             return dict(status="blocked_dns", checked_ip="", ips=" ".join(raw),
                         reason="DNS sinkhole", ms=ms(), tries=1), []
         ips = [x for x in raw if not any(x.startswith(p) for p in SINK_PREFIXES)
                and x not in SINK_EXACT]
-        if not ips:
-            ips = dig_a(name, args.resolver, args.dns_timeout)
         if not ips:
             return dict(status="no_dns", checked_ip="", ips="", reason="no A records",
                         ms=ms(), tries=1), []
