@@ -23,6 +23,14 @@ OP_SRC=""
 die() { echo "ошибка: $*" >&2; exit 1; }
 info() { echo "== $*" >&2; }
 
+# Без iproute2 (Windows, macOS) `x=$(ip ... | sed)` под set -euo pipefail
+# роняет скрипт с кодом 127 и без единого сообщения — говорим прямо.
+require_ip() {
+  command -v ip >/dev/null 2>&1 && return 0
+  die "не найдена команда ip (iproute2). Нужен Linux: Windows и macOS не поддерживаются,
+       в Docker Desktop нет macvlan до USB-модема (README, «Требования к окружению»)"
+}
+
 # Состояние для уборки: заполняется в cmd_check, используется в cleanup.
 RUN_DIR=""
 TMP_DIR=""
@@ -296,6 +304,7 @@ default_input() {
 }
 
 resolve_target() {
+  require_ip
   if [ "$GATEWAY_EXPLICIT" -eq 0 ]; then
     local cand gw cidr ip
     for cand in $(usb_ifaces); do
