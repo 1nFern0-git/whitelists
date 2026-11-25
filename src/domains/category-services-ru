@@ -3,6 +3,7 @@
 1c.ru
 1cfresh.com
 bitrix24.ru
+bitrix24.tech
 
 # 2ГИС
 2gis.ae
@@ -98,8 +99,12 @@ dnl-04.geo.kaspersky.com
 dnl-05.geo.kaspersky.com
 dnl-06.geo.kaspersky.com
 dnl-07.geo.kaspersky.com
+dnl-08.geo.kaspersky.com
+dnl-09.geo.kaspersky.com
 dnl-10.geo.kaspersky.com
 dnl-11.geo.kaspersky.com
+dnl-12.geo.kaspersky.com
+dnl-13.geo.kaspersky.com
 dnl-14.geo.kaspersky.com
 dnl-15.geo.kaspersky.com
 dnl-16.geo.kaspersky.com
@@ -108,8 +113,35 @@ dnl-18.geo.kaspersky.com
 dnl-19.geo.kaspersky.com
 edge.geo.kaspersky.com
 kaspersky-labs.com
+kaspersky.be
+kaspersky.co.in
+kaspersky.co.jp
+kaspersky.co.kr
+kaspersky.co.th
+kaspersky.co.uk
+kaspersky.co.za
 kaspersky.com
+kaspersky.com.au
+kaspersky.com.br
+kaspersky.com.cn
+kaspersky.com.tr
+kaspersky.com.tw
+kaspersky.com.vn
+kaspersky.de
+kaspersky.dk
+kaspersky.es
+kaspersky.fi
+kaspersky.fr
+kaspersky.gr
+kaspersky.it
+kaspersky.kz
+kaspersky.ma
+kaspersky.my
+kaspersky.nl
+kaspersky.ro
+kaspersky.rs
 kaspersky.ru
+kaspersky.se
 ksn-dc1-cert.geoksn.kaspersky.com
 ksn-dc1-file.geoksn.kaspersky.com
 ksn-dc1.geoksn.kaspersky.com
@@ -120,11 +152,15 @@ p03.upd.kaspersky.com
 p04.upd.kaspersky.com
 p05.upd.kaspersky.com
 p06.upd.kaspersky.com
+p07.upd.kaspersky.com
 p08.upd.kaspersky.com
 p09.upd.kaspersky.com
+p10.upd.kaspersky.com
+p11.upd.kaspersky.com
 p12.upd.kaspersky.com
 p13.upd.kaspersky.com
 p14.upd.kaspersky.com
+p15.upd.kaspersky.com
 p16.upd.kaspersky.com
 p17.upd.kaspersky.com
 p18.upd.kaspersky.com
@@ -138,10 +174,15 @@ s04.upd.kaspersky.com
 s05.upd.kaspersky.com
 s06.upd.kaspersky.com
 s07.upd.kaspersky.com
+s08.upd.kaspersky.com
+s09.upd.kaspersky.com
+s10.upd.kaspersky.com
+s11.upd.kaspersky.com
 s12.upd.kaspersky.com
 s13.upd.kaspersky.com
 s14.upd.kaspersky.com
 s15.upd.kaspersky.com
+s16.upd.kaspersky.com
 s17.upd.kaspersky.com
 s18.upd.kaspersky.com
 s19.upd.kaspersky.com
@@ -221,6 +262,7 @@ targetads.io
 # Тильда
 tilda.cc
 tilda.ru
+tilda.ws
 tildacdn.com
 
 # Тензор
@@ -251,6 +293,7 @@ adsdk.yandex.ru
 adv.yandex.com
 adv.yandex.ru
 alice.yandex.ru
+alicepro.yandex.ru
 amc.yandex.ru
 an.yandex.ru
 appmetrica.yandex.com
@@ -430,6 +473,7 @@ poudobnee.com
 
 # Прочее
 analytics.mobile.yandex.net
+armgs.team
 bitrix24public.com
 bitrix24shop.ru
 bitrix24site.ru
@@ -449,19 +493,16 @@ jivochat.com.pe
 jivochat.de
 jivochat.es
 jivosite.ru
-kaspersky.kz
 meteoinfo.ru
 movika.com
+mytopf.com
 reaviz.com
 reaviz.ru
 rustore.team
 rustore.tv
 sage-observability.tech
-sberspasibo.ru
 servicepipe.ru
 servicepipe.tech
-spasibo.market
-spasibosberbank.ru
 srv-hub.org
 t-ofp.ru
 t-tech.dev
@@ -504,3 +545,35 @@ realtyverif.ru
 
 # VK WorkSpace
 workspace.vk.ru
+
+# Comss
+comss.ru
+
+# GitVerse
+gitverse.ru
+
+# Mindbox
+botmechanic.io
+ceosummit.ru
+mind-box.ru
+mindbox-notifications.ru
+mindbox.group
+mindbox.site
+mindbox.so
+popmechanic.io
+popmechanic.ru
+sentry.popmechanic.ru
+summitceo.ru
+
+# Positive Technologies
+ptsecurity.com
+standoff365.com
+
+# СберСпасибо
+sberspasibo.ru
+spasibo.digital
+spasibo.market
+spasibosberbank.ru
+
+# СберТех
+sbertech.ru

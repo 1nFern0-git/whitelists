@@ -23,6 +23,7 @@ goinvest.ru
 forabank.ru
 
 # Газпромбанк
+gazprombank.investments
 gazprombank.ru
 gpb.ru
 
@@ -49,13 +50,18 @@ rshb.ru
 
 # Сбербанк
 ads.sber.ru
+clickstream.sberbank.ru
 sber.ru
 sberbank.com
 sberbank.ru
 sbrf.ru
+visor.sberbank.ru
 
 # Т-Банк (Тинькофф)
+4c.ru
 cdn-tinkoff.ru
+education.tbank.ru
+my-tbank.ru
 t-bank-app.ru
 t-bank-app.su
 tbank-online.com
@@ -178,3 +184,21 @@ sdm.ru
 
 # Яндекс Банк
 bank.yandex.ru
+
+# Банк 131
+bank131.ru
+
+# Металлинвестбанк
+metallinvestbank.ru
+
+# Солидарность
+solid.ru
+
+# ТКБ Банк
+tkbbank.ru
+
+# Углеметбанк
+coalmetbank.ru
+
+# ЮниКредит Банк
+unicreditbank.ru
