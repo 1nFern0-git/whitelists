@@ -163,6 +163,13 @@ def browser_tls_probe(ip, sni, timeout):
         low = text.lower()
         if "timeout" in name or "timed out" in low:
             return "blocked_tls_timeout", ms(), "tls handshake timeout"
+        # curl 92 и 16 — ошибки уровня HTTP/2: RST_STREAM или GOAWAY пришли
+        # внутри TLS-сессии, то есть рукопожатие с настоящим сервером уже
+        # состоялось (без ключей сессии такой кадр не подделать). Иначе слово
+        # «reset» в тексте ниже превращает это в blocked_tls. Так отвечает
+        # ozone.ru: «HTTP/2 stream 1 reset by server (error 0x1 PROTOCOL_ERROR)».
+        if re.search(r"curl: \((?:16|92)\)", text):
+            return "allow", ms(), "TLS ok, HTTP/2 error from server"
         if "reset" in low or "recv failure" in low:
             return "blocked_tls", ms(), text[:90]
         if "refused" in low:
