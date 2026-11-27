@@ -1,0 +1,7 @@
+start:    2026-11-25 22:57:47 +0300
+operator: mts (getprop: 25001,25001)
+resolver: 217.74.244.1
+device:   2306EPN60G, Android 16
+code:     cc36b72 field/termux
+options:  
+end:      2026-11-26 03:37:45 +0300 rc=0

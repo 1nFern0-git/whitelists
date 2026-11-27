@@ -1,0 +1,1319 @@
+input	kind	status	checked_ip	all_ips	reason	ms	source	allowed_ips
+cbr.ru	domain	allow	185.178.208.7	185.178.208.7		422	category-bank-ru	185.178.208.7
+bilet.nspk.ru	domain	allow	185.170.3.61	185.170.3.61		434	category-bank-ru	185.170.3.61
+nspk.ru	domain	allow	194.190.0.23	194.190.0.23		1270	category-bank-ru	194.190.0.23
+alfabank.ru	domain	allow	217.12.104.100	217.12.104.100		468	category-bank-ru	217.12.104.100
+alfabank.st	domain	allow	217.12.104.100	217.12.104.100		291	category-bank-ru	217.12.104.100
+alfa.me	domain	allow	217.12.104.100	217.12.104.100		273	category-bank-ru	217.12.104.100
+alfaonline.org	domain	allow	217.12.98.136	217.12.98.136		348	category-bank-ru	217.12.98.136
+alfabank.gcdn.co	domain	blocked_timeout	45.80.213.62	45.80.213.62	tcp connect timeout; попыток: 2	64270	category-bank-ru	
+a-inv.ru	domain	blocked_timeout	195.24.68.10	195.24.68.10	tcp connect timeout; попыток: 2	64261	category-bank-ru	
+alfacapital.ru	domain	blocked_timeout	178.248.235.98	178.248.235.98	tcp connect timeout; попыток: 2	64237	category-bank-ru	
+alfadirect.ru	domain	allow	217.12.96.64	217.12.96.64		400	category-bank-ru	217.12.96.64
+alfaportal.ru	domain	allow	217.12.101.16	217.12.101.16		381	category-bank-ru	217.12.101.16
+goinvest.ru	domain	blocked_timeout	81.161.99.159	81.161.99.159	tcp connect timeout; попыток: 2	64184	category-bank-ru	
+forabank.ru	domain	allow	185.71.64.140	185.71.64.140		316	category-bank-ru	185.71.64.140
+gazprombank.ru	domain	allow	82.202.190.240	82.202.190.240		474	category-bank-ru	82.202.190.240
+gpb.ru	domain	allow	82.202.190.99	82.202.190.99		517	category-bank-ru	82.202.190.99
+dbo-dengi.online	domain	allow	185.163.159.218	185.163.159.218		330	category-bank-ru	185.163.159.218
+mtsdengi.ru	domain	allow	185.163.159.154	185.163.159.154		368	category-bank-ru	185.163.159.154
+psb-ocenka.ru	domain	allow	81.163.22.182	81.163.22.182		729	category-bank-ru	81.163.22.182
+psbank.ru	domain	blocked_timeout	193.200.10.123	193.200.10.123	tcp connect timeout; попыток: 2	64228	category-bank-ru	
+bankline.ru	domain	blocked_timeout	178.130.128.28	178.130.128.28	tcp connect timeout; попыток: 2	64276	category-bank-ru	
+rosbank.ru	domain	blocked_timeout	178.130.129.27	178.130.129.27	tcp connect timeout; попыток: 2	64249	category-bank-ru	
+abr.ru	domain	blocked_timeout	194.226.55.16	194.226.55.16	tcp connect timeout; попыток: 2	64213	category-bank-ru	
+raiffeisen.ru	domain	blocked_timeout	193.28.44.8	193.28.44.8	tcp connect timeout; попыток: 2	59149	category-bank-ru	
+rshb.ru	domain	allow	194.190.12.47	194.190.12.47		2214	category-bank-ru	194.190.12.47
+ads.sber.ru	domain	allow	185.163.159.102	185.163.159.102		2158	category-bank-ru	185.163.159.102
+sber.ru	domain	allow	84.252.149.198	84.252.149.198		463	category-bank-ru	84.252.149.198
+sberbank.com	domain	allow	84.252.149.206	84.252.149.206		425	category-bank-ru	84.252.149.206
+sberbank.ru	domain	allow	84.252.149.206	84.252.149.206		588	category-bank-ru	84.252.149.206
+sbrf.ru	domain	allow	84.252.149.206	84.252.149.206		353	category-bank-ru	84.252.149.206
+cdn-tinkoff.ru	domain	allow	193.17.93.194	193.17.93.194		336	category-bank-ru	193.17.93.194
+t-bank-app.ru	domain	allow	193.17.93.93	193.17.93.93		305	category-bank-ru	193.17.93.93
+t-bank-app.su	domain	allow_tls	193.17.93.93	193.17.93.93	Failed to perform, curl: (35) TLS connect error: error:10000438:SSL routines:OPENSSL_inter	186	category-bank-ru	193.17.93.93
+tbank-online.com	domain	allow	178.130.128.27	178.130.128.27		411	category-bank-ru	178.130.128.27
+tbank.ru	domain	blocked_timeout	132.243.177.54	132.243.177.54	tcp connect timeout; попыток: 2	64234	category-bank-ru	
+tcsbank.ru	domain	allow	178.130.128.27	178.130.128.27		462	category-bank-ru	178.130.128.27
+tinkoff.ru	domain	allow	178.130.128.27	178.130.128.27		408	category-bank-ru	178.130.128.27
+tmiaf.ru	domain	allow	178.130.128.39	178.130.128.39		295	category-bank-ru	178.130.128.39
+tochka.com	domain	allow	91.206.127.19	91.206.127.19		476	category-bank-ru	91.206.127.19
+vtb.ru	domain	allow	195.242.82.13	195.242.82.13 195.242.83.13		684	category-bank-ru	195.242.82.13 195.242.83.13
+www.vtb.ru	domain	allow	195.242.82.13	195.242.82.13		553	category-bank-ru	195.242.82.13
+online.vtb.ru	domain	allow	185.179.144.43	185.179.144.43		719	category-bank-ru	185.179.144.43
+m.vtb.ru	domain	blocked_timeout	46.243.172.235	178.170.195.49 46.243.172.235	tcp connect timeout; попыток: 2	128389	category-bank-ru	
+mos.transport.vtb.ru	domain	allow	91.198.98.140	91.198.98.140		4096	category-bank-ru	91.198.98.140
+vtb-grants.fut.ru	domain	allow	185.129.100.112	185.129.100.112		387	category-bank-ru	185.129.100.112
+vtb.com	domain	allow	195.242.82.14	195.242.82.14 195.242.83.14		828	category-bank-ru	195.242.82.14 195.242.83.14
+xn--90ab2c.xn--p1ai	domain	allow	195.242.82.13	195.242.82.13 195.242.83.13		1037	category-bank-ru	195.242.82.13 195.242.83.13
+bspb.ru	domain	blocked_timeout	217.195.86.165	213.172.3.49 217.195.86.165	tcp connect timeout; попыток: 2	128326	category-bank-ru	
+domrfbank.ru	domain	blocked_timeout	91.232.6.132	91.232.6.132	tcp connect timeout; попыток: 2	64204	category-bank-ru	
+uralsib.ru	domain	allow	185.71.67.109	185.71.67.109		533	category-bank-ru	185.71.67.109
+mkb.ru	domain	blocked_timeout	93.92.113.12	93.92.113.12	tcp connect timeout; попыток: 2	64219	category-bank-ru	
+sovcombank.ru	domain	allow	178.248.233.80	178.248.233.80		399	category-bank-ru	178.248.233.80
+akbars.ru	domain	blocked_timeout	217.198.15.72	217.198.15.72	tcp connect timeout; попыток: 2	64204	category-bank-ru	
+otpbank.ru	domain	allow	91.221.165.177	91.221.165.177		366	category-bank-ru	91.221.165.177
+homecredit.ru	domain	allow	178.248.233.80	178.248.233.80		329	category-bank-ru	178.248.233.80
+bm-bank.ru	domain	allow	178.248.232.192	178.248.232.192		411	category-bank-ru	178.248.232.192
+qiwi.com	domain	error	91.232.230.50	91.232.230.126 91.232.230.139 91.232.230.50	[Errno 103] Software caused connection abort; попыток: 2	166390	category-bank-ru	
+databank.ru	domain	allow	31.31.198.144	31.31.198.144		2867	category-bank-ru	31.31.198.144
+kbb.ru	domain	allow	185.65.148.128	185.65.148.128		2583	category-bank-ru	185.65.148.128
+lanta.ru	domain	allow	185.71.67.174	185.71.67.174		1640	category-bank-ru	185.71.67.174
+modulbank.ru	domain	allow	185.169.155.187	185.169.155.187		6247	category-bank-ru	185.169.155.187
+mtsbank.ru	domain	allow	185.163.159.137	185.163.159.137		346	category-bank-ru	185.163.159.137
+pochtabank.ru	domain	allow	195.242.82.14	195.242.82.14 195.242.83.14		4188	category-bank-ru	195.242.82.14 195.242.83.14
+absolutbank.ru	domain	allow	194.190.0.220	194.190.0.220		933	category-bank-ru	194.190.0.220
+atb.su	domain	allow	178.248.232.151	178.248.232.151		497	category-bank-ru	178.248.232.151
+autofinancebank.ru	domain	allow	185.71.67.102	185.71.67.102		776	category-bank-ru	185.71.67.102
+avangard.ru	domain	allow	193.222.109.106	193.222.109.106		481	category-bank-ru	193.222.109.106
+bancaintesa.ru	domain	allow	82.202.189.164	82.202.189.164		954	category-bank-ru	82.202.189.164
+bank-hlynov.ru	domain	allow	217.16.29.145	217.16.29.145 89.208.222.63		8761	category-bank-ru	217.16.29.145
+bankofkazan.ru	domain	allow	82.202.191.2	82.202.191.2		679	category-bank-ru	82.202.191.2
+bcs-bank.ru	domain	allow	91.206.127.208	91.206.127.208		538	category-bank-ru	91.206.127.208
+boc.ru	domain	allow	185.71.67.86	185.71.67.86		412	category-bank-ru	185.71.67.86
+centrinvest.ru	domain	allow	45.155.92.19	45.155.92.19		464	category-bank-ru	45.155.92.19
+creditural.ru	domain	allow	185.71.64.128	185.71.64.128		721	category-bank-ru	185.71.64.128
+derzhava.ru	domain	allow	91.215.42.60	91.215.42.60		1406	category-bank-ru	91.215.42.60
+efbank.ru	domain	allow	185.71.67.96	185.71.67.96		700	category-bank-ru	185.71.67.96
+evrofinance.ru	domain	allow	185.71.64.174	185.71.64.174		708	category-bank-ru	185.71.64.174
+eximbank.ru	domain	allow	82.202.190.107	82.202.190.107		679	category-bank-ru	82.202.190.107
+expobank.ru	domain	allow	185.71.67.65	185.71.67.65		424	category-bank-ru	185.71.67.65
+finambank.ru	domain	allow	185.169.155.231	185.169.155.231		446	category-bank-ru	185.169.155.231
+genbank.ru	domain	allow	178.248.236.139	178.248.236.139		437	category-bank-ru	178.248.236.139
+ingobank.ru	domain	allow	185.71.67.240	185.71.67.240		856	category-bank-ru	185.71.67.240
+kamkombank.ru	domain	allow	91.215.42.8	91.215.42.8		548	category-bank-ru	91.215.42.8
+koshelev-bank.ru	domain	allow	188.225.19.29	188.225.19.29		531	category-bank-ru	188.225.19.29
+kremlinbank.ru	domain	allow	91.215.42.238	91.215.42.238		619	category-bank-ru	91.215.42.238
+mcbank.ru	domain	allow	185.71.64.167	185.71.64.167		437	category-bank-ru	185.71.64.167
+nico-bank.ru	domain	allow	91.215.42.53	91.215.42.53		1333	category-bank-ru	91.215.42.53
+norvikbank.ru	domain	allow	95.181.181.57	95.181.181.57		356	category-bank-ru	95.181.181.57
+okbank.ru	domain	allow	185.71.64.153	185.71.64.153		488	category-bank-ru	185.71.64.153
+primbank.ru	domain	allow	212.164.140.100	212.164.140.100 212.164.140.110		3243	category-bank-ru	212.164.140.100 212.164.140.110
+priovtb.com	domain	allow	91.215.42.85	91.215.42.85		715	category-bank-ru	91.215.42.85
+pvubank.com	domain	allow	185.215.4.66	185.215.4.66		494	category-bank-ru	185.215.4.66
+rncb.ru	domain	allow	195.242.82.13	195.242.82.13 195.242.83.13		719	category-bank-ru	195.242.82.13 195.242.83.13
+rsb.ru	domain	allow	185.71.67.233	185.71.67.233		392	category-bank-ru	185.71.67.233
+smbfin.ru	domain	allow	87.226.155.72	87.226.155.72		510	category-bank-ru	87.226.155.72
+socium-bank.ru	domain	allow	31.31.198.149	31.31.198.149		517	category-bank-ru	31.31.198.149
+spvb.ru	domain	allow	91.215.41.30	91.215.41.30		717	category-bank-ru	91.215.41.30
+tagbank.ru	domain	allow	31.31.196.77	31.31.196.77		564	category-bank-ru	31.31.196.77
+tatsotsbank.ru	domain	allow	82.202.190.224	82.202.190.224		1202	category-bank-ru	82.202.190.224
+vbrr.ru	domain	allow	185.71.64.90	185.71.64.90		427	category-bank-ru	185.71.64.90
+vtbbo.ru	domain	allow	185.179.146.70	185.179.146.70		434	category-bank-ru	185.179.146.70
+wb-bank.ru	domain	allow	185.62.202.6	185.62.202.6		601	category-bank-ru	185.62.202.6
+yb-payment.ru	domain	allow	213.165.196.135	213.165.196.135 213.165.196.237		702	category-bank-ru	213.165.196.135 213.165.196.237
+rencredit.ru	domain	allow	109.238.90.130	109.238.90.130		435	category-bank-ru	109.238.90.130
+rdb.ru	domain	allow	91.215.42.41	91.215.42.41		568	category-bank-ru	91.215.42.41
+sdm.ru	domain	allow	185.71.67.122	185.71.67.122		455	category-bank-ru	185.71.67.122
+bank.yandex.ru	domain	allow	213.165.196.135	213.165.196.135 213.165.196.237		613	category-bank-ru	213.165.196.135 213.165.196.237
+cdnvideo.com	domain	allow	151.236.80.17	151.236.80.17		732	category-cdn-ru	151.236.80.17
+cdnvideo.ru	domain	allow	151.236.80.22	151.236.80.22		845	category-cdn-ru	151.236.80.22
+trbcdn.net	domain	allow	151.236.80.22	151.236.80.22		573	category-cdn-ru	151.236.80.22
+edgecenter.ru	domain	allow	95.181.177.64	95.181.177.64		393	category-cdn-ru	95.181.177.64
+servicecdn.ru	domain	allow_tls	193.17.93.93	193.17.93.93	Failed to perform, curl: (35) TLS connect error: error:10000438:SSL routines:OPENSSL_inter	204	category-cdn-ru	193.17.93.93
+gcore.ru	domain	blocked_timeout	45.80.213.62	45.80.213.62	tcp connect timeout; попыток: 2	64203	category-cdn-ru	
+gcorelabs.com	domain	blocked_timeout	45.80.213.62	45.80.213.62	tcp connect timeout; попыток: 2	64309	category-cdn-ru	
+ngenix.net	domain	allow	37.220.165.112	37.220.165.112		1293	category-cdn-ru	37.220.165.112
+cloud.vk.com	domain	allow	95.163.254.192	95.163.254.192 95.163.254.193 95.163.254.194 95.163.254.195 95.163.254.196 95.163.254.197		14299	category-cloud-ru	95.163.254.192 95.163.254.193 95.163.254.194 95.163.254.195 95.163.254.196 95.163.254.197
+reg.ru	domain	allow	194.67.72.31	194.67.72.31		405	category-cloud-ru	194.67.72.31
+selectel.ru	domain	blocked_timeout	85.119.149.3	85.119.149.3	tcp connect timeout; попыток: 2	64180	category-cloud-ru	
+timeweb.cloud	domain	blocked_timeout	178.248.239.157	178.248.239.157	tcp connect timeout; попыток: 2	64203	category-cloud-ru	
+timeweb.com	domain	allow	185.65.148.89	185.65.148.89		525	category-cloud-ru	185.65.148.89
+timeweb.tech	domain	allow	185.65.148.89	185.65.148.89		507	category-cloud-ru	185.65.148.89
+timewebcloud.kz	domain	allow	188.225.31.204	188.225.31.204		775	category-cloud-ru	188.225.31.204
+clstorage.net	domain	allow	87.250.251.92	87.250.251.92		459	category-cloud-ru	87.250.251.92
+static-storage.net	domain	allow	87.250.251.92	87.250.251.92		338	category-cloud-ru	87.250.251.92
+yandex.cloud	domain	allow	87.250.250.108	87.250.250.108		369	category-cloud-ru	87.250.250.108
+mcs.mail.ru	domain	allow	95.163.254.192	95.163.254.192 95.163.254.193 95.163.254.194 95.163.254.195 95.163.254.196 95.163.254.197		14329	category-cloud-ru	95.163.254.192 95.163.254.193 95.163.254.194 95.163.254.195 95.163.254.196 95.163.254.197
+cloud.ru	domain	allow	185.71.64.201	185.71.64.201		544	category-cloud-ru	185.71.64.201
+nic.ru	domain	allow	31.177.76.4	31.177.76.4 31.177.80.4		7976	category-cloud-ru	31.177.76.4 31.177.80.4
+sbercloud.ru	domain	allow	185.71.64.201	185.71.64.201		2168	category-cloud-ru	185.71.64.201
+vscale.io	domain	allow	176.57.64.55	176.57.64.55		2455	category-cloud-ru	176.57.64.55
+dostavista.ru	domain	allow	185.71.67.112	185.71.67.112		2307	category-delivery-ru	185.71.67.112
+kuper.ru	domain	allow	194.190.0.50	194.190.0.50		2266	category-delivery-ru	194.190.0.50
+samokat.ru	domain	allow	109.238.88.243	109.238.88.243		2327	category-delivery-ru	109.238.88.243
+eda.yandex.ru	domain	allow	87.250.251.213	87.250.251.213		2715	category-delivery-ru	87.250.251.213
+lavka.yandex.ru	domain	allow	87.250.250.116	87.250.250.116		6283	category-delivery-ru	87.250.250.116
+delivery-club.ru	domain	allow	87.250.254.102	87.250.254.102		7365	category-delivery-ru	87.250.254.102
+sbermarket.ru	domain	allow	195.208.66.164	195.208.66.164		414	category-delivery-ru	195.208.66.164
+foodfox.ru	domain	allow	87.250.251.213	87.250.251.213		393	category-delivery-ru	87.250.251.213
+o-courier.ru	domain	allow	185.73.193.68	185.73.193.68 185.73.194.82		723	category-delivery-ru	185.73.193.68 185.73.194.82
+ocourier.ru	domain	allow	185.73.193.68	185.73.193.68 185.73.194.82		754	category-delivery-ru	185.73.193.68 185.73.194.82
+victoria-group.ru	domain	allow	194.190.0.144	194.190.0.144		3539	category-developer-ru	194.190.0.144
+a101.ru	domain	blocked_timeout	161.104.61.165	161.104.61.165	tcp connect timeout; попыток: 2	64370	category-developer-ru	
+brusnika.ru	domain	blocked_timeout	178.248.234.207	178.248.234.207	tcp connect timeout; попыток: 2	64275	category-developer-ru	
+setlgroup.ru	domain	blocked_timeout	91.214.41.10	91.214.41.10	tcp connect timeout; попыток: 2	64268	category-developer-ru	
+fsk.ru	domain	blocked_timeout	51.250.55.105	51.250.55.105	tcp connect timeout; попыток: 2	64326	category-developer-ru	
+pik.ru	domain	allow	178.248.233.49	178.248.233.49		367	category-developer-ru	178.248.233.49
+lsr.ru	domain	blocked_timeout	91.223.109.85	91.223.109.85	tcp connect timeout; попыток: 2	64288	category-developer-ru	
+aliexpress.ru	domain	blocked_timeout	47.246.133.148	47.246.133.141 47.246.133.142 47.246.133.143 47.246.133.144 47.246.133.147 47.246.133.148	tcp connect timeout; попыток: 2	385098	category-ecommerce-ru	
+avito.ru	domain	allow	176.114.120.24	176.114.120.24 176.114.122.24 176.114.124.24		849	category-ecommerce-ru	176.114.120.24 176.114.122.24 176.114.124.24
+avito.st	domain	allow	176.114.120.6	176.114.120.6 176.114.122.6 176.114.124.6		930	category-ecommerce-ru	176.114.120.6 176.114.122.6 176.114.124.6
+stats.avito.ru	domain	allow	176.114.120.2	176.114.120.2 176.114.122.2 176.114.124.2		767	category-ecommerce-ru	176.114.120.2 176.114.122.2 176.114.124.2
+auto.ru	domain	blocked_timeout	84.201.184.215	84.201.184.215	tcp connect timeout; попыток: 2	64205	category-ecommerce-ru	
+emex.ru	domain	blocked_timeout	83.242.98.105	83.242.98.105	tcp connect timeout; попыток: 2	64241	category-ecommerce-ru	
+api.megamarket.tech	domain	allow	91.206.127.245	91.206.127.245		352	category-ecommerce-ru	91.206.127.245
+api.sbermarket.ru	domain	allow	109.238.90.23	109.238.90.23		396	category-ecommerce-ru	109.238.90.23
+error-tracking.megamarket.tech	domain	allow	91.206.127.218	91.206.127.218		526	category-ecommerce-ru	91.206.127.218
+megamarket.ru	domain	allow	91.206.127.39	91.206.127.39		392	category-ecommerce-ru	91.206.127.39
+sbermegamarket.ru	domain	allow	91.206.127.39	91.206.127.39		409	category-ecommerce-ru	91.206.127.39
+tracing-http.megamarket.tech	domain	allow	91.206.127.218	91.206.127.218		362	category-ecommerce-ru	91.206.127.218
+adv.ozon.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		598	category-ecommerce-ru	185.73.194.77 185.73.195.108
+agency-adv.ozon.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		601	category-ecommerce-ru	185.73.194.77 185.73.195.108
+analytics-adv.ozon.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		579	category-ecommerce-ru	185.73.194.77 185.73.195.108
+beginners-adv.ozon.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		620	category-ecommerce-ru	185.73.194.77 185.73.195.108
+finance.ozon.ru	domain	allow	194.9.211.128	194.9.211.128 194.9.211.64 194.9.211.96 31.130.143.131 31.130.143.3 31.130.143.67		1867	category-ecommerce-ru	194.9.211.128 194.9.211.64 194.9.211.96 31.130.143.131 31.130.143.3 31.130.143.67
+loyalnost-adv.ozon.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		568	category-ecommerce-ru	185.73.194.77 185.73.195.108
+new-adv.ozon.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		608	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozon.by	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		735	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozon.com	domain	allow	185.73.193.68	185.73.193.68 185.73.194.82		607	category-ecommerce-ru	185.73.193.68 185.73.194.82
+ozon.com.by	domain	blocked_timeout	185.99.142.185	185.99.142.184 185.99.142.185	tcp connect timeout; попыток: 2	128429	category-ecommerce-ru	
+ozon.dev	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		777	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozon.express	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		668	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozon.kz	domain	blocked_timeout	188.0.150.134	188.0.150.134	tcp connect timeout; попыток: 2	64206	category-ecommerce-ru	
+ozon.ru	domain	allow	185.73.193.68	185.73.193.68 185.73.194.82		556	category-ecommerce-ru	185.73.193.68 185.73.194.82
+ozon.tech	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		689	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozon.tm	domain	allow	185.73.193.68	185.73.193.68 185.73.194.82		805	category-ecommerce-ru	185.73.193.68 185.73.194.82
+ozoncamp.pro	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		684	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozone.ru	domain	allow	185.73.193.119	185.73.193.119 185.73.195.116		559	category-ecommerce-ru	185.73.193.119 185.73.195.116
+ozonglobalevents.com	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		687	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozonru.co.il	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		611	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozonru.com	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		649	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozonru.eu	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		609	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozonru.me	domain	allow	185.73.195.97	185.73.195.97 185.73.195.98		570	category-ecommerce-ru	185.73.195.97 185.73.195.98
+ozonsport.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		620	category-ecommerce-ru	185.73.194.77 185.73.195.108
+ozonstatus.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		616	category-ecommerce-ru	185.73.194.77 185.73.195.108
+prodvizhenie-adv.ozon.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		613	category-ecommerce-ru	185.73.194.77 185.73.195.108
+questions-adv.ozon.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		580	category-ecommerce-ru	185.73.194.77 185.73.195.108
+sentry.ozon.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		549	category-ecommerce-ru	185.73.194.77 185.73.195.108
+xapi.ozon.by	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		739	category-ecommerce-ru	185.73.194.77 185.73.195.108
+xapi.ozon.com	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		592	category-ecommerce-ru	185.73.194.77 185.73.195.108
+xapi.ozon.kz	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		728	category-ecommerce-ru	185.73.194.77 185.73.195.108
+xapi.ozon.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		583	category-ecommerce-ru	185.73.194.77 185.73.195.108
+xapi.ozonru.me	domain	allow	185.73.195.97	185.73.195.97 185.73.195.98		600	category-ecommerce-ru	185.73.195.97 185.73.195.98
+sberauto.com	domain	allow	185.169.155.9	185.169.155.9		475	category-ecommerce-ru	185.169.155.9
+sentry.sberauto.com	domain	allow	185.169.155.9	185.169.155.9		330	category-ecommerce-ru	185.169.155.9
+ads-gate.wildberries.ru	domain	allow	185.62.202.4	185.62.202.4		371	category-ecommerce-ru	185.62.202.4
+ads-media.wildberries.ru	domain	allow	185.62.202.29	185.62.202.29		300	category-ecommerce-ru	185.62.202.29
+advert-api-sandbox.wildberries.ru	domain	allow	194.1.214.253	194.1.214.253		510	category-ecommerce-ru	194.1.214.253
+advert-api.wildberries.ru	domain	allow	194.1.214.253	194.1.214.253		424	category-ecommerce-ru	194.1.214.253
+advert-media-api.wildberries.ru	domain	allow	194.1.214.253	194.1.214.253		623	category-ecommerce-ru	194.1.214.253
+analytics.wildberries.ru	domain	allow	213.184.155.75	213.184.155.75 85.198.77.15 85.198.79.102		866	category-ecommerce-ru	213.184.155.75 85.198.77.15 85.198.79.102
+marketing-info.wildberries.ru	domain	allow	185.62.202.12	185.62.202.12		300	category-ecommerce-ru	185.62.202.12
+marketplace-sentry.wb.ru	domain	allow	185.62.202.8	185.62.202.8		295	category-ecommerce-ru	185.62.202.8
+mp.world	domain	allow	185.62.202.8	185.62.202.8		345	category-ecommerce-ru	185.62.202.8
+paywb.com	domain	allow	185.62.201.65	185.62.201.65		316	category-ecommerce-ru	185.62.201.65
+rwb.ru	domain	allow	213.184.155.74	213.184.155.74 85.198.77.14 85.198.79.101		1189	category-ecommerce-ru	213.184.155.74 85.198.77.14 85.198.79.101
+sentry.wb.ru	domain	allow	91.230.107.136	91.230.107.136		317	category-ecommerce-ru	91.230.107.136
+velberis.ru	domain	allow	194.1.214.251	194.1.214.251		441	category-ecommerce-ru	194.1.214.251
+vildberis.ru	domain	allow	194.1.214.251	194.1.214.251		470	category-ecommerce-ru	194.1.214.251
+waildberies.ru	domain	allow	194.1.214.251	194.1.214.251		482	category-ecommerce-ru	194.1.214.251
+waldberies.ru	domain	allow	194.1.214.251	194.1.214.251		460	category-ecommerce-ru	194.1.214.251
+waldberis.ru	domain	allow	194.1.214.251	194.1.214.251		452	category-ecommerce-ru	194.1.214.251
+walderis.ru	domain	allow	194.1.214.251	194.1.214.251		451	category-ecommerce-ru	194.1.214.251
+wallberis.ru	domain	allow	194.1.214.251	194.1.214.251		427	category-ecommerce-ru	194.1.214.251
+wb.am	domain	allow	185.138.253.40	185.138.253.40 185.138.255.40 213.184.155.68		935	category-ecommerce-ru	185.138.253.40 185.138.255.40 213.184.155.68
+wb.kg	domain	allow	185.138.253.40	185.138.253.40 185.138.255.40 213.184.155.68		1563	category-ecommerce-ru	185.138.253.40 185.138.255.40 213.184.155.68
+wb.kz	domain	allow	185.138.253.40	185.138.253.40 185.138.255.40 213.184.155.68		2063	category-ecommerce-ru	185.138.253.40 185.138.255.40 213.184.155.68
+wb.ru	domain	allow	185.138.253.1	185.138.253.1 185.138.255.1 213.184.155.142		814	category-ecommerce-ru	185.138.253.1 185.138.255.1 213.184.155.142
+wbpay.ru	domain	allow	91.230.107.48	91.230.107.48 91.230.107.49		921	category-ecommerce-ru	91.230.107.48 91.230.107.49
+wbr.by	domain	allow	185.138.253.40	185.138.253.40 185.138.255.40 213.184.155.68		937	category-ecommerce-ru	185.138.253.40 185.138.255.40 213.184.155.68
+weildberries.ru	domain	allow	194.1.214.251	194.1.214.251		477	category-ecommerce-ru	194.1.214.251
+welberris.ru	domain	allow	194.1.214.251	194.1.214.251		490	category-ecommerce-ru	194.1.214.251
+weldberies.ru	domain	allow	194.1.214.251	194.1.214.251		592	category-ecommerce-ru	194.1.214.251
+weldberres.ru	domain	allow	194.1.214.251	194.1.214.251		465	category-ecommerce-ru	194.1.214.251
+weldberric.ru	domain	allow	194.1.214.251	194.1.214.251		494	category-ecommerce-ru	194.1.214.251
+wellberes.ru	domain	allow	194.1.214.251	194.1.214.251		437	category-ecommerce-ru	194.1.214.251
+wellberies.ru	domain	allow	194.1.214.251	194.1.214.251		448	category-ecommerce-ru	194.1.214.251
+wibes.com	domain	allow	194.1.214.251	194.1.214.251		465	category-ecommerce-ru	194.1.214.251
+wibes.ru	domain	allow	185.62.202.1	185.62.202.1		362	category-ecommerce-ru	185.62.202.1
+widberri.ru	domain	allow	194.1.214.251	194.1.214.251		466	category-ecommerce-ru	194.1.214.251
+widberris.ru	domain	allow	194.1.214.251	194.1.214.251		439	category-ecommerce-ru	194.1.214.251
+wieldberris.ru	domain	allow	194.1.214.251	194.1.214.251		489	category-ecommerce-ru	194.1.214.251
+wilberes.ru	domain	allow	194.1.214.251	194.1.214.251		487	category-ecommerce-ru	194.1.214.251
+wilberies.ru	domain	allow	194.1.214.251	194.1.214.251		503	category-ecommerce-ru	194.1.214.251
+wilberris.ru	domain	allow	194.1.214.251	194.1.214.251		445	category-ecommerce-ru	194.1.214.251
+wilberry.ru	domain	allow	194.1.214.251	194.1.214.251		454	category-ecommerce-ru	194.1.214.251
+wildbaries.ru	domain	allow	194.1.214.251	194.1.214.251		523	category-ecommerce-ru	194.1.214.251
+wildbarries.ru	domain	allow	194.1.214.251	194.1.214.251		479	category-ecommerce-ru	194.1.214.251
+wildbeeries.ru	domain	allow	194.1.214.251	194.1.214.251		488	category-ecommerce-ru	194.1.214.251
+wildberdes.ru	domain	allow	194.1.214.251	194.1.214.251		458	category-ecommerce-ru	194.1.214.251
+wildberiss.ru	domain	allow	194.1.214.251	194.1.214.251		465	category-ecommerce-ru	194.1.214.251
+wildberr.ru	domain	allow	194.1.214.251	194.1.214.251		428	category-ecommerce-ru	194.1.214.251
+wildberries.am	domain	allow	185.62.202.7	185.62.202.7		270	category-ecommerce-ru	185.62.202.7
+wildberries.co.il	domain	allow	185.62.202.7	185.62.202.7		540	category-ecommerce-ru	185.62.202.7
+wildberries.es	domain	allow	185.138.253.40	185.138.253.40 185.138.255.40 213.184.155.68		1363	category-ecommerce-ru	185.138.253.40 185.138.255.40 213.184.155.68
+wildberries.eu	domain	allow	185.138.253.40	185.138.253.40 185.138.255.40 213.184.155.68		1427	category-ecommerce-ru	185.138.253.40 185.138.255.40 213.184.155.68
+wildberries.kg	domain	allow	185.62.202.7	185.62.202.7		523	category-ecommerce-ru	185.62.202.7
+wildberries.kz	domain	allow	185.138.253.40	185.138.253.40 185.138.255.40 213.184.155.68		895	category-ecommerce-ru	185.138.253.40 185.138.255.40 213.184.155.68
+wildberries.lt	domain	allow	185.138.253.40	185.138.253.40 185.138.255.40 213.184.155.68		900	category-ecommerce-ru	185.138.253.40 185.138.255.40 213.184.155.68
+wildberries.ru	domain	allow	185.62.202.2	185.62.202.2		353	category-ecommerce-ru	185.62.202.2
+wildberries.tj	domain	allow	185.62.202.7	185.62.202.7		837	category-ecommerce-ru	185.62.202.7
+wildberries.tm	domain	allow	194.1.214.251	194.1.214.251		535	category-ecommerce-ru	194.1.214.251
+wildberriess.ru	domain	allow	194.1.214.251	194.1.214.251		485	category-ecommerce-ru	194.1.214.251
+wildberrise.ru	domain	allow	194.1.214.251	194.1.214.251		414	category-ecommerce-ru	194.1.214.251
+wildbiries.ru	domain	allow	194.1.214.251	194.1.214.251		505	category-ecommerce-ru	194.1.214.251
+wildbirris.ru	domain	allow	194.1.214.251	194.1.214.251		534	category-ecommerce-ru	194.1.214.251
+wildbress.ru	domain	allow	194.1.214.251	194.1.214.251		484	category-ecommerce-ru	194.1.214.251
+wildbries.ru	domain	allow	194.1.214.251	194.1.214.251		485	category-ecommerce-ru	194.1.214.251
+wildbrris.ru	domain	allow	194.1.214.251	194.1.214.251		480	category-ecommerce-ru	194.1.214.251
+wildeberies.ru	domain	allow	194.1.214.251	194.1.214.251		437	category-ecommerce-ru	194.1.214.251
+wildeberris.ru	domain	allow	194.1.214.251	194.1.214.251		461	category-ecommerce-ru	194.1.214.251
+wiliberes.ru	domain	allow	194.1.214.251	194.1.214.251		481	category-ecommerce-ru	194.1.214.251
+willberiess.ru	domain	allow	194.1.214.251	194.1.214.251		455	category-ecommerce-ru	194.1.214.251
+willberis.ru	domain	allow	194.1.214.251	194.1.214.251		477	category-ecommerce-ru	194.1.214.251
+wldberris.ru	domain	allow	194.1.214.251	194.1.214.251		458	category-ecommerce-ru	194.1.214.251
+wolfberries.ru	domain	allow	194.1.214.251	194.1.214.251		514	category-ecommerce-ru	194.1.214.251
+xn--80acbjgmges7ca.xn--p1ai	domain	allow	213.184.155.74	213.184.155.74 85.198.77.14 85.198.79.101		985	category-ecommerce-ru	213.184.155.74 85.198.77.14 85.198.79.101
+xn--80acbjgsdq2cl.xn--p1ai	domain	allow	213.184.155.74	213.184.155.74 85.198.77.14 85.198.79.101		740	category-ecommerce-ru	213.184.155.74 85.198.77.14 85.198.79.101
+xn--90ab.com	domain	allow	194.1.214.251	194.1.214.251		469	category-ecommerce-ru	194.1.214.251
+market.ru	domain	allow	87.250.250.22	87.250.250.22		348	category-ecommerce-ru	87.250.250.22
+market.yandex.ru	domain	allow	87.250.250.22	87.250.250.22		318	category-ecommerce-ru	87.250.250.22
+yandex.market	domain	allow	213.180.204.242	213.180.204.242		422	category-ecommerce-ru	213.180.204.242
+youla.ru	domain	allow	185.180.201.252	185.180.201.252		2593	category-ecommerce-ru	185.180.201.252
+lamoda.ru	domain	allow	91.221.165.156	91.221.165.156		321	category-ecommerce-ru	91.221.165.156
+drom.ru	domain	allow	185.65.149.115	185.65.149.115		319	category-ecommerce-ru	185.65.149.115
+flowwow.com	domain	allow	109.238.88.51	109.238.88.51		383	category-ecommerce-ru	109.238.88.51
+avito.com	domain	allow	176.114.120.13	176.114.120.13 176.114.122.13 176.114.124.13		918	category-ecommerce-ru	176.114.120.13 176.114.122.13 176.114.124.13
+avito.tech	domain	allow	185.165.123.36	185.165.123.36		554	category-ecommerce-ru	185.165.123.36
+digital-wb.ru	domain	allow	194.1.214.201	194.1.214.201		444	category-ecommerce-ru	194.1.214.201
+rwbautomation.ru	domain	allow	213.184.155.75	213.184.155.75 85.198.77.15 85.198.79.102		965	category-ecommerce-ru	213.184.155.75 85.198.77.15 85.198.79.102
+rwbautomation.tech	domain	allow	213.184.155.75	213.184.155.75 85.198.77.15 85.198.79.102		978	category-ecommerce-ru	213.184.155.75 85.198.77.15 85.198.79.102
+rwbgeo.ru	domain	allow	185.62.202.4	185.62.202.4		421	category-ecommerce-ru	185.62.202.4
+wbautomation.ru	domain	allow	213.184.155.75	213.184.155.75 85.198.77.15 85.198.79.102		997	category-ecommerce-ru	213.184.155.75 85.198.77.15 85.198.79.102
+wbautomation.tech	domain	allow	213.184.155.75	213.184.155.75 85.198.77.15 85.198.79.102		944	category-ecommerce-ru	213.184.155.75 85.198.77.15 85.198.79.102
+wbkids.ru	domain	allow	185.62.202.4	185.62.202.4		357	category-ecommerce-ru	185.62.202.4
+wbmotivator.ru	domain	allow	213.184.155.75	213.184.155.75 85.198.77.15 85.198.79.102		969	category-ecommerce-ru	213.184.155.75 85.198.77.15 85.198.79.102
+wbtek.ru	domain	allow	185.62.202.4	185.62.202.4		385	category-ecommerce-ru	185.62.202.4
+wbwh.ru	domain	allow	213.184.159.5	213.184.159.5		404	category-ecommerce-ru	213.184.159.5
+wbwh.tech	domain	allow	213.184.159.5	213.184.159.5		482	category-ecommerce-ru	213.184.159.5
+dnevnik.ru	domain	allow	178.248.232.13	178.248.232.13		460	category-education-ru	178.248.232.13
+foxford.ru	domain	blocked_timeout	178.248.235.201	178.248.235.201	tcp connect timeout; попыток: 2	64209	category-education-ru	
+interneturok.ru	domain	blocked_timeout	178.248.235.158	178.248.235.158	tcp connect timeout; попыток: 2	64213	category-education-ru	
+sferum.ru	domain	allow	79.137.183.48	79.137.183.48 79.137.183.49 79.137.183.50 79.137.183.51 79.137.183.52 79.137.183.53		1940	category-education-ru	79.137.183.48 79.137.183.49 79.137.183.50 79.137.183.51 79.137.183.52 79.137.183.53
+uchi.ru	domain	allow	109.238.90.119	109.238.90.119		414	category-education-ru	109.238.90.119
+yaklass.ru	domain	allow	109.238.88.251	109.238.88.251		360	category-education-ru	109.238.88.251
+infourok.ru	domain	allow	178.248.232.117	178.248.232.117		628	category-education-ru	178.248.232.117
+school.mos.ru	domain	allow	94.79.51.184	94.79.51.184 94.79.51.185 94.79.51.186		835	category-education-ru	94.79.51.184 94.79.51.185 94.79.51.186
+21-school.ru	domain	allow	91.221.165.183	91.221.165.183		1079	category-education-ru	91.221.165.183
+metrics.21-school.ru	domain	allow	91.221.165.183	91.221.165.183		395	category-education-ru	91.221.165.183
+cups.online	domain	allow	95.163.40.140	95.163.40.140		438	category-education-ru	95.163.40.140
+gb.ru	domain	allow	178.248.232.209	178.248.232.209		1113	category-education-ru	178.248.232.209
+skillbox.ru	domain	allow	185.65.148.253	185.65.148.253		573	category-education-ru	185.65.148.253
+azbukainterneta.ru	domain	allow	5.143.229.37	5.143.229.37 5.143.230.37		915	category-education-ru	5.143.229.37 5.143.230.37
+prodcontest.com	domain	allow	176.57.66.227	176.57.66.227		512	category-education-ru	176.57.66.227
+code-class.ru	domain	allow	185.215.4.52	185.215.4.52		405	category-education-ru	185.215.4.52
+edu-74.ru	domain	allow	188.19.122.186	188.19.122.186		1071	category-education-ru	188.19.122.186
+skillbox.pro	domain	allow	185.65.148.253	185.65.148.253		394	category-education-ru	185.65.148.253
+tetrika-school.ru	domain	allow	185.169.155.68	185.169.155.68		439	category-education-ru	185.169.155.68
+umschool.net	domain	allow	95.181.177.116	95.181.177.116		418	category-education-ru	95.181.177.116
+koronapay.com	domain	blocked_timeout	194.85.18.104	193.232.20.100 193.232.94.100 194.85.18.104	tcp connect timeout; попыток: 2	192616	category-finance-ru	
+moex.com	domain	allow	85.118.181.8	85.118.181.8		547	category-finance-ru	85.118.181.8
+multiqr.ru	domain	blocked_timeout	84.252.147.147	84.252.147.147	tcp connect timeout; попыток: 2	64338	category-finance-ru	
+platiqr.ru	domain	blocked_timeout	84.252.147.184	84.252.147.184	tcp connect timeout; попыток: 2	64444	category-finance-ru	
+sbp.nspk.ru	domain	allow	194.190.0.23	194.190.0.23		420	category-finance-ru	194.190.0.23
+unistream.ru	domain	allow	185.71.67.208	185.71.67.208		364	category-finance-ru	185.71.67.208
+yoobusiness.ru	domain	allow	185.129.100.112	185.129.100.112		468	category-finance-ru	185.129.100.112
+yoomoney.ru	domain	allow	109.235.165.222	109.235.165.222 185.71.78.222		917	category-finance-ru	109.235.165.222 185.71.78.222
+atomyze.ru	domain	allow	178.130.128.40	178.130.128.40		647	category-finance-ru	178.130.128.40
+atomyze.tech	domain	allow	178.130.128.40	178.130.128.40		674	category-finance-ru	178.130.128.40
+best2pay.net	domain	allow	91.215.41.68	91.215.41.68		681	category-finance-ru	91.215.41.68
+custody.ru	domain	allow	178.130.128.39	178.130.128.39		546	category-finance-ru	178.130.128.39
+ozon-credit.ru	domain	allow	194.9.211.128	194.9.211.128 194.9.211.64 194.9.211.96 31.130.143.131 31.130.143.3 31.130.143.67		1697	category-finance-ru	194.9.211.128 194.9.211.64 194.9.211.96 31.130.143.131 31.130.143.3 31.130.143.67
+ozoncard.ru	domain	allow	185.73.194.77	185.73.194.77 185.73.195.108		580	category-finance-ru	185.73.194.77 185.73.195.108
+banki.ru	domain	allow	185.71.67.241	185.71.67.241		362	category-finance-ru	185.71.67.241
+bcs.ru	domain	allow	109.238.88.230	109.238.88.230		1274	category-finance-ru	109.238.88.230
+gorodpay.ru	domain	allow	82.202.190.155	82.202.190.155		809	category-finance-ru	82.202.190.155
+dolyame.ru	domain	allow	178.130.128.42	178.130.128.42		464	category-finance-ru	178.130.128.42
+nsd.ru	domain	allow	85.118.181.77	85.118.181.77		533	category-finance-ru	85.118.181.77
+broker.ru	domain	allow	91.206.127.208	91.206.127.208		479	category-finance-ru	91.206.127.208
+credistory.ru	domain	allow	91.206.127.169	91.206.127.169		380	category-finance-ru	91.206.127.169
+depository.ru	domain	allow	178.130.128.39	178.130.128.39		750	category-finance-ru	178.130.128.39
+payecom.ru	domain	allow	84.252.146.51	84.252.146.51		466	category-finance-ru	84.252.146.51
+rbcollect.ru	domain	allow	178.130.128.39	178.130.128.39		694	category-finance-ru	178.130.128.39
+rbcredit.ru	domain	allow	178.130.128.39	178.130.128.39		409	category-finance-ru	178.130.128.39
+t-capital-funds.ru	domain	allow	178.130.128.40	178.130.128.40		587	category-finance-ru	178.130.128.40
+t-investlab.ru	domain	allow	178.130.128.27	178.130.128.27		669	category-finance-ru	178.130.128.27
+t.finance	domain	allow	178.130.128.39	178.130.128.39		472	category-finance-ru	178.130.128.39
+tinkoff-group.com	domain	allow	178.130.128.39	178.130.128.39		568	category-finance-ru	178.130.128.39
+tinkoffcapital.ru	domain	allow	178.130.128.40	178.130.128.40		444	category-finance-ru	178.130.128.40
+rncoluminis.ru	domain	allow	90.156.201.103	90.156.201.103 90.156.201.111 90.156.201.36 90.156.201.48		24513	category-finance-ru	90.156.201.103
+sberfactoring.ru	domain	allow	91.221.165.244	91.221.165.244		1076	category-finance-ru	91.221.165.244
+sberleasing.ru	domain	allow	185.71.64.66	185.71.64.66		847	category-finance-ru	185.71.64.66
+spbexchange.ru	domain	allow	185.71.64.226	185.71.64.226		778	category-finance-ru	185.71.64.226
+t-dengi.ru	domain	allow	178.130.128.39	178.130.128.39		643	category-finance-ru	178.130.128.39
+t-finance.ru	domain	allow	178.130.128.39	178.130.128.39		377	category-finance-ru	178.130.128.39
+tpension.ru	domain	allow	178.130.128.27	178.130.128.27		420	category-finance-ru	178.130.128.27
+capitalt.ru	domain	allow	178.130.128.40	178.130.128.40		658	category-finance-ru	178.130.128.40
+phoenix-ca.ru	domain	allow	178.130.128.39	178.130.128.39		2599	category-finance-ru	178.130.128.39
+finuslugi.ru	domain	allow	193.232.39.17	193.232.39.17		478	category-finance-ru	193.232.39.17
+era-invest.ru	domain	allow	178.130.128.39	178.130.128.39		721	category-finance-ru	178.130.128.39
+gov.ru	domain	open_http	95.173.128.89	95.173.128.89 95.173.128.90	HTTP 200 ; попыток: 2	112505	category-gov-ru	
+government.ru	domain	open_http	95.173.136.162	95.173.136.162 95.173.136.163 95.173.136.168	HTTP 200 ; попыток: 2	168508	category-gov-ru	
+gosuslugi.ru	domain	allow	213.59.253.7	213.59.253.7 213.59.254.7		633	category-gov-ru	213.59.253.7 213.59.254.7
+gu-st.ru	domain	allow	212.193.152.183	212.193.152.183 212.193.152.230 212.193.152.75 212.193.152.96 212.193.153.0 212.193.153.34 212.193.153.35 212.193.153.45 37.220.161.124 37.220.161.127 37.220.161.222 37.220.161.236 37.220.165.44 37.220.165.59 37.220.165.78 37.220.165.89		5988	category-gov-ru	212.193.152.183 212.193.152.230 212.193.152.75 212.193.152.96 212.193.153.0 212.193.153.34 212.193.153.35 212.193.153.45 37.220.161.124 37.220.161.127 37.220.161.222 37.220.161.236 37.220.165.44 37.220.165.59 37.220.165.78 37.220.165.89
+gosweb.gosuslugi.ru	domain	allow	109.207.1.46	109.207.1.46		506	category-gov-ru	109.207.1.46
+emias.info	domain	allow	82.202.189.136	82.202.189.136		527	category-gov-ru	82.202.189.136
+mgfoms.ru	domain	blocked_timeout	195.133.255.86	195.133.255.86	tcp connect timeout; попыток: 2	64301	category-gov-ru	
+ro-edu.ru	domain	blocked_timeout	84.47.134.154	84.47.134.154	tcp connect timeout; попыток: 2	64254	category-gov-ru	
+rosseti.ru	domain	allow	91.214.119.200	91.214.119.200		445	category-gov-ru	91.214.119.200
+rosatom.ru	domain	blocked_timeout	185.179.36.228	185.179.36.228	tcp connect timeout; попыток: 2	64200	category-gov-ru	
+rostec.ru	domain	allow	185.163.159.23	185.163.159.23		586	category-gov-ru	185.163.159.23
+rosneft.ru	domain	allow	91.142.135.123	91.142.135.123		544	category-gov-ru	91.142.135.123
+aoglonass.ru	domain	allow	193.232.47.4	193.232.47.4		446	category-gov-ru	193.232.47.4
+rskrf.ru	domain	allow	185.71.67.15	185.71.67.15		317	category-gov-ru	185.71.67.15
+rosreestr.gov.ru	domain	blocked_timeout	217.77.104.150	217.77.104.150	tcp connect timeout; попыток: 2	64208	category-gov-ru	
+sfr.gov.ru	domain	allow	195.161.52.80	195.161.52.80		625	category-gov-ru	195.161.52.80
+minzdrav.gov.ru	domain	blocked_timeout	194.0.219.107	194.0.219.107	tcp connect timeout; попыток: 2	64322	category-gov-ru	
+digital.gov.ru	domain	allow	109.207.1.110	109.207.1.110		444	category-gov-ru	109.207.1.110
+mintrud.gov.ru	domain	allow	95.173.157.45	95.173.157.45		28547	category-gov-ru	95.173.157.45
+xn--90adear.xn--p1ai	domain	allow	185.6.47.14	185.6.47.14 185.6.47.15		586	category-gov-ru	185.6.47.14 185.6.47.15
+mchs.gov.ru	domain	allow	84.42.111.247	84.42.111.247 95.173.146.182		1690	category-gov-ru	84.42.111.247 95.173.146.182
+epp.genproc.gov.ru	domain	allow	82.202.190.211	82.202.190.211		745	category-gov-ru	82.202.190.211
+roskazna.gov.ru	domain	allow	194.226.91.205	194.226.91.205		1510	category-gov-ru	194.226.91.205
+fas.gov.ru	domain	blocked_timeout	194.226.26.36	194.226.26.36	tcp connect timeout; попыток: 2	64266	category-gov-ru	
+rospotrebnadzor.ru	domain	allow	82.202.190.187	82.202.190.187		670	category-gov-ru	82.202.190.187
+epd-portal.ru	domain	allow	178.185.169.4	178.185.169.4		512	category-gov-ru	178.185.169.4
+arbitr.ru	domain	allow	95.167.220.237	95.167.220.237		512	category-gov-ru	95.167.220.237
+cdep.ru	domain	blocked_timeout	84.42.111.138	84.42.111.138	tcp connect timeout; попыток: 2	64310	category-gov-ru	
+ssrf.ru	domain	allow	95.167.220.236	95.167.220.236		771	category-gov-ru	95.167.220.236
+sudrf.ru	domain	blocked_timeout	84.42.111.139	84.42.111.139	tcp connect timeout; попыток: 2	64221	category-gov-ru	
+vekrf.ru	domain	allow	95.167.220.236	95.167.220.236		400	category-gov-ru	95.167.220.236
+vkks.ru	domain	allow	95.167.220.236	95.167.220.236		568	category-gov-ru	95.167.220.236
+vsrf.ru	domain	blocked_timeout	95.173.156.120	95.173.156.120	tcp connect timeout; попыток: 2	64238	category-gov-ru	
+cikrf.ru	domain	open_http	5.143.246.137	5.143.246.137	HTTP 200 ; попыток: 2	518	category-gov-ru	
+ebs.ru	domain	allow	95.167.154.115	95.167.154.115		421	category-gov-ru	95.167.154.115
+goskey.ru	domain	allow	193.162.30.87	193.162.30.87		444	category-gov-ru	193.162.30.87
+grfc.ru	domain	blocked_timeout	212.192.156.10	212.192.156.10	tcp connect timeout; попыток: 2	64220	category-gov-ru	
+izbirkom.ru	domain	open_http	5.143.246.137	5.143.246.137	HTTP 200 ; попыток: 2	679	category-gov-ru	
+kremlin.ru	domain	open_http	95.173.136.70	95.173.136.70 95.173.136.71 95.173.136.72	HTTP 200 ; попыток: 2	168564	category-gov-ru	
+mil.ru	domain	allow	212.192.156.38	212.192.156.38		474	category-gov-ru	212.192.156.38
+nalog.ru	domain	allow	195.208.66.236	195.208.66.236		387	category-gov-ru	195.208.66.236
+xn--80ajghhoc2aj1c8b.xn--p1ai	domain	allow	95.129.236.157	95.129.236.157		676	category-gov-ru	95.129.236.157
+xn--b1aew.xn--p1ai	domain	allow	185.6.47.14	185.6.47.14 185.6.47.15		2276	category-gov-ru	185.6.47.14 185.6.47.15
+xn--90aivcdt6dxbc.xn--p1ai	domain	allow	185.169.155.16	185.169.155.16		359	category-gov-ru	185.169.155.16
+moskva-putinu.ru	domain	allow	212.193.153.247	212.193.153.247 37.220.165.127		1122	category-gov-ru	212.193.153.247 37.220.165.127
+mos.ru	domain	allow	212.11.151.57	212.11.151.57		367	category-gov-ru	212.11.151.57
+spb.ru	domain	blocked_timeout	178.210.74.11	178.210.74.11	tcp connect timeout; попыток: 2	64242	category-gov-ru	
+kchr.ru	domain	allow	91.215.43.43	91.215.43.43		431	category-gov-ru	91.215.43.43
+mosreg.ru	domain	allow	185.169.155.145	185.169.155.145		391	category-gov-ru	185.169.155.145
+tatarstan.ru	domain	allow	85.233.75.12	85.233.75.12		880	category-gov-ru	85.233.75.12
+xn--80aacoonefzg3am8b1fsb.xn--p1ai	domain	allow	195.34.235.86	195.34.235.86		872	category-gov-ru	195.34.235.86
+i-ola.ru	domain	blocked_timeout	45.10.218.34	45.10.218.34	tcp connect timeout; попыток: 2	64224	category-gov-ru	
+kemerovo.ru	domain	blocked_timeout	178.248.239.182	178.248.239.182	tcp connect timeout; попыток: 2	64299	category-gov-ru	
+krd.ru	domain	allow	95.181.181.126	95.181.181.126		331	category-gov-ru	95.181.181.126
+kursk.ru	domain	allow	185.71.67.154	185.71.67.154		516	category-gov-ru	185.71.67.154
+pskov.ru	domain	allow	91.215.42.140	91.215.42.140		485	category-gov-ru	91.215.42.140
+vlc.ru	domain	blocked_timeout	37.200.76.142	37.200.76.142	tcp connect timeout; попыток: 2	64346	category-gov-ru	
+xn--80acgfbsl1azdqr.xn--p1ai	domain	blocked_timeout	194.213.117.42	194.213.117.42	tcp connect timeout; попыток: 2	64240	category-gov-ru	
+er.ru	domain	allow	178.248.232.136	178.248.232.136		15191	category-gov-ru	178.248.232.136
+kprf.ru	domain	blocked_timeout	178.248.237.108	178.248.237.108	tcp connect timeout; попыток: 2	64171	category-gov-ru	
+ldpr.ru	domain	blocked_timeout	46.46.151.76	185.33.175.180 46.46.151.76	tcp connect timeout; попыток: 2	128815	category-gov-ru	
+newpeople.ru	domain	blocked_timeout	178.248.235.127	178.248.235.127	tcp connect timeout; попыток: 2	64259	category-gov-ru	
+rsv.ru	domain	allow	185.71.64.165	185.71.64.165		532	category-gov-ru	185.71.64.165
+xn--90acagbhgpca7c8c7f.xn--p1ai	domain	allow	91.215.41.46	91.215.41.46		448	category-gov-ru	91.215.41.46
+myrosmol.ru	domain	allow	178.185.170.244	178.185.170.244		553	category-gov-ru	178.185.170.244
+tvoyhod.online	domain	allow	195.19.99.168	195.19.99.168		530	category-gov-ru	195.19.99.168
+znanierussia.ru	domain	allow	185.65.150.53	185.65.150.53		561	category-gov-ru	185.65.150.53
+onf.ru	domain	allow	91.215.41.97	91.215.41.97		812	category-gov-ru	91.215.41.97
+altaiobr04.ru	domain	allow	95.215.85.143	95.215.85.143		662	category-gov-ru	95.215.85.143
+volgograd.ru	domain	allow	82.202.190.244	82.202.190.244		627	category-gov-ru	82.202.190.244
+gosdolgi.ru	domain	allow	178.130.128.27	178.130.128.27		413	category-gov-ru	178.130.128.27
+emias.ru	domain	allow	82.202.189.136	82.202.189.136		319	category-gov-ru	82.202.189.136
+irk.ru	domain	allow	91.215.42.22	91.215.42.22		898	category-gov-ru	91.215.42.22
+kaluga.ru	domain	allow	62.148.128.14	62.148.128.14		634	category-gov-ru	62.148.128.14
+sgo41.ru	domain	allow	212.164.137.112	212.164.137.112		1388	category-gov-ru	212.164.137.112
+kirov.ru	domain	allow	87.226.192.100	87.226.192.100		435	category-gov-ru	87.226.192.100
+lipetsk.ru	domain	allow	185.183.175.230	185.183.175.230		797	category-gov-ru	185.183.175.230
+emias.mos.ru	domain	allow	82.202.189.125	82.202.189.125		430	category-gov-ru	82.202.189.125
+transport.mos.ru	domain	allow	178.178.127.20	178.178.127.20		678	category-gov-ru	178.178.127.20
+xn--b1afabzvcegckfhg.xn--p1ai	domain	allow	92.50.233.170	92.50.233.170		525	category-gov-ru	92.50.233.170
+smolensk.ru	domain	allow	46.61.209.7	46.61.209.7		1403	category-gov-ru	46.61.209.7
+surgut.ru	domain	allow	31.31.196.177	31.31.196.177		471	category-gov-ru	31.31.196.177
+tula.ru	domain	open_http	109.207.1.13	109.207.1.13	HTTP 301 http://tula-r71.gosweb.gosuslugi.ru/; попыток: 2	56365	category-gov-ru	
+ulan-ude.ru	domain	allow_tls	81.177.140.28	81.177.140.28	Failed to perform, curl: (35) TLS connect error: error:10000458:SSL routines:OPENSSL_inter	361	category-gov-ru	81.177.140.28
+cap.ru	domain	allow	194.226.90.15	194.226.90.15		2018	category-gov-ru	194.226.90.15
+e-yakutia.ru	domain	allow	91.201.237.94	91.201.237.94		1711	category-gov-ru	91.201.237.94
+tinkoffinsurance.ru	domain	allow	178.130.128.27	178.130.128.27		412	category-insurance-ru	178.130.128.27
+tinsurance.ru	domain	allow	178.130.128.27	178.130.128.27		388	category-insurance-ru	178.130.128.27
+ingos.ru	domain	blocked_timeout	195.245.206.101	195.245.206.101	tcp connect timeout; попыток: 2	64168	category-insurance-ru	
+renins.ru	domain	allow	155.212.234.79	155.212.234.79		362	category-insurance-ru	155.212.234.79
+reso.ru	domain	blocked_timeout	195.66.78.2	195.66.78.2	tcp connect timeout; попыток: 2	64269	category-insurance-ru	
+vsk.ru	domain	allow	185.71.67.58	185.71.67.58		382	category-insurance-ru	185.71.67.58
+makc.ru	domain	allow	178.176.229.208	178.176.229.208		1051	category-insurance-ru	178.176.229.208
+energogarant.ru	domain	allow	185.71.67.208	185.71.67.208		537	category-insurance-ru	185.71.67.208
+rgs.ru	domain	blocked_timeout	132.243.178.72	132.243.178.72	tcp connect timeout; попыток: 2	64242	category-insurance-ru	
+sogaz.ru	domain	blocked_timeout	185.173.80.30	185.173.80.30	tcp connect timeout; попыток: 2	64267	category-insurance-ru	
+alfastrah.ru	domain	blocked_timeout	185.65.151.250	185.65.151.250	tcp connect timeout; попыток: 2	64252	category-insurance-ru	
+renaissance.ru	domain	allow	87.226.166.137	87.226.166.137		652	category-insurance-ru	87.226.166.137
+autoins.ru	domain	blocked_timeout	90.156.206.245	90.156.206.245	tcp connect timeout; попыток: 2	64309	category-insurance-ru	
+amt-insurance.com	domain	allow	188.225.28.201	188.225.28.201		524	category-insurance-ru	188.225.28.201
+reso-med.com	domain	allow	185.71.67.195	185.71.67.195		880	category-insurance-ru	185.71.67.195
+tinkoffinsurancefuture.ru	domain	allow	178.130.128.27	178.130.128.27		518	category-insurance-ru	178.130.128.27
+tinsurancefuture.ru	domain	allow	178.130.128.27	178.130.128.27		498	category-insurance-ru	178.130.128.27
+sberbank-insurance.ru	domain	allow	185.169.155.195	185.169.155.195		525	category-insurance-ru	185.169.155.195
+dom.gosuslugi.ru	domain	allow	217.107.108.114	217.107.108.114		567	category-jkh-ru	217.107.108.114
+mosenergosbyt.ru	domain	allow	195.82.140.164	195.82.140.164		533	category-jkh-ru	195.82.140.164
+nesk.ru	domain	blocked_timeout	188.43.92.25	188.43.92.25	tcp connect timeout; попыток: 2	64333	category-jkh-ru	
+cdek-am.com	domain	allow	155.212.234.107	155.212.234.107		566	category-logistics-ru	155.212.234.107
+cdek-bd.com	domain	allow	185.215.4.28	185.215.4.28		540	category-logistics-ru	185.215.4.28
+cdek-express.cn	domain	allow	176.57.66.95	176.57.66.95		947	category-logistics-ru	176.57.66.95
+cdek-express.in	domain	allow	185.215.4.28	185.215.4.28		665	category-logistics-ru	185.215.4.28
+cdek-express.uz	domain	allow	155.212.234.126	155.212.234.126		560	category-logistics-ru	155.212.234.126
+cdek-hk.com	domain	allow	185.215.4.28	185.215.4.28		574	category-logistics-ru	185.215.4.28
+cdek-il.com	domain	allow	185.215.4.28	185.215.4.28		634	category-logistics-ru	185.215.4.28
+cdek-th.com	domain	allow	185.215.4.28	185.215.4.28		544	category-logistics-ru	185.215.4.28
+cdek-tm.com	domain	allow	185.215.4.28	185.215.4.28		536	category-logistics-ru	185.215.4.28
+cdek.by	domain	blocked_timeout	212.67.25.16	212.67.25.16	tcp connect timeout; попыток: 2	64343	category-logistics-ru	
+cdek.ge	domain	allow	155.212.234.107	155.212.234.107		443	category-logistics-ru	155.212.234.107
+cdek.id	domain	allow	185.215.4.28	185.215.4.28		751	category-logistics-ru	185.215.4.28
+cdek.kg	domain	allow	155.212.234.107	155.212.234.107		538	category-logistics-ru	155.212.234.107
+cdek.kz	domain	blocked_timeout	212.67.24.4	212.67.24.4	tcp connect timeout; попыток: 2	64462	category-logistics-ru	
+cdek.media	domain	allow	185.215.4.20	185.215.4.20		582	category-logistics-ru	185.215.4.20
+cdek.ru	domain	allow	91.206.127.236	91.206.127.236		377	category-logistics-ru	91.206.127.236
+cdek.shopping	domain	allow	195.209.89.191	195.209.89.191 46.235.189.241 78.41.111.190		2139	category-logistics-ru	195.209.89.191 46.235.189.241 78.41.111.190
+cdek.vn	domain	allow	185.215.4.28	185.215.4.28		779	category-logistics-ru	185.215.4.28
+cdektr.com	domain	allow	185.215.4.28	185.215.4.28		593	category-logistics-ru	185.215.4.28
+dellin.ru	domain	allow	178.248.238.211	178.248.238.211		338	category-logistics-ru	178.248.238.211
+topdelivery.ru	domain	allow	81.177.165.117	81.177.165.117		477	category-logistics-ru	81.177.165.117
+pochta.ru	domain	allow	212.164.140.129	212.164.140.129 212.164.140.151 212.164.140.153		1306	category-logistics-ru	212.164.140.129 212.164.140.151 212.164.140.153
+russianpost.ru	domain	allow	91.215.36.177	91.215.36.177		591	category-logistics-ru	91.215.36.177
+boxberry.ru	domain	allow	5.45.196.38	5.45.196.38		565	category-logistics-ru	5.45.196.38
+baikalsr.ru	domain	blocked_timeout	185.178.210.41	185.178.210.41	tcp connect timeout; попыток: 2	64210	category-logistics-ru	
+jde.ru	domain	blocked_timeout	176.53.244.109	176.53.244.109	tcp connect timeout; попыток: 2	64284	category-logistics-ru	
+tk-kit.ru	domain	blocked_timeout	89.22.170.122	89.22.170.122	tcp connect timeout; попыток: 2	64264	category-logistics-ru	
+dpd.ru	domain	allow	185.169.155.177	185.169.155.177		478	category-logistics-ru	185.169.155.177
+ponyexpress.ru	domain	allow	109.238.88.5	109.238.88.5		1038	category-logistics-ru	109.238.88.5
+ad-cdek.ru	domain	open_http	109.70.26.37	109.70.26.37 194.85.61.76	HTTP 200 ; попыток: 2	112484	category-logistics-ru	
+sberlogistics.ru	domain	allow	185.169.155.141	185.169.155.141		389	category-logistics-ru	185.169.155.141
+360.ru	domain	blocked_timeout	95.129.238.243	95.129.238.243	tcp connect timeout; попыток: 2	64273	category-media-ru	
+aif.ru	domain	allow	91.214.119.200	91.214.119.200 91.214.119.234		677	category-media-ru	91.214.119.200 91.214.119.234
+domashniy.ru	domain	blocked_timeout	155.212.235.134	155.212.235.134	tcp connect timeout; попыток: 2	64200	category-media-ru	
+dumatv.ru	domain	allow	193.107.234.251	193.107.234.251		807	category-media-ru	193.107.234.251
+friday.ru	domain	allow	185.178.210.70	185.178.210.70		428	category-media-ru	185.178.210.70
+gazeta.ru	domain	allow	81.19.72.0	81.19.72.0 81.19.72.1 81.19.72.2		809	category-media-ru	81.19.72.0 81.19.72.1 81.19.72.2
+iz.ru	domain	allow	185.178.208.4	185.178.208.4		456	category-media-ru	185.178.208.4
+kommersant.ru	domain	allow	178.248.238.19	178.248.238.19		284	category-media-ru	178.248.238.19
+kp.ru	domain	allow	185.71.64.65	185.71.64.65		339	category-media-ru	185.71.64.65
+lenta.ru	domain	allow	81.19.72.32	81.19.72.32 81.19.72.33 81.19.72.34		1152	category-media-ru	81.19.72.32 81.19.72.33 81.19.72.34
+matchtv.ru	domain	allow	95.181.177.110	95.181.177.110		302	category-media-ru	95.181.177.110
+mir24.tv	domain	allow	195.128.157.168	195.128.157.168		1016	category-media-ru	195.128.157.168
+mk.ru	domain	allow	85.193.70.155	85.193.70.155		516	category-media-ru	85.193.70.155
+muz-tv.ru	domain	blocked_timeout	155.212.235.135	155.212.235.135	tcp connect timeout; попыток: 2	64249	category-media-ru	
+newizv.ru	domain	allow	185.71.67.194	185.71.67.194		444	category-media-ru	185.71.67.194
+ntv.ru	domain	allow	185.129.100.162	185.129.100.162 185.129.100.166		1773	category-media-ru	185.129.100.162 185.129.100.166
+radiomir.fm	domain	allow	195.128.157.168	195.128.157.168		1276	category-media-ru	195.128.157.168
+radioplayer.ru	domain	allow	23.105.253.197	23.105.253.197		787	category-media-ru	23.105.253.197
+rbc.ru	domain	allow	178.248.235.46	178.248.235.46		361	category-media-ru	178.248.235.46
+ria.ru	domain	allow	194.190.139.47	194.190.139.47		360	category-media-ru	194.190.139.47
+spastv.ru	domain	blocked_timeout	89.223.25.35	89.223.25.35	tcp connect timeout; попыток: 2	64207	category-media-ru	
+soloviev.live	domain	blocked_timeout	90.156.201.46	90.156.201.113 90.156.201.36 90.156.201.38 90.156.201.46	tcp connect timeout; попыток: 2	256756	category-media-ru	
+sport24.ru	domain	blocked_timeout	178.248.238.127	178.248.238.127	tcp connect timeout; попыток: 2	64209	category-media-ru	
+tass.ru	domain	allow	91.221.165.118	91.221.165.118		430	category-media-ru	91.221.165.118
+tnt-online.ru	domain	blocked_timeout	91.207.59.163	91.207.59.163	tcp connect timeout; попыток: 2	64209	category-media-ru	
+vedomosti.ru	domain	allow	185.65.148.33	185.65.148.33		443	category-media-ru	185.65.148.33
+vitrina.tv	domain	allow	95.129.236.190	95.129.236.190		458	category-media-ru	95.129.236.190
+vgtrk.ru	domain	blocked_timeout	185.65.150.49	185.65.150.49	tcp connect timeout; попыток: 2	64195	category-media-ru	
+tvzvezda.ru	domain	allow	95.129.232.3	95.129.232.3		366	category-media-ru	95.129.232.3
+rambler.ru	domain	allow	81.19.82.0	81.19.82.0 81.19.82.1 81.19.82.2		826	category-media-ru	81.19.82.0 81.19.82.1 81.19.82.2
+1tv.ru	domain	allow	178.248.233.188	178.248.233.188		350	category-media-ru	178.248.233.188
+ren.tv	domain	blocked_timeout	185.178.208.3	185.178.208.3	tcp connect timeout; попыток: 2	64227	category-media-ru	
+tvc.ru	domain	allow	178.248.233.127	178.248.233.127		432	category-media-ru	178.248.233.127
+5-tv.ru	domain	allow	91.215.42.192	91.215.42.192		442	category-media-ru	91.215.42.192
+tv3.ru	domain	allow	193.232.151.164	193.232.151.164		484	category-media-ru	193.232.151.164
+rg.ru	domain	allow	185.65.148.114	185.65.148.114		338	category-media-ru	185.65.148.114
+rusradio.ru	domain	allow	178.248.232.163	178.248.232.163		469	category-media-ru	178.248.232.163
+europaplus.ru	domain	blocked_timeout	45.145.65.156	45.145.65.156	tcp connect timeout; попыток: 2	64233	category-media-ru	
+retrofm.ru	domain	blocked_timeout	37.139.62.51	37.139.62.51	tcp connect timeout; попыток: 2	64242	category-media-ru	
+habr.com	domain	blocked_timeout	178.248.237.68	178.248.237.68	tcp connect timeout; попыток: 2	64213	category-media-ru	
+ctc.ru	domain	allow	91.206.127.24	91.206.127.24		368	category-media-ru	91.206.127.24
+forbes.ru	domain	blocked_timeout	5.252.32.223	5.252.32.223	tcp connect timeout; попыток: 2	64248	category-media-ru	
+1tv.com	domain	allow	185.129.100.25	185.129.100.25		578	category-media-ru	185.129.100.25
+1917live.red	domain	allow	185.79.236.160	185.79.236.160 89.191.237.183		849	category-media-ru	185.79.236.160 89.191.237.183
+actualidad-rt.com	domain	allow	89.191.237.193	89.191.237.193		462	category-media-ru	89.191.237.193
+ahilesva.info	domain	allow	185.79.236.160	185.79.236.160 89.191.237.183		644	category-media-ru	185.79.236.160 89.191.237.183
+arabicrt.ru	domain	allow	89.191.237.182	185.79.236.168 89.191.237.182		8490	category-media-ru	89.191.237.182
+baranky.com	domain	allow	89.191.237.151	185.79.236.51 89.191.237.151		8463	category-media-ru	89.191.237.151
+book1917.live	domain	allow	185.79.236.160	185.79.236.160 89.191.237.183		754	category-media-ru	185.79.236.160 89.191.237.183
+de-rt.com	domain	allow	185.79.236.191	185.79.236.191		404	category-media-ru	185.79.236.191
+de-rt.org	domain	allow	89.191.237.195	89.191.237.195		491	category-media-ru	89.191.237.195
+de-rtnews.com	domain	allow	185.79.236.191	185.79.236.191		456	category-media-ru	185.79.236.191
+de-rtnews.net	domain	allow	89.191.237.195	89.191.237.195		499	category-media-ru	89.191.237.195
+dert.online	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		806	category-media-ru	185.79.236.191 89.191.237.195
+dert.site	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		786	category-media-ru	185.79.236.191 89.191.237.195
+dert.tech	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		777	category-media-ru	185.79.236.191 89.191.237.195
+es-rt.com	domain	allow	185.79.236.175	185.79.236.175 89.191.237.193		651	category-media-ru	185.79.236.175 89.191.237.193
+esrt.online	domain	allow	185.79.236.175	185.79.236.175 89.191.237.193		784	category-media-ru	185.79.236.175 89.191.237.193
+esrt.press	domain	allow	185.79.236.175	185.79.236.175 89.191.237.193		822	category-media-ru	185.79.236.175 89.191.237.193
+esrt.site	domain	allow	178.176.128.128	178.176.128.128		434	category-media-ru	178.176.128.128
+esrt.space	domain	allow	178.176.128.128	178.176.128.128		418	category-media-ru	178.176.128.128
+esrt.tech	domain	allow	185.79.236.175	185.79.236.175 89.191.237.193		842	category-media-ru	185.79.236.175 89.191.237.193
+esrt.website	domain	allow	178.176.128.128	178.176.128.128		509	category-media-ru	178.176.128.128
+freeassange.tech	domain	allow	185.79.236.191	185.79.236.191		443	category-media-ru	185.79.236.191
+freede.tech	domain	allow	185.79.236.191	185.79.236.191		417	category-media-ru	185.79.236.191
+freedert.online	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		713	category-media-ru	185.79.236.191 89.191.237.195
+gatewaytorussia.ru	domain	allow	89.191.237.151	185.79.236.51 89.191.237.151		8484	category-media-ru	89.191.237.151
+kanzlerdaddy.ru	domain	allow	185.79.236.160	185.79.236.160 89.191.237.183		602	category-media-ru	185.79.236.160 89.191.237.183
+noticias-rt.com	domain	allow	185.79.236.175	185.79.236.175 89.191.237.193		699	category-media-ru	185.79.236.175 89.191.237.193
+notimundo.press	domain	allow	185.79.236.175	185.79.236.175 89.191.237.193		734	category-media-ru	185.79.236.175 89.191.237.193
+oknovrossiu.ru	domain	allow	89.191.237.151	185.79.236.51 89.191.237.151		8464	category-media-ru	89.191.237.151
+pobeda.page	domain	allow	185.79.236.160	185.79.236.160 89.191.237.183		1014	category-media-ru	185.79.236.160 89.191.237.183
+romanovs100.com	domain	allow	185.79.236.160	185.79.236.160 89.191.237.183		1010	category-media-ru	185.79.236.160 89.191.237.183
+rt.com	domain	allow	91.215.41.4	91.215.41.4		407	category-media-ru	91.215.41.4
+rt.rs	domain	allow	91.215.41.13	91.215.41.13		498	category-media-ru	91.215.41.13
+rtarabic.com	domain	blocked_timeout	185.79.236.60	185.79.236.60	tcp connect timeout; попыток: 2	64381	category-media-ru	
+rtarabic.net	domain	allow	89.191.237.191	185.79.236.173 89.191.237.191		8518	category-media-ru	89.191.237.191
+rtarabic.org	domain	allow	89.191.237.191	185.79.236.173 89.191.237.191		8544	category-media-ru	89.191.237.191
+rtarabic.ru	domain	allow	89.191.237.191	185.79.236.173 89.191.237.191		8546	category-media-ru	89.191.237.191
+rtbrasil.com	domain	allow	89.191.237.157	89.191.237.157		443	category-media-ru	89.191.237.157
+rtbrasil.info	domain	allow	89.191.237.157	185.79.236.157 89.191.237.157		8602	category-media-ru	89.191.237.157
+rtde.agency	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		801	category-media-ru	185.79.236.191 89.191.237.195
+rtde.expert	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		767	category-media-ru	185.79.236.191 89.191.237.195
+rtde.info	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		768	category-media-ru	185.79.236.191 89.191.237.195
+rtde.life	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		964	category-media-ru	185.79.236.191 89.191.237.195
+rtde.live	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		917	category-media-ru	185.79.236.191 89.191.237.195
+rtde.me	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		834	category-media-ru	185.79.236.191 89.191.237.195
+rtde.media	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		887	category-media-ru	185.79.236.191 89.191.237.195
+rtde.online	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		804	category-media-ru	185.79.236.191 89.191.237.195
+rtde.org	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		875	category-media-ru	185.79.236.191 89.191.237.195
+rtde.press	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		789	category-media-ru	185.79.236.191 89.191.237.195
+rtde.site	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		758	category-media-ru	185.79.236.191 89.191.237.195
+rtde.team	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		821	category-media-ru	185.79.236.191 89.191.237.195
+rtde.tech	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		817	category-media-ru	185.79.236.191 89.191.237.195
+rtde.website	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		765	category-media-ru	185.79.236.191 89.191.237.195
+rtde.world	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		817	category-media-ru	185.79.236.191 89.191.237.195
+rtde.xyz	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		813	category-media-ru	185.79.236.191 89.191.237.195
+rtdefree.info	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		824	category-media-ru	185.79.236.191 89.191.237.195
+rtdefree.me	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		748	category-media-ru	185.79.236.191 89.191.237.195
+rtdefree.online	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		855	category-media-ru	185.79.236.191 89.191.237.195
+rtdefree.tech	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		771	category-media-ru	185.79.236.191 89.191.237.195
+rtdoc.tv	domain	allow	185.79.236.160	185.79.236.160		482	category-media-ru	185.79.236.160
+rtdocumentary.online	domain	allow	185.79.236.160	185.79.236.160 89.191.237.183		774	category-media-ru	185.79.236.160 89.191.237.183
+rtenafrique.tv	domain	allow	89.191.237.196	185.79.236.192 89.191.237.196		8495	category-media-ru	89.191.237.196
+rtenfrancais.tv	domain	blocked_timeout	185.79.236.192	185.79.236.192	tcp connect timeout; попыток: 2	64242	category-media-ru	
+rtenfrance.tv	domain	allow	178.176.128.128	178.176.128.128		426	category-media-ru	178.176.128.128
+rtespanol.com	domain	allow	185.79.236.175	185.79.236.175 89.191.237.193		763	category-media-ru	185.79.236.175 89.191.237.193
+rtfrance.tv	domain	allow	89.191.237.196	185.79.236.192 89.191.237.196		8481	category-media-ru	89.191.237.196
+rtnewsde.com	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		717	category-media-ru	185.79.236.191 89.191.237.195
+rtnewsde.online	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		828	category-media-ru	185.79.236.191 89.191.237.195
+rtnewsde.pro	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		754	category-media-ru	185.79.236.191 89.191.237.195
+rtnewsde.site	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		828	category-media-ru	185.79.236.191 89.191.237.195
+rtnewsde.tech	domain	allow	185.79.236.191	185.79.236.191 89.191.237.195		826	category-media-ru	185.79.236.191 89.191.237.195
+rtnewsru.com	domain	allow	89.191.237.192	185.79.236.174 89.191.237.192		8615	category-media-ru	89.191.237.192
+rtrunews.com	domain	allow	89.191.237.192	185.79.236.174 89.191.237.192		8496	category-media-ru	89.191.237.192
+rtxv.ru	domain	allow	185.79.236.160	185.79.236.160 89.191.237.183		765	category-media-ru	185.79.236.160 89.191.237.183
+runewsrt.com	domain	allow	89.191.237.192	185.79.236.174 89.191.237.192		8497	category-media-ru	89.191.237.192
+ruptly.agency	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64726	category-media-ru	
+rurtnews.com	domain	allow	89.191.237.192	185.79.236.174 89.191.237.192		8520	category-media-ru	89.191.237.192
+russiabeyond.com	domain	allow	89.191.237.151	185.79.236.51 89.191.237.151		8443	category-media-ru	89.191.237.151
+russiaislove.com	domain	allow	89.191.237.151	185.79.236.51 89.191.237.151		8382	category-media-ru	89.191.237.151
+russiatoday.ru	domain	allow	89.191.237.194	89.191.237.194		472	category-media-ru	89.191.237.194
+shop-rt.com	domain	allow	91.215.41.3	91.215.41.3		591	category-media-ru	91.215.41.3
+slavicstar.com	domain	allow	89.191.237.151	185.79.236.51 89.191.237.151		8457	category-media-ru	89.191.237.151
+sn-esp.site	domain	allow	185.79.236.175	185.79.236.175 89.191.237.193		704	category-media-ru	185.79.236.175 89.191.237.193
+swentr.site	domain	allow	89.191.237.192	185.79.236.174 89.191.237.192		8540	category-media-ru	89.191.237.192
+watchingthehawks.com	domain	allow	89.191.237.182	185.79.236.168 89.191.237.182		8518	category-media-ru	89.191.237.182
+b2c-digest.ru	domain	allow	195.209.82.229	195.209.82.229 212.193.152.80 37.220.161.251 37.220.163.23 37.220.165.231		2947	category-media-ru	195.209.82.229 212.193.152.80 37.220.161.251 37.220.163.23 37.220.165.231
+baltnews.com	domain	allow	194.190.139.86	194.190.139.86		570	category-media-ru	194.190.139.86
+baltnews.lt	domain	allow	194.190.139.86	194.190.139.86		392	category-media-ru	194.190.139.86
+ferra.ru	domain	allow	81.19.72.52	81.19.72.52 81.19.72.53 81.19.72.54 81.19.72.55		1136	category-media-ru	81.19.72.52 81.19.72.53 81.19.72.54 81.19.72.55
+hardware.ru	domain	allow	81.19.72.52	81.19.72.52 81.19.72.53 81.19.72.54 81.19.72.55		1096	category-media-ru	81.19.72.52 81.19.72.53 81.19.72.54 81.19.72.55
+ixbt.media	domain	allow	185.215.4.27	185.215.4.27		518	category-media-ru	185.215.4.27
+ixbt.ru	domain	allow	81.19.72.52	81.19.72.52 81.19.72.53 81.19.72.54 81.19.72.55		1132	category-media-ru	81.19.72.52 81.19.72.53 81.19.72.54 81.19.72.55
+russoutdoor.ru	domain	allow	185.62.202.10	185.62.202.10		371	category-media-ru	185.62.202.10
+rbth.com	domain	allow	89.191.237.151	185.79.236.51 89.191.237.151		9297	category-media-ru	89.191.237.151
+seclab.lat	domain	allow	178.248.236.145	178.248.236.145		432	category-media-ru	178.248.236.145
+securitylab.ru	domain	allow	178.248.236.145	178.248.236.145		437	category-media-ru	178.248.236.145
+radiosputnik.ria.ru	domain	allow	194.190.139.47	194.190.139.47		406	category-media-ru	194.190.139.47
+radiosputnik.ru	domain	allow	194.190.139.4	194.190.139.4		461	category-media-ru	194.190.139.4
+sputnikglobe.com	domain	allow	194.190.139.3	194.190.139.3		488	category-media-ru	194.190.139.3
+sputnikimages.com	domain	allow	91.206.127.25	91.206.127.25		399	category-media-ru	91.206.127.25
+sputnikmediabank.com	domain	allow	91.206.127.25	91.206.127.25		625	category-media-ru	91.206.127.25
+sputniknews.com	domain	allow	194.190.139.3	194.190.139.3		489	category-media-ru	194.190.139.3
+thequestion.ru	domain	allow	213.180.204.242	213.180.204.242		408	category-media-ru	213.180.204.242
+tok.media	domain	allow	194.190.139.88	194.190.139.88		444	category-media-ru	194.190.139.88
+uma.media	domain	allow	81.161.98.179	155.212.235.232 81.161.98.179		8466	category-media-ru	81.161.98.179
+inosmi.ru	domain	allow	194.190.139.41	194.190.139.41		462	category-media-ru	194.190.139.41
+patriarchia.ru	domain	allow	95.129.232.101	95.129.232.101		448	category-media-ru	95.129.232.101
+posledovania.ru	domain	allow	151.236.84.93	151.236.84.93		1171	category-media-ru	151.236.84.93
+xn--80adfddrquddgz.xn--p1ai	domain	allow	31.31.197.139	31.31.197.139		373	category-media-ru	31.31.197.139
+restream.ru	domain	allow	212.193.153.152	212.193.153.152 212.193.153.157 37.220.163.154		900	category-media-ru	212.193.153.152 212.193.153.157 37.220.163.154
+stv.ru	domain	open_http	109.70.26.37	109.70.26.37 194.85.61.76	HTTP 200 ; попыток: 2	112675	category-media-ru	
+t-j.ru	domain	allow	178.248.232.177	178.248.232.177		350	category-media-ru	178.248.232.177
+tinkoffjournal.ru	domain	allow	178.248.232.177	178.248.232.177		369	category-media-ru	178.248.232.177
+ukraina.ru	domain	allow	185.169.155.233	185.169.155.233		671	category-media-ru	185.169.155.233
+mamadeti.ru	domain	allow	185.65.148.202	185.65.148.202		664	category-medicine-ru	185.65.148.202
+medsi.ru	domain	allow	212.109.215.214	212.109.215.214		575	category-medicine-ru	212.109.215.214
+smartmed.pro	domain	allow	212.109.215.139	212.109.215.139 213.108.128.246		8781	category-medicine-ru	212.109.215.139
+invitro.ru	domain	blocked_timeout	185.129.103.93	185.129.103.93	tcp connect timeout; попыток: 2	64226	category-medicine-ru	
+gemotest.ru	domain	blocked_timeout	185.11.199.148	185.11.199.148	tcp connect timeout; попыток: 2	64247	category-medicine-ru	
+apteka.ru	domain	blocked_timeout	178.248.238.97	178.248.238.97	tcp connect timeout; попыток: 2	64238	category-medicine-ru	
+eapteka.ru	domain	allow	195.209.82.243	195.209.82.243 37.220.162.231 37.220.165.220		1352	category-medicine-ru	195.209.82.243 37.220.162.231 37.220.165.220
+zdravcity.ru	domain	blocked_timeout	185.178.208.215	185.178.208.215	tcp connect timeout; попыток: 2	64270	category-medicine-ru	
+docdoc.ru	domain	allow	109.238.88.151	109.238.88.151		2448	category-medicine-ru	109.238.88.151
+sberhealth.ru	domain	allow	91.206.127.224	91.206.127.224		413	category-medicine-ru	91.206.127.224
+aptekamos.ru	domain	blocked_timeout	185.165.123.34	185.165.123.34	tcp connect timeout; попыток: 2	64183	category-medicine-ru	
+prodoctorov.ru	domain	allow	91.221.164.73	91.221.164.73		403	category-medicine-ru	91.221.164.73
+aptekiplus.ru	domain	allow	178.248.232.66	178.248.232.66		288	category-medicine-ru	178.248.232.66
+eaptechka.online	domain	allow	37.140.192.68	37.140.192.68		457	category-medicine-ru	37.140.192.68
+genotek.ru	domain	allow	138.16.240.67	138.16.240.67		342	category-medicine-ru	138.16.240.67
+gorzdrav.org	domain	allow	185.71.64.131	185.71.64.131		466	category-medicine-ru	185.71.64.131
+gorzdrav.spb.ru	domain	allow	46.243.177.93	46.243.177.93		625	category-medicine-ru	46.243.177.93
+mosgorzdrav.ru	domain	allow	212.45.30.1	212.45.30.1 212.45.30.2 212.45.30.3		2443	category-medicine-ru	212.45.30.1 212.45.30.2 212.45.30.3
+zub.ru	domain	allow	95.129.232.55	95.129.232.55		572	category-medicine-ru	95.129.232.55
+farmlend.ru	domain	allow	178.248.232.109	178.248.232.109		405	category-medicine-ru	178.248.232.109
+av.ru	domain	allow	109.238.90.194	109.238.90.194		373	category-retail-ru	109.238.90.194
+auchan.ru	domain	allow	178.248.232.180	178.248.232.180		420	category-retail-ru	178.248.232.180
+bristol.ru	domain	allow	178.248.233.140	178.248.233.140		342	category-retail-ru	178.248.233.140
+burgerkingrus.ru	domain	allow	194.190.0.37	194.190.0.37		333	category-retail-ru	194.190.0.37
+detmir.ru	domain	allow	95.129.232.159	95.129.232.159		416	category-retail-ru	95.129.232.159
+dixy.ru	domain	allow	178.248.233.46	178.248.233.46		654	category-retail-ru	178.248.233.46
+dns-shop.ru	domain	allow	185.65.148.196	185.65.148.196		315	category-retail-ru	185.65.148.196
+dodois.com	domain	blocked_timeout	150.171.109.195	150.171.109.195	tcp connect timeout; попыток: 2	64260	category-retail-ru	
+dodopizza.com	domain	allow	91.221.165.34	91.221.165.34		481	category-retail-ru	91.221.165.34
+dodopizza.ru	domain	allow	91.221.164.120	91.221.164.120		433	category-retail-ru	91.221.164.120
+dostaevsky.ru	domain	blocked_tls_timeout	178.248.236.74	178.248.236.74	tls handshake timeout; попыток: 2	66414	category-retail-ru	
+evrasia.rest	domain	blocked_timeout	217.197.238.66	217.197.238.66	tcp connect timeout; попыток: 2	64370	category-retail-ru	
+vkusnoitochka.ru	domain	allow	185.65.148.127	185.65.148.127 185.65.149.127		2692	category-retail-ru	185.65.148.127 185.65.149.127
+fix-price.com	domain	blocked_timeout	89.208.86.157	37.139.43.125 89.208.86.157	tcp connect timeout; попыток: 2	128331	category-retail-ru	
+krasyar.ru	domain	allow	178.248.239.241	178.248.239.241		433	category-retail-ru	178.248.239.241
+lemanapro.ru	domain	blocked_timeout	185.65.151.100	185.65.151.100	tcp connect timeout; попыток: 2	64216	category-retail-ru	
+lenta.com	domain	allow	178.248.232.88	178.248.232.88		335	category-retail-ru	178.248.232.88
+lenta.tech	domain	blocked_timeout	185.65.150.60	185.65.150.60	tcp connect timeout; попыток: 2	64274	category-retail-ru	
+kazanexpress.ru	domain	blocked_timeout	158.160.102.60	158.160.102.60	tcp connect timeout; попыток: 2	64240	category-retail-ru	
+magnit.ru	domain	allow	155.212.234.29	155.212.234.29		958	category-retail-ru	155.212.234.29
+mm.ru	domain	blocked_timeout	158.160.102.60	158.160.102.60	tcp connect timeout; попыток: 2	64272	category-retail-ru	
+metro-cc.ru	domain	allow	95.181.177.3	95.181.177.3		2254	category-retail-ru	95.181.177.3
+5ka.ru	domain	allow	91.221.164.42	91.221.164.42		399	category-retail-ru	91.221.164.42
+5post.market	domain	allow	193.232.108.210	193.232.108.210		446	category-retail-ru	193.232.108.210
+chizhik.club	domain	allow	91.221.164.93	91.221.164.93		475	category-retail-ru	91.221.164.93
+clubx5.ru	domain	allow	193.232.108.22	193.232.108.22		428	category-retail-ru	193.232.108.22
+dialogx5.ru	domain	open_http	109.70.26.37	109.70.26.37 194.85.61.76	HTTP 200 ; попыток: 2	112541	category-retail-ru	
+e5.ru	domain	allow	188.72.103.101	188.72.103.101		568	category-retail-ru	188.72.103.101
+fivepost.ru	domain	allow	193.232.108.16	193.232.108.16		385	category-retail-ru	193.232.108.16
+idx5.ru	domain	allow	193.232.108.22	193.232.108.22		380	category-retail-ru	193.232.108.22
+jx5.ru	domain	allow	188.72.103.101	188.72.103.101		561	category-retail-ru	188.72.103.101
+keyx5.ru	domain	allow	193.232.108.22	193.232.108.22		494	category-retail-ru	193.232.108.22
+mnogolososya.ru	domain	blocked_timeout	158.160.150.74	158.160.150.74	tcp connect timeout; попыток: 2	64281	category-retail-ru	
+myapelsin.ru	domain	allow	193.232.108.68	193.232.108.68		371	category-retail-ru	193.232.108.68
+okolo.app	domain	allow	46.173.21.100	46.173.21.100 46.173.21.101 46.173.21.99		891	category-retail-ru	46.173.21.100 46.173.21.101 46.173.21.99
+perekrestok.ru	domain	allow	109.238.90.201	109.238.90.201		324	category-retail-ru	109.238.90.201
+x5.com	domain	blocked_timeout	85.10.159.177	85.10.159.177	tcp connect timeout; попыток: 2	64334	category-retail-ru	
+x5.ru	domain	allow	91.206.100.17	91.206.100.17		504	category-retail-ru	91.206.100.17
+x5.tech	domain	allow	91.206.100.17	91.206.100.17		934	category-retail-ru	91.206.100.17
+x5club.ru	domain	allow	193.232.108.201	193.232.108.201		587	category-retail-ru	193.232.108.201
+x5id.ru	domain	allow	91.206.100.36	91.206.100.36		471	category-retail-ru	91.206.100.36
+x5l.ru	domain	allow	188.72.103.101	188.72.103.101		453	category-retail-ru	188.72.103.101
+x5media.ru	domain	allow	176.57.65.141	176.57.65.141		445	category-retail-ru	176.57.65.141
+x5paket.ru	domain	allow	193.232.108.16	193.232.108.16		346	category-retail-ru	193.232.108.16
+x5q.ru	domain	allow	188.72.103.101	188.72.103.101		574	category-retail-ru	188.72.103.101
+x5w.ru	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64331	category-retail-ru	
+krasnoeibeloe.ru	domain	allow	95.181.177.105	95.181.177.105		701	category-retail-ru	95.181.177.105
+okmarket.ru	domain	blocked_timeout	213.165.196.127	213.165.196.127	tcp connect timeout; попыток: 2	64237	category-retail-ru	
+rostics.ru	domain	allow	212.193.152.179	212.193.152.179 212.193.152.232 212.193.152.243 37.220.161.187		1181	category-retail-ru	212.193.152.179 212.193.152.232 212.193.152.243 37.220.161.187
+unirest.tech	domain	blocked_timeout	51.250.45.50	51.250.45.50	tcp connect timeout; попыток: 2	64309	category-retail-ru	
+ilovesakura.ru	domain	blocked_timeout	178.248.235.113	178.248.235.113	tcp connect timeout; попыток: 2	64282	category-retail-ru	
+myspar.ru	domain	allow	185.165.123.103	185.165.123.103		631	category-retail-ru	185.165.123.103
+sushiwok.ru	domain	blocked_timeout	138.16.207.46	138.16.207.46	tcp connect timeout; попыток: 2	64278	category-retail-ru	
+winelab.ru	domain	blocked_timeout	178.248.238.7	178.248.238.7	tcp connect timeout; попыток: 2	64245	category-retail-ru	
+vkusvill.ru	domain	allow	178.248.232.221	178.248.232.221		1114	category-retail-ru	178.248.232.221
+mvideo.ru	domain	allow	185.71.67.88	185.71.67.88		354	category-retail-ru	185.71.67.88
+citilink.ru	domain	blocked_timeout	178.248.234.66	178.248.234.66	tcp connect timeout; попыток: 2	64265	category-retail-ru	
+goldapple.ru	domain	allow	195.209.90.166	195.209.90.166 195.209.92.146 212.193.153.24 37.220.162.254		2037	category-retail-ru	195.209.90.166 195.209.92.146 212.193.153.24 37.220.162.254
+letu.ru	domain	allow	37.220.162.232	37.220.162.232 37.220.165.162 37.220.165.219		2471	category-retail-ru	37.220.162.232 37.220.165.162 37.220.165.219
+rivegosh.ru	domain	blocked_timeout	82.97.243.107	82.97.243.107	tcp connect timeout; попыток: 2	64318	category-retail-ru	
+sportmaster.ru	domain	allow	178.248.232.80	178.248.232.80		338	category-retail-ru	178.248.232.80
+eldorado.ru	domain	allow	185.71.67.56	185.71.67.56		440	category-retail-ru	185.71.67.56
+petrovich.ru	domain	allow	78.155.198.17	78.155.198.17		507	category-retail-ru	78.155.198.17
+vseinstrumenti.ru	domain	allow	185.169.155.85	185.169.155.85		362	category-retail-ru	185.169.155.85
+ostin.com	domain	allow	178.248.232.245	178.248.232.245		362	category-retail-ru	178.248.232.245
+sokolov.ru	domain	allow	178.248.232.167	178.248.232.167		413	category-retail-ru	178.248.232.167
+ixbt.shop	domain	allow	176.57.64.62	176.57.64.62		620	category-retail-ru	176.57.64.62
+stolichki.ru	domain	allow	109.238.88.146	109.238.88.146		830	category-retail-ru	109.238.88.146
+1c-bitrix.ru	domain	allow	178.248.233.117	178.248.233.117		389	category-services-ru	178.248.233.117
+1c.ru	domain	allow	185.12.152.144	185.12.152.144		680	category-services-ru	185.12.152.144
+1cfresh.com	domain	allow	185.98.85.241	185.98.85.241 193.32.190.194		8555	category-services-ru	185.98.85.241
+bitrix24.ru	domain	blocked_timeout	178.248.238.120	178.248.238.120	tcp connect timeout; попыток: 2	64237	category-services-ru	
+2gis.ae	domain	allow	91.236.51.50	91.236.51.50		754	category-services-ru	91.236.51.50
+2gis.am	domain	allow	91.236.51.50	91.236.51.50		476	category-services-ru	91.236.51.50
+2gis.az	domain	allow	91.236.51.50	91.236.51.50		609	category-services-ru	91.236.51.50
+2gis.by	domain	allow	91.236.51.50	91.236.51.50		631	category-services-ru	91.236.51.50
+2gis.com	domain	allow	91.236.51.50	91.236.51.50		487	category-services-ru	91.236.51.50
+2gis.ge	domain	allow	91.236.51.50	91.236.51.50		608	category-services-ru	91.236.51.50
+2gis.kg	domain	allow	91.236.51.50	91.236.51.50		799	category-services-ru	91.236.51.50
+2gis.ru	domain	allow	91.236.51.50	91.236.51.50		432	category-services-ru	91.236.51.50
+2gis.tj	domain	allow	91.236.51.50	91.236.51.50		568	category-services-ru	91.236.51.50
+2gis.uz	domain	allow	91.236.51.50	91.236.51.50		747	category-services-ru	91.236.51.50
+atomen.ru	domain	blocked_timeout	185.179.36.228	185.179.36.228	tcp connect timeout; попыток: 2	64317	category-services-ru	
+belkacar.ru	domain	allow	94.139.240.134	94.139.240.134 94.139.240.135		750	category-services-ru	94.139.240.134 94.139.240.135
+delimobil.ru	domain	allow	178.248.237.193	178.248.237.193		336	category-services-ru	178.248.237.193
+markirovka.ru	domain	allow	91.215.43.140	91.215.43.140		816	category-services-ru	91.215.43.140
+meteum.ai	domain	allow	213.180.193.146	213.180.193.146		408	category-services-ru	213.180.193.146
+citydrive.ru	domain	allow	178.248.239.67	178.248.239.67		771	category-services-ru	178.248.239.67
+crrintegro.ru	domain	blocked_timeout	176.57.67.161	176.57.67.161	tcp connect timeout; попыток: 2	64287	category-services-ru	
+csat.ru	domain	allow	195.149.197.11	195.149.197.11		392	category-services-ru	195.149.197.11
+dmclk.ru	domain	blocked_timeout	194.58.112.174	194.58.112.174	tcp connect timeout; попыток: 2	64244	category-services-ru	
+domclick.ru	domain	blocked_timeout	178.248.234.210	178.248.234.210	tcp connect timeout; попыток: 2	64232	category-services-ru	
+evotor.ru	domain	allow	185.170.207.139	185.170.207.139		478	category-services-ru	185.170.207.139
+f6.ru	domain	blocked_timeout	84.38.189.59	84.38.188.134 84.38.189.59	tcp connect timeout; попыток: 2	128349	category-services-ru	
+facct.ru	domain	blocked_timeout	77.223.101.245	77.223.101.245	tcp connect timeout; попыток: 2	64249	category-services-ru	
+giga.chat	domain	blocked_timeout	178.248.234.251	178.248.234.251	tcp connect timeout; попыток: 2	64267	category-services-ru	
+gismeteo.ru	domain	allow	31.172.76.57	31.172.76.57 31.172.76.58 31.172.76.59 31.172.76.60		1219	category-services-ru	31.172.76.57 31.172.76.58 31.172.76.59 31.172.76.60
+gpmdi.ru	domain	allow	176.57.66.94	176.57.66.94		410	category-services-ru	176.57.66.94
+gpnbonus.ru	domain	blocked_timeout	213.221.41.242	213.221.41.242	tcp connect timeout; попыток: 2	64224	category-services-ru	
+hh.ru	domain	allow	94.124.200.0	94.124.200.0		729	category-services-ru	94.124.200.0
+hr-link.ru	domain	allow	176.57.66.112	176.57.66.112		437	category-services-ru	176.57.66.112
+iitrust.ru	domain	allow	193.162.30.87	193.162.30.87		644	category-services-ru	193.162.30.87
+jivo.ru	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64282	category-services-ru	
+jivochat.com	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64327	category-services-ru	
+jivosite.com	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64325	category-services-ru	
+activate.activation-v2.kaspersky.com	domain	allow	93.159.229.150	77.74.182.140 93.159.229.150		8902	category-services-ru	93.159.229.150
+activation-v2.geo.kaspersky.com	domain	allow	93.159.229.150	77.74.182.140 93.159.229.150		8527	category-services-ru	93.159.229.150
+activation-v2.kaspersky.com	domain	allow	93.159.229.150	77.74.182.140 93.159.229.150		8392	category-services-ru	93.159.229.150
+crl.kaspersky.com	domain	allow	95.167.139.3	193.238.132.7 193.238.133.5 95.167.139.3		16375	category-services-ru	95.167.139.3
+dc1-cert.ksn.kaspersky-labs.com	domain	allow	79.133.168.56	193.238.132.54 193.238.132.57 193.238.133.12 79.133.168.56 79.133.168.59 79.133.170.5 79.133.171.54 79.133.171.60		25470	category-services-ru	79.133.168.56 79.133.168.59 79.133.170.5 79.133.171.54 79.133.171.60
+dc1-file.ksn.kaspersky-labs.com	domain	allow	79.133.168.56	193.238.132.54 193.238.133.15 193.238.133.18 193.238.133.8 79.133.168.56 79.133.169.30 79.133.170.63 79.133.171.22		33299	category-services-ru	79.133.168.56 79.133.169.30 79.133.170.63 79.133.171.22
+dc1-pp.ksn.kaspersky-labs.com	domain	allow	79.133.168.53	79.133.168.53 79.133.168.56 79.133.168.9 79.133.169.145 79.133.170.63 79.133.170.66 79.133.171.54 79.133.171.57		2033	category-services-ru	79.133.168.53 79.133.168.56 79.133.168.9 79.133.169.145 79.133.170.63 79.133.170.66 79.133.171.54 79.133.171.57
+dc1-st.ksn.kaspersky-labs.com	domain	allow	79.133.168.59	193.238.132.54 193.238.132.8 193.238.133.15 79.133.168.59 79.133.169.30 79.133.170.63 79.133.171.22 79.133.171.54		25491	category-services-ru	79.133.168.59 79.133.169.30 79.133.170.63 79.133.171.22 79.133.171.54
+dc1.ksn.kaspersky-labs.com	domain	allow	79.133.168.59	193.238.132.8 193.238.133.8 79.133.168.59 79.133.169.139 79.133.169.30 79.133.170.63 79.133.170.66 79.133.171.60		17767	category-services-ru	79.133.168.59 79.133.169.139 79.133.169.30 79.133.170.63 79.133.170.66 79.133.171.60
+dnl-00.geo.kaspersky.com	domain	allow	93.191.13.100	93.191.13.100		425	category-services-ru	93.191.13.100
+dnl-01.geo.kaspersky.com	domain	allow	93.191.13.100	93.191.13.100		573	category-services-ru	93.191.13.100
+dnl-02.geo.kaspersky.com	domain	allow	62.76.91.139	62.76.91.139		470	category-services-ru	62.76.91.139
+dnl-03.geo.kaspersky.com	domain	allow	62.76.91.139	62.76.91.139		459	category-services-ru	62.76.91.139
+dnl-04.geo.kaspersky.com	domain	allow	95.167.139.13	95.167.139.13		445	category-services-ru	95.167.139.13
+dnl-05.geo.kaspersky.com	domain	allow	95.167.139.13	95.167.139.13		453	category-services-ru	95.167.139.13
+dnl-06.geo.kaspersky.com	domain	blocked_timeout	193.238.132.3	193.238.132.3	tcp connect timeout; попыток: 2	64342	category-services-ru	
+dnl-07.geo.kaspersky.com	domain	blocked_timeout	193.238.132.3	193.238.132.3	tcp connect timeout; попыток: 2	64437	category-services-ru	
+dnl-10.geo.kaspersky.com	domain	allow	46.46.184.59	46.46.184.59		481	category-services-ru	46.46.184.59
+dnl-11.geo.kaspersky.com	domain	allow	93.191.13.211	93.191.13.211		406	category-services-ru	93.191.13.211
+dnl-14.geo.kaspersky.com	domain	allow	212.8.233.167	212.8.233.167		420	category-services-ru	212.8.233.167
+dnl-15.geo.kaspersky.com	domain	allow	93.191.13.211	93.191.13.211		421	category-services-ru	93.191.13.211
+dnl-16.geo.kaspersky.com	domain	blocked_timeout	193.238.133.3	193.238.133.3	tcp connect timeout; попыток: 2	64221	category-services-ru	
+dnl-17.geo.kaspersky.com	domain	allow	46.46.184.59	46.46.184.59		332	category-services-ru	46.46.184.59
+dnl-18.geo.kaspersky.com	domain	allow	212.8.233.167	212.8.233.167		449	category-services-ru	212.8.233.167
+dnl-19.geo.kaspersky.com	domain	allow	62.76.91.139	62.76.91.139		398	category-services-ru	62.76.91.139
+edge.geo.kaspersky.com	domain	allow	212.8.233.173	193.238.132.7 193.238.133.5 212.8.233.173		16463	category-services-ru	212.8.233.173
+kaspersky-labs.com	domain	blocked_dns		127.0.0.1	DNS sinkhole	179	category-services-ru	
+kaspersky.com	domain	blocked_timeout	185.85.15.46	185.85.15.46	tcp connect timeout; попыток: 2	64836	category-services-ru	
+kaspersky.ru	domain	allow	82.202.191.110	82.202.191.110		368	category-services-ru	82.202.191.110
+ksn-dc1-cert.geoksn.kaspersky.com	domain	allow	79.133.168.53	193.238.132.60 193.238.133.15 79.133.168.53 79.133.170.63 79.133.170.66 79.133.170.69 79.133.171.22 79.133.171.60		17383	category-services-ru	79.133.168.53 79.133.170.63 79.133.170.66 79.133.170.69 79.133.171.22 79.133.171.60
+ksn-dc1-file.geoksn.kaspersky.com	domain	allow	79.133.168.56	193.238.132.54 193.238.132.60 193.238.132.8 193.238.133.8 79.133.168.56 79.133.169.142 79.133.169.145 79.133.170.63		32945	category-services-ru	79.133.168.56 79.133.169.142 79.133.169.145 79.133.170.63
+ksn-dc1.geoksn.kaspersky.com	domain	allow	79.133.169.139	193.238.132.8 193.238.133.18 193.238.133.8 79.133.169.139 79.133.169.145 79.133.170.5 79.133.171.22 79.133.171.57		25228	category-services-ru	79.133.169.139 79.133.169.145 79.133.170.5 79.133.171.22 79.133.171.57
+p00.upd.kaspersky.com	domain	allow	93.191.13.100	93.191.13.100		440	category-services-ru	93.191.13.100
+p01.upd.kaspersky.com	domain	allow	93.191.13.100	93.191.13.100		556	category-services-ru	93.191.13.100
+p02.upd.kaspersky.com	domain	allow	62.76.91.139	62.76.91.139		549	category-services-ru	62.76.91.139
+p03.upd.kaspersky.com	domain	allow	62.76.91.139	62.76.91.139		396	category-services-ru	62.76.91.139
+p04.upd.kaspersky.com	domain	allow	95.167.139.13	95.167.139.13		425	category-services-ru	95.167.139.13
+p05.upd.kaspersky.com	domain	allow	95.167.139.13	95.167.139.13		433	category-services-ru	95.167.139.13
+p06.upd.kaspersky.com	domain	blocked_timeout	193.238.133.3	193.238.133.3	tcp connect timeout; попыток: 2	64296	category-services-ru	
+p08.upd.kaspersky.com	domain	allow	93.191.13.211	93.191.13.211		821	category-services-ru	93.191.13.211
+p09.upd.kaspersky.com	domain	blocked_timeout	193.238.132.3	193.238.132.3	tcp connect timeout; попыток: 2	64267	category-services-ru	
+p12.upd.kaspersky.com	domain	allow	212.8.233.167	212.8.233.167		429	category-services-ru	212.8.233.167
+p13.upd.kaspersky.com	domain	allow	79.133.169.7	79.133.169.7		666	category-services-ru	79.133.169.7
+p14.upd.kaspersky.com	domain	allow	95.167.139.6	95.167.139.6		564	category-services-ru	95.167.139.6
+p16.upd.kaspersky.com	domain	allow	62.76.91.139	62.76.91.139		402	category-services-ru	62.76.91.139
+p17.upd.kaspersky.com	domain	blocked_timeout	193.238.133.3	193.238.133.3	tcp connect timeout; попыток: 2	64430	category-services-ru	
+p18.upd.kaspersky.com	domain	allow	212.8.233.167	212.8.233.167		360	category-services-ru	212.8.233.167
+p19.upd.kaspersky.com	domain	allow	95.167.139.6	95.167.139.6		593	category-services-ru	95.167.139.6
+refresh-bkg.activation-v2.kaspersky.com	domain	allow	93.159.229.150	77.74.182.140 93.159.229.150		8464	category-services-ru	93.159.229.150
+s00.upd.kaspersky.com	domain	allow	93.191.13.100	93.191.13.100		308	category-services-ru	93.191.13.100
+s01.upd.kaspersky.com	domain	allow	93.191.13.100	93.191.13.100		364	category-services-ru	93.191.13.100
+s02.upd.kaspersky.com	domain	allow	62.76.91.139	62.76.91.139		336	category-services-ru	62.76.91.139
+s03.upd.kaspersky.com	domain	allow	62.76.91.139	62.76.91.139		378	category-services-ru	62.76.91.139
+s04.upd.kaspersky.com	domain	allow	95.167.139.13	95.167.139.13		359	category-services-ru	95.167.139.13
+s05.upd.kaspersky.com	domain	allow	95.167.139.13	95.167.139.13		370	category-services-ru	95.167.139.13
+s06.upd.kaspersky.com	domain	blocked_timeout	193.238.133.3	193.238.133.3	tcp connect timeout; попыток: 2	64307	category-services-ru	
+s07.upd.kaspersky.com	domain	blocked_timeout	193.238.132.3	193.238.132.3	tcp connect timeout; попыток: 2	64203	category-services-ru	
+s12.upd.kaspersky.com	domain	allow	79.133.169.7	79.133.169.7		492	category-services-ru	79.133.169.7
+s13.upd.kaspersky.com	domain	allow	212.8.233.167	212.8.233.167		556	category-services-ru	212.8.233.167
+s14.upd.kaspersky.com	domain	allow	95.167.139.6	95.167.139.6		483	category-services-ru	95.167.139.6
+s15.upd.kaspersky.com	domain	allow	46.46.184.59	46.46.184.59		397	category-services-ru	46.46.184.59
+s17.upd.kaspersky.com	domain	allow	93.191.13.100	93.191.13.100		313	category-services-ru	93.191.13.100
+s18.upd.kaspersky.com	domain	allow	62.76.91.139	62.76.91.139		360	category-services-ru	62.76.91.139
+s19.upd.kaspersky.com	domain	allow	212.8.233.167	212.8.233.167		363	category-services-ru	212.8.233.167
+cntd.ru	domain	blocked_timeout	5.61.15.145	5.61.15.145	tcp connect timeout; попыток: 2	64242	category-services-ru	
+kodeks.ru	domain	blocked_timeout	5.61.15.145	5.61.15.145	tcp connect timeout; попыток: 2	64235	category-services-ru	
+kontur-inc.com	domain	allow	46.17.203.154	46.17.203.154		427	category-services-ru	46.17.203.154
+kontur.ru	domain	allow	46.17.206.11	46.17.206.11		461	category-services-ru	46.17.206.11
+metrika.kontur.ru	domain	allow	46.17.203.250	46.17.203.250		306	category-services-ru	46.17.203.250
+sentry.kontur.host	domain	allow	46.17.203.17	46.17.203.17		327	category-services-ru	46.17.203.17
+lizaalert.org	domain	blocked_timeout	89.208.78.55	89.208.78.55	tcp connect timeout; попыток: 2	64643	category-services-ru	
+imgsmail.ru	domain	allow	89.221.239.2	89.221.239.2 90.156.232.41		607	category-services-ru	89.221.239.2 90.156.232.41
+mail.ru	domain	allow	185.180.201.1	185.180.201.1 89.221.239.1 90.156.232.4		837	category-services-ru	185.180.201.1 89.221.239.1 90.156.232.4
+my.com	domain	no_dns			no A records; попыток: 2	4419	category-services-ru	
+memealerts.com	domain	allow	91.215.42.81	91.215.42.81		538	category-services-ru	91.215.42.81
+mindbox.ru	domain	blocked_timeout	178.248.234.187	178.248.234.187	tcp connect timeout; попыток: 2	64235	category-services-ru	
+xn--80afnfom.xn--80ahmohdapg.xn--80asehdb	domain	blocked_timeout	194.226.55.22	194.226.55.22	tcp connect timeout; попыток: 2	64401	category-services-ru	
+xn--80asg7a0b.xn--80ahmohdapg.xn--80asehdb	domain	blocked_timeout	194.226.55.22	194.226.55.22	tcp connect timeout; попыток: 2	64245	category-services-ru	
+netmonet.co	domain	allow	185.65.148.240	185.65.148.240		649	category-services-ru	185.65.148.240
+pravo.ru	domain	blocked_timeout	89.108.74.51	89.108.74.51	tcp connect timeout; попыток: 2	64242	category-services-ru	
+retailrocket.ru	domain	blocked_timeout	95.143.190.233	92.53.65.172 95.143.190.232 95.143.190.233	tcp connect timeout; попыток: 2	192559	category-services-ru	
+ads-integration.rustore.ru	domain	allow	95.163.61.56	95.163.61.56		433	category-services-ru	95.163.61.56
+ads.rustore.ru	domain	allow	95.163.61.56	95.163.61.56		291	category-services-ru	95.163.61.56
+adv.rustore.ru	domain	allow	95.163.61.56	95.163.61.56		334	category-services-ru	95.163.61.56
+click.rustore.ru	domain	allow	217.20.157.129	217.20.157.129		305	category-services-ru	217.20.157.129
+pixel.rustore.ru	domain	allow	217.20.157.129	217.20.157.129		358	category-services-ru	217.20.157.129
+rustore.ru	domain	allow	95.163.61.31	95.163.61.31		411	category-services-ru	95.163.61.31
+stats.rustore.ru	domain	allow	90.156.232.47	90.156.232.47		302	category-services-ru	90.156.232.47
+ametrica.org	domain	blocked_timeout	84.201.184.133	84.201.184.133	tcp connect timeout; попыток: 2	64195	category-services-ru	
+edna.id	domain	blocked_timeout	52.60.87.163	52.60.87.163	tcp connect timeout; попыток: 2	64220	category-services-ru	
+ruwiki.ru	domain	blocked_timeout	178.248.238.63	178.248.238.63	tcp connect timeout; попыток: 2	64211	category-services-ru	
+sbermarketing.ru	domain	allow	185.71.64.196	185.71.64.196		682	category-services-ru	185.71.64.196
+shedevrum.ai	domain	allow	87.250.254.169	87.250.254.169		362	category-services-ru	87.250.254.169
+sleza.media	domain	allow	185.65.148.108	185.65.148.108		874	category-services-ru	185.65.148.108
+sourcecraft.dev	domain	allow	158.160.46.143	158.160.46.143		857	category-services-ru	158.160.46.143
+targetads.io	domain	allow	185.215.4.40	185.215.4.40		479	category-services-ru	185.215.4.40
+tilda.cc	domain	blocked_timeout	194.48.203.4	194.48.203.4	tcp connect timeout; попыток: 2	64248	category-services-ru	
+tilda.ru	domain	allow	178.248.233.147	178.248.233.147		396	category-services-ru	178.248.233.147
+tildacdn.com	domain	blocked_timeout	95.213.201.187	95.213.201.187	tcp connect timeout; попыток: 2	64279	category-services-ru	
+tensor.ru	domain	allow	91.232.93.39	91.232.93.39		517	category-services-ru	91.232.93.39
+trueconf.ru	domain	allow	185.71.64.152	185.71.64.152		523	category-services-ru	185.71.64.152
+zentotem.net	domain	blocked_timeout	185.151.241.25	185.151.241.25	tcp connect timeout; попыток: 2	64320	category-services-ru	
+usedesk.ru	domain	allow	176.57.65.17	176.57.65.17		363	category-services-ru	176.57.65.17
+uxfeedback.ru	domain	allow	213.180.193.247	213.180.193.247		472	category-services-ru	213.180.193.247
+whoosh.bike	domain	allow	185.129.100.112	185.129.100.112		526	category-services-ru	185.129.100.112
+adfox.ru	domain	allow	213.180.193.191	213.180.193.191		343	category-services-ru	213.180.193.191
+adfox.yandex.ru	domain	allow	213.180.193.191	213.180.193.191		407	category-services-ru	213.180.193.191
+adfstat.yandex.ru	domain	allow	87.250.250.145	87.250.250.145		331	category-services-ru	87.250.250.145
+ads.yandex.com	domain	allow	87.250.250.25	87.250.250.25		509	category-services-ru	87.250.250.25
+ads.yandex.ru	domain	allow	87.250.250.25	87.250.250.25		459	category-services-ru	87.250.250.25
+adsdk.yandex.ru	domain	allow	87.250.250.120	87.250.250.120		324	category-services-ru	87.250.250.120
+adv.yandex.com	domain	allow	213.180.204.242	213.180.204.242		335	category-services-ru	213.180.204.242
+adv.yandex.ru	domain	allow	213.180.204.50	213.180.204.50		344	category-services-ru	213.180.204.50
+alice.yandex.ru	domain	allow	213.180.193.143	213.180.193.143		585	category-services-ru	213.180.193.143
+amc.yandex.ru	domain	allow	87.250.250.254	87.250.250.254		355	category-services-ru	87.250.250.254
+an.yandex.ru	domain	allow	213.180.193.90	213.180.193.90 213.180.204.90 77.88.21.90 87.250.250.90 93.158.134.90		1340	category-services-ru	213.180.193.90 213.180.204.90 77.88.21.90 87.250.250.90 93.158.134.90
+appmetrica.yandex.com	domain	allow	93.158.134.167	93.158.134.167		329	category-services-ru	93.158.134.167
+appmetrica.yandex.ru	domain	allow	93.158.134.167	93.158.134.167		364	category-services-ru	93.158.134.167
+arenda.yandex.ru	domain	allow	213.180.204.188	213.180.204.188		586	category-services-ru	213.180.204.188
+bs.yandex.ru	domain	allow	213.180.193.90	213.180.193.90 213.180.204.90 77.88.21.90 87.250.250.90 93.158.134.90		1406	category-services-ru	213.180.193.90 213.180.204.90 77.88.21.90 87.250.250.90 93.158.134.90
+clck.ru	domain	allow	213.180.204.221	213.180.204.221		500	category-services-ru	213.180.204.221
+clck.yandex.com	domain	allow	213.180.193.14	213.180.193.14 213.180.204.14 77.88.21.14 87.250.250.14 87.250.251.14 93.158.134.14		1508	category-services-ru	213.180.193.14 213.180.204.14 77.88.21.14 87.250.250.14 87.250.251.14 93.158.134.14
+clck.yandex.ru	domain	allow	213.180.193.14	213.180.193.14 213.180.204.14 77.88.21.14 87.250.250.14 87.250.251.14 93.158.134.14		1541	category-services-ru	213.180.193.14 213.180.204.14 77.88.21.14 87.250.250.14 87.250.251.14 93.158.134.14
+counter.yandex.ru	domain	allow	213.180.204.242	213.180.204.242		336	category-services-ru	213.180.204.242
+dzen.ru	domain	allow	95.163.218.220	95.163.218.220		350	category-services-ru	95.163.218.220
+informer.yandex.ru	domain	allow	87.250.250.119	87.250.250.119 87.250.251.119		562	category-services-ru	87.250.250.119 87.250.251.119
+log.dzen.ru	domain	allow	95.163.218.201	95.163.218.201		417	category-services-ru	95.163.218.201
+log.strm.yandex.ru	domain	allow	141.8.134.77	141.8.134.77		303	category-services-ru	141.8.134.77
+mc.yandex.com	domain	allow	77.88.21.119	77.88.21.119 87.250.250.119 87.250.251.119		781	category-services-ru	77.88.21.119 87.250.250.119 87.250.251.119
+mc.yandex.ru	domain	allow	77.88.21.119	77.88.21.119 87.250.250.119 87.250.251.119		797	category-services-ru	77.88.21.119 87.250.250.119 87.250.251.119
+metrika.yandex.com	domain	allow	87.250.251.77	87.250.251.77		380	category-services-ru	87.250.251.77
+metrika.yandex.ru	domain	allow	87.250.251.77	87.250.251.77		389	category-services-ru	87.250.251.77
+ms.dzen.ru	domain	allow	95.163.218.255	95.163.218.255		362	category-services-ru	95.163.218.255
+naydex.net	domain	allow	87.250.251.92	87.250.251.92		412	category-services-ru	87.250.251.92
+pixel.yandex.com	domain	allow	213.180.204.242	213.180.204.242		487	category-services-ru	213.180.204.242
+report.ap.yandex-net.ru	domain	allow	141.8.134.77	141.8.134.77 213.180.193.226		616	category-services-ru	141.8.134.77 213.180.193.226
+rostaxi.org	domain	allow	87.250.251.140	87.250.251.140		385	category-services-ru	87.250.251.140
+webvisor.com	domain	allow	87.250.251.77	87.250.251.77		381	category-services-ru	87.250.251.77
+xn--d1acpjx3f.xn--p1ai	domain	allow	213.180.204.242	213.180.204.242		444	category-services-ru	213.180.204.242
+ya.ru	domain	allow	5.255.255.242	5.255.255.242 77.88.44.242 77.88.55.242		902	category-services-ru	5.255.255.242 77.88.44.242 77.88.55.242
+yandex-images.clstorage.net	domain	allow	87.250.251.92	87.250.251.92		334	category-services-ru	87.250.251.92
+yandex-team.ru	domain	allow	93.158.134.170	93.158.134.170		367	category-services-ru	93.158.134.170
+yandex.aero	domain	allow	213.180.204.242	213.180.204.242		413	category-services-ru	213.180.204.242
+yandex.az	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1390	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.by	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1415	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.co.il	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1436	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.com	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1283	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.com.am	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1532	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.com.ge	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1583	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.com.ru	domain	allow	213.180.204.242	213.180.204.242		463	category-services-ru	213.180.204.242
+yandex.de	domain	allow	213.180.204.242	213.180.204.242		378	category-services-ru	213.180.204.242
+yandex.ee	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1206	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.eu	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1172	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.fi	domain	allow	213.180.204.242	213.180.204.242		442	category-services-ru	213.180.204.242
+yandex.fr	domain	allow	213.180.204.242	213.180.204.242		490	category-services-ru	213.180.204.242
+yandex.jobs	domain	allow	213.180.204.242	213.180.204.242		418	category-services-ru	213.180.204.242
+yandex.lt	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1136	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.lv	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1129	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.md	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1298	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.net	domain	allow	213.180.204.242	213.180.204.242		393	category-services-ru	213.180.204.242
+yandex.org	domain	allow	213.180.204.242	213.180.204.242		531	category-services-ru	213.180.204.242
+yandex.pl	domain	allow	213.180.204.242	213.180.204.242		443	category-services-ru	213.180.204.242
+yandex.ru	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		885	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.st	domain	allow	37.9.64.225	37.9.64.225		190	category-services-ru	37.9.64.225
+yandex.tj	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1480	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.tm	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1438	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandex.uz	domain	allow	5.255.255.77	5.255.255.77 77.88.44.55 77.88.55.88		1310	category-services-ru	5.255.255.77 77.88.44.55 77.88.55.88
+yandexadexchange.net	domain	allow	213.180.193.90	213.180.193.90 213.180.204.90 77.88.21.90 87.250.250.90 93.158.134.90		1443	category-services-ru	213.180.193.90 213.180.204.90 77.88.21.90 87.250.250.90 93.158.134.90
+yandexcom.net	domain	blocked_timeout	75.2.53.3	35.71.159.45 75.2.53.3	tcp connect timeout; попыток: 2	128393	category-services-ru	
+yastat.net	domain	allow	37.9.64.225	37.9.64.225		406	category-services-ru	37.9.64.225
+yastatic-net.ru	domain	allow	37.9.64.225	37.9.64.225		184	category-services-ru	37.9.64.225
+yastatic.net	domain	allow	37.9.64.225	37.9.64.225		264	category-services-ru	37.9.64.225
+inappstory.com	domain	blocked_timeout	63.185.10.204	63.183.162.144 63.185.10.204	tcp connect timeout; попыток: 2	128501	category-services-ru	
+inappstory.ru	domain	allow	158.160.210.100	158.160.210.100		732	category-services-ru	158.160.210.100
+yandex-pogoda.static-storage.net	domain	allow	87.250.251.92	87.250.251.92		331	category-services-ru	87.250.251.92
+edadeal.io	domain	allow	93.158.134.210	93.158.134.210	TLS ok, HTTP/2 error from server	359	category-services-ru	93.158.134.210
+edadeal.ru	domain	allow	93.158.134.210	93.158.134.210		461	category-services-ru	93.158.134.210
+cian.ru	domain	allow	51.250.123.126	51.250.123.126		387	category-services-ru	51.250.123.126
+rabota.ru	domain	blocked_timeout	155.212.235.180	155.212.235.180	tcp connect timeout; попыток: 2	64294	category-services-ru	
+moysklad.ru	domain	allow	185.71.67.15	185.71.67.15		392	category-services-ru	185.71.67.15
+sbis.ru	domain	allow	91.213.144.237	91.213.144.237		425	category-services-ru	91.213.144.237
+myoffice.ru	domain	blocked_timeout	193.32.60.27	193.32.60.27	tcp connect timeout; попыток: 2	64279	category-services-ru	
+b17.ru	domain	allow	91.215.42.213	91.215.42.213		443	category-services-ru	91.215.42.213
+drweb.com	domain	allow	178.248.233.94	178.248.233.94		401	category-services-ru	178.248.233.94
+drweb.ru	domain	allow	178.248.232.183	178.248.232.183		398	category-services-ru	178.248.232.183
+xn--90absjljw3g.xn--p1ai	domain	blocked_timeout	91.218.230.232	91.218.230.232	tcp connect timeout; попыток: 2	64272	category-services-ru	
+gainstech.ru	domain	allow	178.130.128.39	178.130.128.39		1083	category-services-ru	178.130.128.39
+id.ru	domain	allow	185.71.64.201	185.71.64.201		568	category-services-ru	185.71.64.201
+bargipsy.com	domain	allow	185.215.4.28	185.215.4.28		517	category-services-ru	185.215.4.28
+hacksoft.ru	domain	allow	178.248.236.145	178.248.236.145		508	category-services-ru	178.248.236.145
+hh.by	domain	allow	94.124.200.1	94.124.200.1		436	category-services-ru	94.124.200.1
+hhcdn.ru	domain	allow	94.124.200.0	94.124.200.0		342	category-services-ru	94.124.200.0
+jivo.chat	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64228	category-services-ru	
+jivochat.com.tr	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64342	category-services-ru	
+jivochat.ru	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64261	category-services-ru	
+jumpwork.ru	domain	allow	178.130.128.39	178.130.128.39		593	category-services-ru	178.130.128.39
+polza.ai	domain	blocked_timeout	91.184.237.15	91.184.237.149 91.184.237.15	tcp connect timeout; попыток: 2	128442	category-services-ru	
+rugpt.io	domain	allow	91.221.164.48	91.221.164.48		556	category-services-ru	91.221.164.48
+sberdevices.ru	domain	allow	95.181.177.60	95.181.177.60		302	category-services-ru	95.181.177.60
+sberdisk.ru	domain	allow	185.71.64.55	185.71.64.55		413	category-services-ru	185.71.64.55
+talantix.ru	domain	allow	94.124.200.1	94.124.200.1		549	category-services-ru	94.124.200.1
+cxhub.ru	domain	allow	90.156.232.30	90.156.232.30		1196	category-services-ru	90.156.232.30
+hrtek.ru	domain	allow	95.163.37.196	95.163.37.196		356	category-services-ru	95.163.37.196
+yclients.com	domain	allow	109.238.90.138	109.238.90.138		336	category-services-ru	109.238.90.138
+berizaryad.ru	domain	allow	5.45.196.103	5.45.196.103		820	category-services-ru	5.45.196.103
+xn--80aaeib8abrryx4k.xn--p1ai	domain	allow	51.250.123.126	51.250.123.126		573	category-services-ru	51.250.123.126
+zarplata.ru	domain	allow	94.124.200.1	94.124.200.1		882	category-services-ru	94.124.200.1
+karmahelp.ru	domain	allow	178.130.128.40	178.130.128.40		417	category-services-ru	178.130.128.40
+ktalk.ru	domain	allow	46.17.203.9	46.17.203.9		381	category-services-ru	46.17.203.9
+lifestyle-tec.ru	domain	allow	178.130.128.39	178.130.128.39		618	category-services-ru	178.130.128.39
+ligadobra.ru	domain	allow	176.57.67.28	176.57.67.28		508	category-services-ru	176.57.67.28
+mts-link.ru	domain	allow	37.130.193.75	37.130.193.75		438	category-services-ru	37.130.193.75
+multifactor.ru	domain	allow	31.31.197.11	31.31.197.11		429	category-services-ru	31.31.197.11
+xn--80aaafbpzn5blfby1p.xn--p1ai	domain	allow	51.250.123.126	51.250.123.126		518	category-services-ru	51.250.123.126
+poudobnee.com	domain	allow	176.57.66.25	176.57.66.25		501	category-services-ru	176.57.66.25
+analytics.mobile.yandex.net	domain	allow	141.8.134.77	141.8.134.77 213.180.193.226		591	category-services-ru	141.8.134.77 213.180.193.226
+bitrix24public.com	domain	allow	95.163.249.170	109.120.182.255 195.208.185.4 46.235.53.58 46.235.53.67 46.235.53.69 89.208.228.119 95.163.249.170		48710	category-services-ru	95.163.249.170
+bitrix24shop.ru	domain	allow	185.137.235.2	185.137.235.2		469	category-services-ru	185.137.235.2
+bitrix24site.ru	domain	allow	185.137.235.2	185.137.235.2		436	category-services-ru	185.137.235.2
+clck.yandex.net	domain	allow	93.158.134.32	93.158.134.32		358	category-services-ru	93.158.134.32
+drweb-av.it	domain	allow	213.79.65.58	213.79.65.58		443	category-services-ru	213.79.65.58
+drweb-av.pl	domain	allow	213.79.65.58	213.79.65.58		492	category-services-ru	213.79.65.58
+drweb.by	domain	allow	213.79.65.58	213.79.65.58		468	category-services-ru	213.79.65.58
+electronicsignature.ru	domain	allow	178.130.128.39	178.130.128.39		626	category-services-ru	178.130.128.39
+envybox.kg	domain	allow	185.215.4.60	185.215.4.60		539	category-services-ru	185.215.4.60
+gismeteo.by	domain	allow	31.172.76.57	31.172.76.57 31.172.76.59		747	category-services-ru	31.172.76.57 31.172.76.59
+idecosoftware.ru	domain	allow	185.215.4.13	185.215.4.13		453	category-services-ru	185.215.4.13
+jivochat.co.in	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64279	category-services-ru	
+jivochat.co.za	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64479	category-services-ru	
+jivochat.com.br	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64523	category-services-ru	
+jivochat.com.co	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64390	category-services-ru	
+jivochat.com.pe	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64299	category-services-ru	
+jivochat.de	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64353	category-services-ru	
+jivochat.es	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64320	category-services-ru	
+jivosite.ru	domain	blocked_timeout	95.181.182.182	95.181.182.182	tcp connect timeout; попыток: 2	64202	category-services-ru	
+kaspersky.kz	domain	allow	82.202.191.110	82.202.191.110		458	category-services-ru	82.202.191.110
+meteoinfo.ru	domain	allow	193.7.160.228	193.7.160.228		9992	category-services-ru	193.7.160.228
+movika.com	domain	allow	217.20.155.54	217.20.155.54		402	category-services-ru	217.20.155.54
+reaviz.com	domain	allow	194.190.0.94	194.190.0.94		378	category-services-ru	194.190.0.94
+reaviz.ru	domain	allow	91.221.164.2	91.221.164.2		604	category-services-ru	91.221.164.2
+rustore.team	domain	allow	95.163.61.31	95.163.61.31		418	category-services-ru	95.163.61.31
+rustore.tv	domain	allow	95.163.61.56	95.163.61.56		397	category-services-ru	95.163.61.56
+sage-observability.tech	domain	allow	178.130.128.39	178.130.128.39		1480	category-services-ru	178.130.128.39
+sberspasibo.ru	domain	open_http	178.248.236.183	178.248.236.183	HTTP 502 ; попыток: 2	1113	category-services-ru	
+servicepipe.ru	domain	allow	91.206.127.56	91.206.127.56		373	category-services-ru	91.206.127.56
+servicepipe.tech	domain	allow	155.212.234.5	155.212.234.5		306	category-services-ru	155.212.234.5
+spasibo.market	domain	open_http	178.248.236.183	178.248.236.183	HTTP 502 ; попыток: 2	1135	category-services-ru	
+spasibosberbank.ru	domain	allow	178.248.236.183	178.248.236.183		511	category-services-ru	178.248.236.183
+srv-hub.org	domain	allow	193.17.93.93	193.17.93.93		380	category-services-ru	193.17.93.93
+t-ofp.ru	domain	allow	178.130.128.39	178.130.128.39		518	category-services-ru	178.130.128.39
+t-tech.dev	domain	allow	178.130.128.39	178.130.128.39		602	category-services-ru	178.130.128.39
+t-tech.ru	domain	allow	178.130.128.39	178.130.128.39		383	category-services-ru	178.130.128.39
+t-tech.team	domain	allow	31.31.196.17	31.31.196.17		398	category-services-ru	31.31.196.17
+t-technologies.ru	domain	allow	178.130.128.39	178.130.128.39		631	category-services-ru	178.130.128.39
+tarantool.io	domain	allow	95.163.41.75	95.163.41.75		441	category-services-ru	95.163.41.75
+tarantoolplus.ru	domain	allow	95.163.41.75	95.163.41.75		349	category-services-ru	95.163.41.75
+time-messenger.ru	domain	allow	178.130.128.39	178.130.128.39		594	category-services-ru	178.130.128.39
+trace-flow.ru	domain	allow	155.212.204.159	155.212.204.159 155.212.204.16 155.212.204.92		1123	category-services-ru	155.212.204.159 155.212.204.16 155.212.204.92
+ukit.me	domain	allow	185.129.100.126	185.129.100.126		454	category-services-ru	185.129.100.126
+vigo.tech	domain	allow	176.57.66.114	176.57.66.114		462	category-services-ru	176.57.66.114
+vsemrabota.ru	domain	allow	185.62.202.4	185.62.202.4		332	category-services-ru	185.62.202.4
+ya.cc	domain	allow	213.180.193.221	213.180.193.221		302	category-services-ru	213.180.193.221
+yadi.sk	domain	allow	87.250.250.50	87.250.250.50		429	category-services-ru	87.250.250.50
+yandex-ad.cn	domain	allow	213.180.204.50	213.180.204.50		602	category-services-ru	213.180.204.50
+yandex-team.com	domain	allow	93.158.134.170	93.158.134.170		430	category-services-ru	93.158.134.170
+yandex.asia	domain	allow	213.180.204.242	213.180.204.242		439	category-services-ru	213.180.204.242
+yandex.it	domain	allow	213.180.204.242	213.180.204.242		436	category-services-ru	213.180.204.242
+yandex.mobi	domain	allow	213.180.204.242	213.180.204.242		433	category-services-ru	213.180.204.242
+yandex.net.ru	domain	allow	213.180.204.242	213.180.204.242		536	category-services-ru	213.180.204.242
+yandex.pro	domain	allow	93.158.134.42	93.158.134.42		538	category-services-ru	93.158.134.42
+yandex.tr	domain	allow	213.180.204.242	213.180.204.242		441	category-services-ru	213.180.204.242
+rabota.by	domain	allow	94.124.200.1	94.124.200.1		913	category-services-ru	94.124.200.1
+otello.ru	domain	allow	91.236.51.50	91.236.51.50		381	category-services-ru	91.236.51.50
+warehouse.domains	domain	allow	85.198.79.18	85.198.76.12 85.198.77.102 85.198.79.18		16466	category-services-ru	85.198.79.18
+shedevrum.com	domain	allow	87.250.254.169	87.250.254.169		437	category-services-ru	87.250.254.169
+shedevrum.ru	domain	allow	87.250.254.169	87.250.254.169		472	category-services-ru	87.250.254.169
+realtyverif.ru	domain	allow	213.180.204.188	213.180.204.188		371	category-services-ru	213.180.204.188
+workspace.vk.ru	domain	allow	217.69.139.215	217.69.139.215 217.69.139.216 94.100.180.215 94.100.180.216		1608	category-services-ru	217.69.139.215 217.69.139.216 94.100.180.215 94.100.180.216
+mycdn.me	domain	allow	217.20.152.226	217.20.152.226 217.20.155.82 217.20.156.72		854	category-social-media-ru	217.20.152.226 217.20.155.82 217.20.156.72
+odnoklassniki.co.ee	domain	allow	217.20.157.145	217.20.157.145 5.61.21.121		754	category-social-media-ru	217.20.157.145 5.61.21.121
+ok.ru	domain	allow	217.20.157.145	217.20.157.145 5.61.21.121		890	category-social-media-ru	217.20.157.145 5.61.21.121
+okcdn.ru	domain	allow	217.20.152.226	217.20.152.226 217.20.155.82 217.20.156.72		828	category-social-media-ru	217.20.152.226 217.20.155.82 217.20.156.72
+apptracer.ru	domain	allow	217.20.147.7	217.20.147.7 217.20.155.82 217.20.156.72		891	category-social-media-ru	217.20.147.7 217.20.155.82 217.20.156.72
+max.ru	domain	allow	155.212.204.140	155.212.204.140 155.212.204.5 155.212.204.74		874	category-social-media-ru	155.212.204.140 155.212.204.5 155.212.204.74
+tamtam.chat	domain	allow	178.22.89.168	178.22.89.168 185.16.148.34		580	category-social-media-ru	178.22.89.168 185.16.148.34
+adblogger.vk.com	domain	allow	95.163.61.52	95.163.61.52		384	category-social-media-ru	95.163.61.52
+adblogger.vk.ru	domain	allow	95.163.61.52	95.163.61.52		437	category-social-media-ru	95.163.61.52
+ads.vk.com	domain	allow	89.221.236.19	89.221.236.19		303	category-social-media-ru	89.221.236.19
+ads.vk.ru	domain	allow	89.221.236.19	89.221.236.19		414	category-social-media-ru	89.221.236.19
+adv.vk.com	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1822	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+adv.vk.ru	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1879	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+advk.vk.ru	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1802	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+analytics.vk.com	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1797	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+analytics.vk.ru	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1853	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+mvk.com	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1876	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+st-ok-pts.cdn-vk.ru	domain	allow	95.163.58.196	95.163.58.196 95.163.58.197 95.163.58.200 95.163.58.201 95.163.58.205 95.163.58.206 95.163.58.211 95.163.58.214 95.163.58.215 95.163.58.217		10727	category-social-media-ru	95.163.58.196 95.163.58.197 95.163.58.200 95.163.58.201 95.163.58.205 95.163.58.206 95.163.58.211 95.163.58.214 95.163.58.215 95.163.58.217
+st-ok.cdn-vk.ru	domain	allow	95.163.58.194	95.163.58.194 95.163.58.197 95.163.58.199 95.163.58.208 95.163.58.213 95.163.58.214 95.163.58.215 95.163.58.216 95.163.58.217 95.163.60.63		4229	category-social-media-ru	95.163.58.194 95.163.58.197 95.163.58.199 95.163.58.208 95.163.58.213 95.163.58.214 95.163.58.215 95.163.58.216 95.163.58.217 95.163.60.63
+stacks.vk-portal.net	domain	allow	95.213.22.90	95.213.22.90		366	category-social-media-ru	95.213.22.90
+stats.vk-portal.net	domain	allow	87.240.129.132	87.240.129.132		365	category-social-media-ru	87.240.129.132
+target.vk.com	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1806	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+target.vk.ru	domain	allow	5.61.21.185	5.61.21.185		406	category-social-media-ru	5.61.21.185
+userapi.com	domain	allow	87.240.129.187	87.240.129.187 87.240.190.64		658	category-social-media-ru	87.240.129.187 87.240.190.64
+vk-analytics.ru	domain	no_dns			no A records; попыток: 2	7316	category-social-media-ru	
+vk-apps.com	domain	allow	95.213.27.254	95.213.27.254		584	category-social-media-ru	95.213.27.254
+vk-apps.ru	domain	allow	95.213.27.254	95.213.27.254		510	category-social-media-ru	95.213.27.254
+vk-portal.net	domain	allow	87.240.129.191	87.240.129.191		385	category-social-media-ru	87.240.129.191
+vk.cc	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1901	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+vk.com	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1835	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+vk.company	domain	allow	89.221.239.148	89.221.239.148		415	category-social-media-ru	89.221.239.148
+vk.design	domain	allow	87.240.129.187	87.240.129.187 87.240.190.64		728	category-social-media-ru	87.240.129.187 87.240.190.64
+vk.link	domain	allow	87.240.129.187	87.240.129.187 87.240.190.64		873	category-social-media-ru	87.240.129.187 87.240.190.64
+vk.me	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1846	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+vk.ru	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		4657	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+vk.team	domain	allow	89.221.239.148	89.221.239.148		343	category-social-media-ru	89.221.239.148
+vkcloud-static.ru	domain	allow	95.163.254.192	95.163.254.192 95.163.254.193 95.163.254.194		6955	category-social-media-ru	95.163.254.192 95.163.254.193 95.163.254.194
+vkontakte.ru	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1891	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+vkuser.net	domain	blocked_timeout	95.213.37.126	95.213.37.126	tcp connect timeout; попыток: 2	64232	category-social-media-ru	
+vkuserphoto.ru	domain	allow	87.240.129.187	87.240.129.187 87.240.190.64		688	category-social-media-ru	87.240.129.187 87.240.190.64
+my.mail.ru	domain	allow	89.221.236.44	89.221.236.44		2663	category-social-media-ru	89.221.236.44
+pikabu.ru	domain	blocked_timeout	185.178.210.201	185.178.210.201	tcp connect timeout; попыток: 2	64204	category-social-media-ru	
+ads.icq.com	domain	open_http	155.212.203.195	155.212.203.195	HTTP 404 ; попыток: 2	793	category-social-media-ru	
+ciciq.net	domain	allow	178.237.20.20	178.237.20.20		474	category-social-media-ru	178.237.20.20
+goicq.org	domain	allow	178.237.20.20	178.237.20.20		474	category-social-media-ru	178.237.20.20
+icq-download.com	domain	allow	178.237.20.20	178.237.20.20		466	category-social-media-ru	178.237.20.20
+icq-mobile.com	domain	allow	178.237.20.20	178.237.20.20		456	category-social-media-ru	178.237.20.20
+icq-online.com	domain	allow	178.237.20.20	178.237.20.20		478	category-social-media-ru	178.237.20.20
+icq-phone.com	domain	allow	178.237.20.20	178.237.20.20		461	category-social-media-ru	178.237.20.20
+icq-phone.org	domain	allow	178.237.20.20	178.237.20.20		487	category-social-media-ru	178.237.20.20
+icq.asia	domain	allow	178.237.20.20	178.237.20.20		463	category-social-media-ru	178.237.20.20
+icq.at	domain	allow	178.237.20.20	178.237.20.20		531	category-social-media-ru	178.237.20.20
+icq.biz	domain	allow	178.237.20.20	178.237.20.20		458	category-social-media-ru	178.237.20.20
+icq.com	domain	allow	95.163.61.100	95.163.61.100		322	category-social-media-ru	95.163.61.100
+icq.de	domain	allow	178.237.20.20	178.237.20.20		528	category-social-media-ru	178.237.20.20
+icq.eu	domain	allow	178.237.20.20	178.237.20.20		421	category-social-media-ru	178.237.20.20
+icq.fr	domain	allow	178.237.20.20	178.237.20.20		464	category-social-media-ru	178.237.20.20
+icq.im	domain	allow	95.163.254.24	95.163.254.24		2473	category-social-media-ru	95.163.254.24
+icq.mobi	domain	allow	178.237.20.20	178.237.20.20		473	category-social-media-ru	178.237.20.20
+icq.org	domain	allow	178.237.20.20	178.237.20.20		597	category-social-media-ru	178.237.20.20
+icq.ru	domain	allow	178.237.20.20	178.237.20.20		458	category-social-media-ru	178.237.20.20
+icq.sg	domain	allow	178.237.20.20	178.237.20.20		453	category-social-media-ru	178.237.20.20
+icq2mobile.com	domain	allow	178.237.20.20	178.237.20.20		465	category-social-media-ru	178.237.20.20
+icq5.com	domain	allow	178.237.20.20	178.237.20.20		425	category-social-media-ru	178.237.20.20
+icqanywhere.com	domain	allow	178.237.20.20	178.237.20.20		474	category-social-media-ru	178.237.20.20
+icqbrasil.com	domain	allow	178.237.20.20	178.237.20.20		461	category-social-media-ru	178.237.20.20
+icqbrazil.com	domain	allow	178.237.20.20	178.237.20.20		475	category-social-media-ru	178.237.20.20
+icqchat.com	domain	allow	178.237.20.20	178.237.20.20		462	category-social-media-ru	178.237.20.20
+icqflirting.com	domain	allow	178.237.20.20	178.237.20.20		452	category-social-media-ru	178.237.20.20
+icqgame.com	domain	allow	178.237.20.20	178.237.20.20		448	category-social-media-ru	178.237.20.20
+icqgames.com	domain	allow	178.237.20.20	178.237.20.20		440	category-social-media-ru	178.237.20.20
+icqkids.com	domain	allow	178.237.20.20	178.237.20.20		478	category-social-media-ru	178.237.20.20
+icqmail.com	domain	allow	95.163.61.101	95.163.61.101		395	category-social-media-ru	95.163.61.101
+icqonline.com	domain	allow	178.237.20.20	178.237.20.20		493	category-social-media-ru	178.237.20.20
+icqpassword.com	domain	allow	178.237.20.20	178.237.20.20		457	category-social-media-ru	178.237.20.20
+icqpeople.com	domain	allow	178.237.20.20	178.237.20.20		435	category-social-media-ru	178.237.20.20
+icqservers.com	domain	allow	178.237.20.20	178.237.20.20		459	category-social-media-ru	178.237.20.20
+icqservice.com	domain	allow	178.237.20.20	178.237.20.20		504	category-social-media-ru	178.237.20.20
+icqsupportteam.com	domain	allow	178.237.20.20	178.237.20.20		492	category-social-media-ru	178.237.20.20
+icqsystem.com	domain	allow	178.237.20.20	178.237.20.20		429	category-social-media-ru	178.237.20.20
+icqsystems.com	domain	allow	178.237.20.20	178.237.20.20		492	category-social-media-ru	178.237.20.20
+icqtoday.com	domain	allow	178.237.20.20	178.237.20.20		457	category-social-media-ru	178.237.20.20
+icqtutor.com	domain	allow	178.237.20.20	178.237.20.20		487	category-social-media-ru	178.237.20.20
+icqvideo.com	domain	allow	178.237.20.20	178.237.20.20		472	category-social-media-ru	178.237.20.20
+mailicq.org	domain	allow	178.237.20.20	178.237.20.20		495	category-social-media-ru	178.237.20.20
+mirabilis.com	domain	allow	178.237.20.20	178.237.20.20		399	category-social-media-ru	178.237.20.20
+mirandaicq.com	domain	allow	178.237.20.20	178.237.20.20		480	category-social-media-ru	178.237.20.20
+mobile-bb.com	domain	allow	178.248.232.165	178.248.232.165 178.248.232.25		667	category-social-media-ru	178.248.232.165 178.248.232.25
+mobile-icq.com	domain	allow	178.237.20.20	178.237.20.20		459	category-social-media-ru	178.237.20.20
+mobileicq.com	domain	allow	178.237.20.20	178.237.20.20		492	category-social-media-ru	178.237.20.20
+xn-----6kc7adj0c9esa.com	domain	allow	178.237.20.20	178.237.20.20		443	category-social-media-ru	178.237.20.20
+xn----7sbaba0dc6cdn7cxcj.com	domain	allow	178.237.20.20	178.237.20.20		450	category-social-media-ru	178.237.20.20
+xn----7sbabae2a0bnvtsfr4loc.com	domain	allow	178.237.20.20	178.237.20.20		451	category-social-media-ru	178.237.20.20
+xn----7sbbab6bregnh7b8if5b.com	domain	allow	178.237.20.20	178.237.20.20		487	category-social-media-ru	178.237.20.20
+xn----7sbbamm1bv2bh7i.com	domain	allow	178.237.20.20	178.237.20.20		435	category-social-media-ru	178.237.20.20
+xn----8sbaroledu6bi7j.com	domain	allow	178.237.20.20	178.237.20.20		453	category-social-media-ru	178.237.20.20
+xn----8sbeoy5bze.com	domain	allow	178.237.20.20	178.237.20.20		431	category-social-media-ru	178.237.20.20
+xn--80aqcf7a6do.com	domain	allow	178.237.20.20	178.237.20.20		451	category-social-media-ru	178.237.20.20
+1l-hit.mail.ru	domain	allow	90.156.232.38	90.156.232.38		346	category-social-media-ru	90.156.232.38
+ad.mail.ru	domain	allow	155.212.203.195	155.212.203.195		300	category-social-media-ru	155.212.203.195
+ad4.mail.ru	domain	allow	155.212.203.195	155.212.203.195		363	category-social-media-ru	155.212.203.195
+alt-ad.mail.ru	domain	allow	155.212.203.195	155.212.203.195		315	category-social-media-ru	155.212.203.195
+an.mail.ru	domain	allow	155.212.203.195	155.212.203.195		320	category-social-media-ru	155.212.203.195
+appsmail.ru	domain	allow	89.221.236.44	89.221.236.44		1431	category-social-media-ru	89.221.236.44
+attachmail.ru	domain	allow	89.221.239.2	89.221.239.2 90.156.232.41		616	category-social-media-ru	89.221.239.2 90.156.232.41
+b2.mail.ru	domain	allow	155.212.203.195	155.212.203.195		299	category-social-media-ru	155.212.203.195
+bk.ru	domain	allow	95.163.50.30	95.163.50.30		438	category-social-media-ru	95.163.50.30
+bs.mail.ru	domain	allow	155.212.203.195	155.212.203.195		338	category-social-media-ru	155.212.203.195
+inbox.ru	domain	allow	89.221.239.2	89.221.239.2 90.156.232.41		556	category-social-media-ru	89.221.239.2 90.156.232.41
+internet.ru	domain	allow	89.221.239.2	89.221.239.2 90.156.232.41		685	category-social-media-ru	89.221.239.2 90.156.232.41
+r.mail.ru	domain	allow	155.212.203.196	155.212.203.196		310	category-social-media-ru	155.212.203.196
+r0.mail.ru	domain	allow	155.212.203.196	155.212.203.196		348	category-social-media-ru	155.212.203.196
+r0.mradx.net	domain	allow	94.100.180.12	94.100.180.12		2359	category-social-media-ru	94.100.180.12
+r1.mail.ru	domain	open_http	155.212.203.196	155.212.203.196	HTTP 404 ; попыток: 2	761	category-social-media-ru	
+radar.imgsmail.ru	domain	allow	95.163.59.229	95.163.59.229		402	category-social-media-ru	95.163.59.229
+reklama.mail.ru	domain	allow	155.212.203.195	155.212.203.195		295	category-social-media-ru	155.212.203.195
+rs.mail.ru	domain	allow	155.212.203.196	155.212.203.196		333	category-social-media-ru	155.212.203.196
+sentry-ng.g.smailru.net	domain	allow	89.221.236.9	89.221.236.9		352	category-social-media-ru	89.221.236.9
+t.mail.ru	domain	allow	155.212.203.196	155.212.203.196		302	category-social-media-ru	155.212.203.196
+target.my.com	domain	allow	5.61.21.185	5.61.21.185		345	category-social-media-ru	5.61.21.185
+tech-mail.ru	domain	allow	95.163.58.173	95.163.58.173		358	category-social-media-ru	95.163.58.173
+top-fwz1.mail.ru	domain	allow	90.156.233.120	90.156.233.120		338	category-social-media-ru	90.156.233.120
+top-staging.mail.ru	domain	allow	95.163.61.39	95.163.61.39		2464	category-social-media-ru	95.163.61.39
+tracker-api.my.com	domain	allow	90.156.232.26	90.156.232.26		1419	category-social-media-ru	90.156.232.26
+tracker.my.com	domain	allow	95.163.61.3	95.163.61.3		3078	category-social-media-ru	95.163.61.3
+vmailru.net	domain	allow	89.221.239.148	89.221.239.148		339	category-social-media-ru	89.221.239.148
+whiteline.mail.ru	domain	allow	155.212.203.195	155.212.203.195		2356	category-social-media-ru	155.212.203.195
+xmail.ru	domain	allow	89.221.239.2	89.221.239.2 90.156.232.41		633	category-social-media-ru	89.221.239.2 90.156.232.41
+xn--80asgb.xn--p1ai	domain	allow	185.180.201.1	185.180.201.1 89.221.239.1 90.156.232.4		1324	category-social-media-ru	185.180.201.1 89.221.239.1 90.156.232.4
+xn--e1aigb.xn--p1ai	domain	allow	185.180.201.1	185.180.201.1 89.221.239.1 90.156.232.4		890	category-social-media-ru	185.180.201.1 89.221.239.1 90.156.232.4
+xray.mail.ru	domain	allow	95.163.59.201	95.163.59.201		324	category-social-media-ru	95.163.59.201
+apiok.ru	domain	allow	185.16.148.105	185.16.148.105 5.61.23.12		609	category-social-media-ru	185.16.148.105 5.61.23.12
+boosty.to	domain	allow	95.181.179.160	95.181.179.160		1116	category-social-media-ru	95.181.179.160
+donationalerts.com	domain	allow	95.181.179.165	95.181.179.165		432	category-social-media-ru	95.181.179.165
+odkl.ru	domain	allow	217.20.157.145	217.20.157.145 5.61.21.121		604	category-social-media-ru	217.20.157.145 5.61.21.121
+odnoklasniki.by	domain	allow	217.20.157.145	217.20.157.145 5.61.21.121		660	category-social-media-ru	217.20.157.145 5.61.21.121
+odnoklassniki.am	domain	allow	217.20.157.145	217.20.157.145 5.61.21.121		639	category-social-media-ru	217.20.157.145 5.61.21.121
+odnoklassniki.by	domain	allow	217.20.157.145	217.20.157.145 5.61.21.121		599	category-social-media-ru	217.20.157.145 5.61.21.121
+odnoklassniki.eu	domain	allow	217.20.157.145	217.20.157.145 5.61.21.121		606	category-social-media-ru	217.20.157.145 5.61.21.121
+odnoklassniki.lv	domain	allow	217.20.157.145	217.20.157.145 5.61.21.121		702	category-social-media-ru	217.20.157.145 5.61.21.121
+odnoklassniki.ru	domain	allow	217.20.157.145	217.20.157.145 5.61.21.121		607	category-social-media-ru	217.20.157.145 5.61.21.121
+odnoklassniki.tj	domain	allow	217.20.157.145	217.20.157.145 5.61.21.121		721	category-social-media-ru	217.20.157.145 5.61.21.121
+ok.me	domain	allow	217.20.156.11	217.20.155.6 217.20.156.11 5.61.23.4		63094	category-social-media-ru	217.20.156.11 5.61.23.4
+oktech.ru	domain	allow	217.20.147.7	217.20.147.7 217.20.152.226 217.20.155.82 217.20.156.72		1136	category-social-media-ru	217.20.147.7 217.20.152.226 217.20.155.82 217.20.156.72
+userapi.ru	domain	allow	87.240.129.187	87.240.129.187 87.240.190.64		790	category-social-media-ru	87.240.129.187 87.240.190.64
+vkcdnservice.com	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1893	category-social-media-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+vkclips.app	domain	allow	87.240.129.187	87.240.129.187 87.240.132.64		721	category-social-media-ru	87.240.129.187 87.240.132.64
+vkontakte.com	domain	allow	95.142.192.76	95.142.192.76		462	category-social-media-ru	95.142.192.76
+vkpay.app	domain	allow	95.163.39.86	95.163.39.86 95.163.39.87		3689	category-social-media-ru	95.163.39.86 95.163.39.87
+vkpay.com	domain	allow	95.163.39.86	95.163.39.86 95.163.39.87		3773	category-social-media-ru	95.163.39.86 95.163.39.87
+vkpay.io	domain	allow	95.163.39.87	95.163.39.87		2631	category-social-media-ru	95.163.39.87
+vkpay.ru	domain	allow	95.163.39.87	95.163.39.87		1451	category-social-media-ru	95.163.39.87
+vkuserlive.net	domain	allow	87.240.129.187	87.240.129.187 87.240.190.64		1917	category-social-media-ru	87.240.129.187 87.240.190.64
+setka.ru	domain	allow	94.124.200.0	94.124.200.0		569	category-social-media-ru	94.124.200.0
+championat.com	domain	allow	81.19.86.2	81.19.86.0 81.19.86.1 81.19.86.2		16488	category-sport-ru	81.19.86.2
+khl.ru	domain	allow	109.238.88.141	109.238.88.141		373	category-sport-ru	109.238.88.141
+sport-express.ru	domain	allow	95.129.236.96	95.129.236.96		394	category-sport-ru	95.129.236.96
+rfs.ru	domain	blocked_timeout	178.176.229.212	178.176.229.212	tcp connect timeout; попыток: 2	64231	category-sport-ru	
+betboom.ru	domain	allow	178.248.232.165	178.248.232.165 178.248.232.25		566	category-sport-ru	178.248.232.165 178.248.232.25
+fon.bet	domain	allow	185.169.155.31	185.169.155.31		335	category-sport-ru	185.169.155.31
+rutube.sport	domain	allow	178.248.237.55	178.248.237.55 185.71.67.50		1894	category-sport-ru	178.248.237.55 185.71.67.50
+worldcuprussia.com	domain	allow	89.191.237.182	185.79.236.168 89.191.237.182		8458	category-sport-ru	89.191.237.182
+zenit.ru	domain	allow	185.71.64.169	185.71.64.169		444	category-sport-ru	185.71.64.169
+ligastavok.ru	domain	allow	178.248.232.191	178.248.232.191		367	category-sport-ru	178.248.232.191
+vk-stadium.ru	domain	allow	185.215.4.26	185.215.4.26		410	category-sport-ru	185.215.4.26
+sportmail.ru	domain	allow	185.180.201.199	185.180.201.199		346	category-sport-ru	185.180.201.199
+24h.tv	domain	blocked_timeout	178.248.235.155	178.248.235.155	tcp connect timeout; попыток: 2	64271	category-streaming-ru	
+beeline.tv	domain	blocked_timeout	80.243.79.211	80.243.79.211	tcp connect timeout; попыток: 2	64333	category-streaming-ru	
+beepopcorn.ru	domain	blocked_timeout	80.243.79.232	80.243.79.230 80.243.79.231 80.243.79.232	tcp connect timeout; попыток: 2	192480	category-streaming-ru	
+ivi.ru	domain	allow	80.67.43.1	80.67.43.1 80.67.43.33 80.67.43.65		769	category-streaming-ru	80.67.43.1 80.67.43.33 80.67.43.65
+ivi.tv	domain	allow	80.67.43.1	80.67.43.1 80.67.43.33 80.67.43.65		786	category-streaming-ru	80.67.43.1 80.67.43.33 80.67.43.65
+kinopoisk-ru.clstorage.net	domain	allow	87.250.251.92	87.250.251.92		365	category-streaming-ru	87.250.251.92
+kinopoisk.ru	domain	allow	213.180.199.9	213.180.199.9		527	category-streaming-ru	213.180.199.9
+okko.sport	domain	allow	109.238.90.217	109.238.90.217		320	category-streaming-ru	109.238.90.217
+okko.tv	domain	allow	185.169.155.118	185.169.155.118		363	category-streaming-ru	185.169.155.118
+okkoapi.tv	domain	allow	31.132.34.2	31.132.34.2		400	category-streaming-ru	31.132.34.2
+playfamily.ru	domain	allow	178.18.218.7	178.18.218.7		403	category-streaming-ru	178.18.218.7
+premier.one	domain	allow	185.65.149.69	155.212.235.231 185.65.149.69		8418	category-streaming-ru	185.65.149.69
+rutube.ru	domain	allow	109.238.90.239	109.238.90.239 178.248.233.148		716	category-streaming-ru	109.238.90.239 178.248.233.148
+rutubelist.ru	domain	allow	89.248.230.8	89.248.230.8	TLS ok, HTTP/2 error from server	259	category-streaming-ru	89.248.230.8
+smotrim.ru	domain	allow	178.248.234.241	178.248.234.241		413	category-streaming-ru	178.248.234.241
+vkuseraudio.com	domain	allow	87.240.129.187	87.240.129.187		493	category-streaming-ru	87.240.129.187
+vkuseraudio.net	domain	allow	87.240.129.187	87.240.129.187		373	category-streaming-ru	87.240.129.187
+vkuseraudio.ru	domain	allow	87.240.129.187	87.240.129.187		405	category-streaming-ru	87.240.129.187
+vkuservideo.com	domain	allow	87.240.129.187	87.240.129.187		937	category-streaming-ru	87.240.129.187
+vkuservideo.net	domain	allow	87.240.129.187	87.240.129.187		444	category-streaming-ru	87.240.129.187
+vkuservideo.ru	domain	allow	87.240.129.187	87.240.129.187		2021	category-streaming-ru	87.240.129.187
+vkvideo.ru	domain	allow	87.240.129.133	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194		1810	category-streaming-ru	87.240.129.133 87.240.132.67 87.240.132.72 87.240.132.78 87.240.137.164 93.186.225.194
+wink.am	domain	allow	212.193.153.157	212.193.153.157		895	category-streaming-ru	212.193.153.157
+wink.ru	domain	allow	212.193.153.133	212.193.153.133 212.193.153.141 212.193.153.154 37.220.163.129 37.220.163.130 37.220.163.151 37.220.163.152 37.220.163.156 37.220.165.244		4319	category-streaming-ru	212.193.153.133 212.193.153.141 212.193.153.154 37.220.163.129 37.220.163.130 37.220.163.151 37.220.163.152 37.220.163.156 37.220.165.244
+boom.ru	domain	allow	87.240.129.191	87.240.129.191 87.240.190.66		737	category-streaming-ru	87.240.129.191 87.240.190.66
+zvuk-b2b.com	domain	allow	185.215.4.42	185.215.4.42		473	category-streaming-ru	185.215.4.42
+zvuk.com	domain	allow	91.221.164.24	91.221.164.24		338	category-streaming-ru	91.221.164.24
+kion.ru	domain	allow	185.65.148.187	185.65.148.187		810	category-streaming-ru	185.65.148.187
+start.ru	domain	blocked_timeout	185.243.86.7	185.243.86.7	tcp connect timeout; попыток: 2	64211	category-streaming-ru	
+more.tv	domain	allow	212.193.153.131	212.193.153.131 212.193.153.139		714	category-streaming-ru	212.193.153.131 212.193.153.139
+amediateka.ru	domain	blocked_timeout	108.157.229.90	108.157.229.112 108.157.229.129 108.157.229.79 108.157.229.90	tcp connect timeout; попыток: 2	256624	category-streaming-ru	
+viju.tv	domain	blocked_timeout	178.248.237.198	178.248.237.198	tcp connect timeout; попыток: 2	64279	category-streaming-ru	
+bookmate.ru	domain	allow	87.250.254.107	87.250.254.107		356	category-streaming-ru	87.250.254.107
+khangar.net	domain	allow	185.79.236.160	185.79.236.160 89.191.237.183		673	category-streaming-ru	185.79.236.160 89.191.237.183
+vkplay.live	domain	allow	89.221.236.4	89.221.236.4		2513	category-streaming-ru	89.221.236.4
+vkplay.ru	domain	allow	95.163.61.43	95.163.61.43		387	category-streaming-ru	95.163.61.43
+ivicdn.tv	domain	allow	80.67.43.1	80.67.43.1 80.67.43.33 80.67.43.65		843	category-streaming-ru	80.67.43.1 80.67.43.33 80.67.43.65
+1cloud.ru	domain	allow	178.248.236.173	178.248.236.173		458	category-telecom-ru	178.248.236.173
+beeline.ru	domain	allow	217.118.87.98	217.118.87.98		401	category-telecom-ru	217.118.87.98
+fastvps.ru	domain	allow	185.71.67.74	185.71.67.74		479	category-telecom-ru	185.71.67.74
+megafon.ru	domain	allow	178.177.13.149	178.177.13.149 188.162.60.210		697	category-telecom-ru	178.177.13.149 188.162.60.210
+mgfn.ru	domain	allow	178.177.13.149	178.177.13.149 188.162.60.210		705	category-telecom-ru	178.177.13.149 188.162.60.210
+motivtelecom.ru	domain	allow	217.148.54.180	217.148.54.180		1533	category-telecom-ru	217.148.54.180
+a.mts.ru	domain	allow	213.87.47.6	213.87.47.6		378	category-telecom-ru	213.87.47.6
+mts.ru	domain	allow	178.248.238.27	178.248.238.27		384	category-telecom-ru	178.248.238.27
+mymts.ru	domain	allow	178.248.238.27	178.248.238.27		298	category-telecom-ru	178.248.238.27
+nextmobile.ru	domain	allow	92.246.149.217	92.246.149.217		1030	category-telecom-ru	92.246.149.217
+qms.ru	domain	allow	87.226.249.86	87.226.249.86		386	category-telecom-ru	87.226.249.86
+rostelecom.ru	domain	allow	87.226.162.216	87.226.162.216		338	category-telecom-ru	87.226.162.216
+rt.ru	domain	allow	87.226.162.216	87.226.162.216		405	category-telecom-ru	87.226.162.216
+sberbank-tele.com	domain	allow	185.163.159.146	185.163.159.146		358	category-telecom-ru	185.163.159.146
+sbermobile.ru	domain	allow	185.163.159.108	185.163.159.108		822	category-telecom-ru	185.163.159.108
+t2.ru	domain	allow	212.193.152.80	212.193.152.80 37.220.161.251 37.220.161.64 37.220.163.23 37.220.165.231		1770	category-telecom-ru	212.193.152.80 37.220.161.251 37.220.161.64 37.220.163.23 37.220.165.231
+tele2.ru	domain	allow	212.193.152.137	212.193.152.137 212.193.152.85 37.220.161.200 37.220.161.212 37.220.165.50		1963	category-telecom-ru	212.193.152.137 212.193.152.85 37.220.161.200 37.220.161.212 37.220.165.50
+ertelecom.ru	domain	allow	91.221.164.66	91.221.164.66		957	category-telecom-ru	91.221.164.66
+vtbmobile.ru	domain	allow	178.248.232.252	178.248.232.252		466	category-telecom-ru	178.248.232.252
+scartel.ru	domain	allow	178.177.13.149	178.177.13.149 188.162.60.210		695	category-telecom-ru	178.177.13.149 188.162.60.210
+xn--80a9a4b.xn--p1ai	domain	allow	178.177.13.149	178.177.13.149 188.162.60.210		777	category-telecom-ru	178.177.13.149 188.162.60.210
+xn--80aj3b.xn--p1ai	domain	allow	178.177.13.149	178.177.13.149 188.162.60.210		757	category-telecom-ru	178.177.13.149 188.162.60.210
+xn--80arpq.xn--p1ai	domain	allow	178.177.13.149	178.177.13.149 188.162.60.210		689	category-telecom-ru	178.177.13.149 188.162.60.210
+yota.ru	domain	allow	178.177.13.241	178.177.13.241 188.170.66.75		672	category-telecom-ru	178.177.13.241 188.170.66.75
+yotagamer.ru	domain	allow	178.177.13.149	178.177.13.149 188.162.60.210		647	category-telecom-ru	178.177.13.149 188.162.60.210
+mgts.ru	domain	allow	195.178.108.240	195.178.108.240		482	category-telecom-ru	195.178.108.240
+dom.ru	domain	allow	194.190.0.234	194.190.0.234		541	category-telecom-ru	194.190.0.234
+ttk.ru	domain	blocked_timeout	62.33.186.12	62.33.186.12	tcp connect timeout; попыток: 2	64218	category-telecom-ru	
+volnamobile.ru	domain	allow	185.15.39.100	185.15.39.100		481	category-telecom-ru	185.15.39.100
+akado.ru	domain	allow	185.169.155.180	185.169.155.180		411	category-telecom-ru	185.169.155.180
+ufanet.ru	domain	blocked_timeout	81.30.199.238	81.30.199.238	tcp connect timeout; попыток: 2	64256	category-telecom-ru	
+mtt.ru	domain	blocked_timeout	185.200.242.8	185.200.242.8	tcp connect timeout; попыток: 2	64220	category-telecom-ru	
+tinkoffmobile.ru	domain	blocked_timeout	91.226.31.83	91.226.31.83	tcp connect timeout; попыток: 2	64460	category-telecom-ru	
+aeroflot.ru	domain	allow	195.209.82.227	195.209.82.227 195.209.82.84 212.193.153.14 212.193.153.166 37.220.161.51 37.220.163.4 37.220.163.9 37.220.165.164		2535	category-transport-ru	195.209.82.227 195.209.82.84 212.193.153.14 212.193.153.166 37.220.161.51 37.220.163.4 37.220.163.9 37.220.165.164
+dzvr.ru	domain	blocked_timeout	188.43.103.240	188.43.103.240	tcp connect timeout; попыток: 2	64248	category-transport-ru	
+rzd-bonus.ru	domain	allow	185.71.67.111	185.71.67.111		490	category-transport-ru	185.71.67.111
+rzd.ru	domain	allow	212.164.138.120	212.164.138.120 212.164.138.121 212.164.138.122 212.164.138.123 212.164.138.124 212.164.138.125 212.164.138.126 212.164.138.127 212.164.138.128 212.164.138.129 212.164.138.130 212.164.138.131 212.164.140.170 212.164.140.180		20575	category-transport-ru	212.164.138.120 212.164.138.121 212.164.138.122 212.164.138.123 212.164.138.124 212.164.138.125 212.164.138.126 212.164.138.127 212.164.138.128 212.164.138.129 212.164.138.130 212.164.138.131
+grandtrain.ru	domain	allow	95.129.236.237	95.129.236.237		586	category-transport-ru	95.129.236.237
+taximaxim.ru	domain	allow	178.248.237.53	178.248.237.53		1065	category-transport-ru	178.248.237.53
+taxsee.ru	domain	allow	195.209.117.20	195.209.117.20		509	category-transport-ru	195.209.117.20
+mosmetro.ru	domain	allow	178.178.127.20	178.178.127.20		522	category-transport-ru	178.178.127.20
+pobeda.aero	domain	allow	194.190.0.152	194.190.0.152		619	category-transport-ru	194.190.0.152
+rossiya-airlines.com	domain	blocked_timeout	217.195.76.247	217.195.76.247	tcp connect timeout; попыток: 2	64265	category-transport-ru	
+flyredwings.com	domain	allow	91.215.43.65	91.215.43.65		1202	category-transport-ru	91.215.43.65
+nordwind.aero	domain	allow	193.24.8.15	193.24.8.15		375	category-transport-ru	193.24.8.15
+uralairlines.ru	domain	blocked_timeout	178.248.239.188	178.248.239.188	tcp connect timeout; попыток: 2	64226	category-transport-ru	
+s7.ru	domain	allow	155.212.234.239	155.212.234.239		333	category-transport-ru	155.212.234.239
+mosgortrans.ru	domain	blocked_timeout	109.70.24.77	109.70.24.77	tcp connect timeout; попыток: 2	64222	category-transport-ru	
+azurair.ru	domain	allow	212.193.152.55	212.193.152.55 37.220.163.101 37.220.163.108 37.220.165.197		1614	category-transport-ru	212.193.152.55 37.220.163.101 37.220.163.108 37.220.165.197
+city-mobil.ru	domain	allow	185.169.155.2	185.169.155.2		480	category-transport-ru	185.169.155.2
+taxi.yandex.ru	domain	allow	37.9.112.5	37.9.112.5		851	category-transport-ru	37.9.112.5
+yandex.taxi	domain	allow	87.250.250.8	87.250.250.8		832	category-transport-ru	87.250.250.8
+fasten.ru	domain	allow	87.250.251.188	87.250.251.188		822	category-transport-ru	87.250.251.188
+vezet.ru	domain	allow	87.250.251.23	87.250.251.23		532	category-transport-ru	87.250.251.23
+jump.taxi	domain	allow	178.130.128.39	178.130.128.39		1625	category-transport-ru	178.130.128.39
+podorozhnik.spb.ru	domain	allow	62.89.202.115	62.89.202.115		460	category-transport-ru	62.89.202.115
+rutaxi.ru	domain	allow	87.250.251.23	87.250.251.23		816	category-transport-ru	87.250.251.23
+sbertroika.ru	domain	allow	185.215.4.43	185.215.4.43		381	category-transport-ru	185.215.4.43
+taxsee.com	domain	allow	195.209.117.20	195.209.117.20		493	category-transport-ru	195.209.117.20
+whoosh-bike.ru	domain	allow	185.215.4.20	185.215.4.20		465	category-transport-ru	185.215.4.20
+onetwotrip.com	domain	allow	178.248.238.70	178.248.238.70		398	category-travel-ru	178.248.238.70
+ostrovok.ru	domain	blocked_timeout	78.155.198.113	78.155.198.113	tcp connect timeout; попыток: 2	64249	category-travel-ru	
+sutochno.ru	domain	allow	194.190.0.245	194.190.0.245		503	category-travel-ru	194.190.0.245
+travel.yandex.ru	domain	allow	93.158.134.81	93.158.134.81		710	category-travel-ru	93.158.134.81
+yandex.travel	domain	allow	213.180.204.242	213.180.204.242		1075	category-travel-ru	213.180.204.242
+tutu.ru	domain	allow	178.248.234.61	178.248.234.61		435	category-travel-ru	178.248.234.61
+ozon.travel	domain	allow	185.73.193.82	185.73.193.82 185.73.194.107		567	category-travel-ru	185.73.193.82 185.73.194.107
+booking-tec.ru	domain	allow	178.130.128.39	178.130.128.39		717	category-travel-ru	178.130.128.39
+travel-tec.ru	domain	allow	178.130.128.39	178.130.128.39		570	category-travel-ru	178.130.128.39
